@@ -344,7 +344,96 @@ kbd { background: var(--glass-bg); border: 1px solid var(--glass-border); border
     #ambient-bg::before, #ambient-bg::after { animation: none !important; }
 }
 
-/* Hide live feed on small screens — it overlaps the game grid. */
-@media (max-width: 1100px) {
+/* Hide live feed on narrow screens — it overlaps the lobby content. */
+@media (max-width: 1400px) {
     .live-feed { display: none; }
+}
+
+/* Promo strip in hero */
+.promo-text { margin: 20px auto 0; max-width: 600px; padding: 10px 18px; border-radius: 50px; background: linear-gradient(135deg, rgba(212,168,67,0.12), rgba(139,92,246,0.12)); border: 1px solid var(--glass-border); font-size: 14px; color: var(--text); font-weight: 500; transition: opacity 0.3s; }
+.promo-text.promo-leaving { opacity: 0; }
+
+/* Section header (missions, recently played) */
+.section-header { display: flex; align-items: baseline; justify-content: space-between; max-width: 1200px; margin: 0 auto; padding: 24px 40px 12px; }
+.section-header h2 { font-family: var(--font-display); font-size: 22px; color: var(--gold); }
+.section-sub { color: var(--text-secondary); font-size: 12px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; }
+.section-sub #mission-timer { color: var(--gold-light); font-variant-numeric: tabular-nums; }
+
+/* Missions */
+.missions-section { position: relative; z-index: 1; max-width: 1200px; margin: 0 auto; }
+.missions-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; padding: 0 40px; }
+.mission-card { display: flex; align-items: center; gap: 14px; background: var(--bg-card); border: 1px solid var(--glass-border); border-radius: var(--radius); padding: 14px; transition: all 0.3s; }
+.mission-card:hover { border-color: rgba(212,168,67,0.3); }
+.mission-card.complete { border-color: var(--green); background: rgba(34,197,94,0.06); }
+.mission-card.claimed { opacity: 0.6; }
+.mission-icon { font-size: 32px; flex-shrink: 0; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4)); }
+.mission-body { flex: 1; min-width: 0; }
+.mission-name { font-weight: 800; font-size: 14px; color: var(--text); margin-bottom: 2px; }
+.mission-desc { font-size: 12px; color: var(--text-secondary); margin-bottom: 8px; }
+.mission-progress { display: flex; align-items: center; gap: 8px; }
+.mission-progress-bar { flex: 1; height: 6px; background: rgba(0,0,0,0.3); border-radius: 4px; overflow: hidden; }
+.mission-progress-fill { height: 100%; background: linear-gradient(90deg, var(--gold-dark), var(--gold-light)); transition: width 0.5s ease-out; }
+.mission-card.complete .mission-progress-fill { background: linear-gradient(90deg, var(--green), #4ade80); }
+.mission-progress-text { font-size: 11px; color: var(--text-muted); font-weight: 700; font-variant-numeric: tabular-nums; min-width: 60px; text-align: right; }
+.mission-reward { font-size: 13px; font-weight: 800; color: var(--gold-light); flex-shrink: 0; }
+.mission-card.claimed .mission-reward { color: var(--green); font-size: 20px; }
+
+/* Recently played */
+.recent-section { position: relative; z-index: 1; max-width: 1200px; margin: 0 auto; }
+.recent-section h2 { font-family: var(--font-display); font-size: 22px; color: var(--gold); padding: 24px 40px 12px; max-width: 1200px; margin: 0 auto; }
+.recent-row { display: flex; gap: 12px; padding: 0 40px; overflow-x: auto; scrollbar-width: thin; }
+.recent-tile { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 14px 18px; background: var(--bg-card); border: 1px solid var(--glass-border); border-top: 3px solid var(--card-accent, var(--gold)); border-radius: var(--radius); cursor: pointer; min-width: 100px; font-family: inherit; color: inherit; transition: all 0.2s; }
+.recent-tile:hover { background: var(--bg-card-hover); transform: translateY(-2px); }
+.recent-tile-icon { font-size: 28px; }
+.recent-tile-name { font-size: 11px; font-weight: 700; color: var(--text); white-space: nowrap; }
+
+/* Lobby toolbar (search + categories) */
+.lobby-toolbar { position: relative; z-index: 1; max-width: 1200px; margin: 24px auto 0; padding: 0 40px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.search-label { flex: 1; min-width: 220px; position: relative; }
+.search-label::before { content: '🔍'; position: absolute; left: 14px; top: 50%; transform: translateY(-50%); pointer-events: none; opacity: 0.6; }
+.game-search { width: 100%; padding: 10px 16px 10px 40px; border-radius: 50px; border: 1px solid var(--glass-border); background: var(--bg-card); color: var(--text); font-size: 14px; font-family: inherit; transition: all 0.2s; }
+.game-search:focus { outline: none; border-color: var(--gold); background: var(--bg-card-hover); }
+.category-tabs { display: flex; gap: 6px; background: var(--bg-card); border: 1px solid var(--glass-border); border-radius: 50px; padding: 4px; }
+.cat-tab { background: transparent; border: none; color: var(--text-secondary); padding: 6px 16px; border-radius: 50px; cursor: pointer; font-weight: 700; font-size: 13px; transition: all 0.2s; font-family: inherit; }
+.cat-tab:hover { color: var(--text); }
+.cat-tab.active { background: var(--gold); color: #0a0e1a; }
+
+.no-results { padding: 60px 20px; text-align: center; color: var(--text-muted); font-size: 15px; grid-column: 1 / -1; }
+
+/* Game card badges */
+.game-card { position: relative; }
+.card-badge { position: absolute; top: 12px; right: 12px; padding: 3px 10px; border-radius: 50px; font-size: 10px; font-weight: 800; letter-spacing: 1px; z-index: 2; }
+.card-badge.hot { background: linear-gradient(135deg, #f59e0b, #ef4444); color: #fff; box-shadow: 0 2px 8px rgba(239,68,68,0.4); }
+.card-badge.new { background: linear-gradient(135deg, #3b82f6, #8b5cf6); color: #fff; box-shadow: 0 2px 8px rgba(59,130,246,0.4); }
+
+/* Rescue chips button (header) */
+.rescue-btn { margin-left: 12px; background: linear-gradient(135deg, #ef4444, #f59e0b); color: #fff; border: none; padding: 8px 16px; border-radius: 50px; font-weight: 800; font-size: 12px; cursor: pointer; box-shadow: 0 4px 12px rgba(239,68,68,0.3); animation: pulse 2s infinite; }
+.rescue-btn:hover { transform: scale(1.05); }
+
+/* Bet history (in stats modal) */
+.history-section { border-top: 1px solid var(--glass-border); padding-top: 16px; }
+.history-section h4 { margin-bottom: 12px; color: var(--gold-light); }
+.bet-history-list { max-height: 280px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
+.bet-row { display: grid; grid-template-columns: 28px 1fr auto auto; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; background: var(--bg-card); font-size: 13px; }
+.bet-icon { font-size: 18px; }
+.bet-game { color: var(--text); font-weight: 600; }
+.bet-time { color: var(--text-muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.bet-result { font-weight: 800; font-size: 13px; font-variant-numeric: tabular-nums; }
+.bet-result.win { color: var(--green); }
+.bet-result.lose { color: var(--red); }
+.bet-mult { color: var(--text-muted); font-size: 11px; margin-left: 4px; }
+.bet-empty { padding: 20px; text-align: center; color: var(--text-muted); font-size: 13px; }
+
+/* Stats modal goes wider to fit history */
+.stats-modal-content { max-width: 520px; max-height: 92vh; overflow-y: auto; }
+
+/* Responsive tweaks */
+@media (max-width: 768px) {
+    .section-header, .recent-section h2 { padding-left: 16px; padding-right: 16px; }
+    .missions-list, .recent-row, .lobby-toolbar { padding-left: 16px; padding-right: 16px; }
+    .lobby-toolbar { flex-direction: column; align-items: stretch; }
+    .category-tabs { overflow-x: auto; }
+    .promo-text { margin: 16px 12px 0; font-size: 12px; padding: 8px 14px; }
+    .rescue-btn { display: none; }
+    .rescue-btn:not(.hidden) { display: block; margin: 8px 0 0; width: 100%; }
 }

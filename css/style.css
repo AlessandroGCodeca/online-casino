@@ -41,6 +41,18 @@
 html { scroll-behavior: smooth; }
 body { font-family: var(--font); background: var(--bg-primary); color: var(--text); min-height: 100vh; overflow-x: hidden; transition: background-color 0.3s, color 0.3s; }
 .hidden { display: none !important; }
+
+/* Accessible focus ring (only on keyboard focus). */
+:focus { outline: none; }
+:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; border-radius: 4px; }
+
+/* Skip link for keyboard users. */
+.skip-link { position: absolute; top: -100px; left: 0; background: var(--gold); color: #0a0e1a; padding: 12px 20px; font-weight: 700; z-index: 1000; text-decoration: none; border-radius: 0 0 8px 0; transition: top 0.2s; }
+.skip-link:focus { top: 0; }
+
+kbd { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 4px; padding: 1px 6px; font-size: 11px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--text-secondary); }
+
+.noscript-warning { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: var(--bg-primary); color: var(--text); padding: 40px; text-align: center; font-size: 18px; z-index: 9999; }
 .fade-out { opacity: 0; pointer-events: none; transition: opacity 0.3s; }
 .fade-in { opacity: 1; transition: opacity 0.3s; }
 .slide-up { animation: slideUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
@@ -269,8 +281,70 @@ body { font-family: var(--font); background: var(--bg-primary); color: var(--tex
 .shop-item-icon { font-size: 36px; margin-bottom: 8px; }
 .shop-item-name { font-weight: 700; font-size: 14px; margin-bottom: 4px; }
 .shop-item-price { color: var(--gold); font-size: 12px; font-weight: 800; margin-bottom: 12px; }
+.shop-item-price-placeholder { height: 14px; margin-bottom: 12px; }
 .shop-btn { padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; border: none; }
 .shop-btn.buy { background: var(--gold); color: #000; }
 .shop-btn.buy:hover { box-shadow: 0 0 10px rgba(212,168,67,0.5); }
 .shop-btn.equip { background: var(--glass-bg); color: var(--text); border: 1px solid var(--gold); }
-.shop-btn.equipped { background: var(--green); color: #fff; pointer-events: none; }
+.shop-btn.equipped { background: var(--green); color: #fff; cursor: default; }
+
+/* Leaderboard */
+.leaderboard { max-width: 800px; margin: 0 auto; padding: 0 24px 40px; text-align: center; position: relative; z-index: 1; }
+.leaderboard h2 { font-family: var(--font-display); color: var(--gold); margin-bottom: 20px; }
+.leaderboard-list { background: var(--bg-card); border: 1px solid var(--glass-border); border-radius: var(--radius-lg); padding: 8px 20px; text-align: left; }
+.leaderboard-row { display: grid; grid-template-columns: 40px 1fr auto; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--glass-border); }
+.leaderboard-row:last-child { border-bottom: none; }
+.leaderboard-row.you { background: rgba(212,168,67,0.08); border-left: 3px solid var(--gold); padding-left: 12px; margin: 0 -12px; border-radius: 6px; border-bottom-color: transparent; }
+.leaderboard-rank { color: var(--text-muted); font-weight: 800; }
+.leaderboard-name { font-weight: 600; color: var(--text); }
+.leaderboard-amount { color: var(--gold-light); font-weight: 800; font-variant-numeric: tabular-nums; }
+.you-tag { background: var(--gold); color: #0a0e1a; padding: 1px 8px; border-radius: 10px; font-size: 10px; font-weight: 800; letter-spacing: 1px; margin-left: 6px; vertical-align: middle; }
+
+/* Toasts */
+.toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 1000; display: flex; flex-direction: column; gap: 12px; pointer-events: none; max-width: calc(100vw - 48px); }
+.toast { background: var(--bg-secondary); border: 1px solid var(--gold); border-radius: 8px; padding: 12px 16px; color: var(--text); box-shadow: 0 4px 12px rgba(0,0,0,0.3); font-weight: 600; font-size: 14px; animation: slideUp 0.3s forwards; pointer-events: auto; }
+.toast-leaving { animation: fadeOut 0.3s forwards; }
+@keyframes fadeOut { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(8px); } }
+
+/* Achievements list (in stats modal) */
+.achievements-section { border-top: 1px solid var(--glass-border); padding-top: 16px; }
+.achievements-section h4 { margin-bottom: 12px; color: var(--gold-light); }
+.achievements-list { display: grid; gap: 8px; }
+.achievement-row { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 8px; background: var(--bg-card); border: 1px solid transparent; opacity: 0.5; }
+.achievement-row.unlocked { background: var(--glass-bg); border-color: var(--glass-border); opacity: 1; }
+.achievement-icon { font-size: 24px; filter: grayscale(1); }
+.achievement-row.unlocked .achievement-icon { filter: none; }
+.achievement-body { flex: 1; }
+.achievement-name { font-weight: 700; color: var(--text); font-size: 14px; }
+.achievement-desc { font-size: 12px; color: var(--text-secondary); }
+.achievement-reward { font-size: 12px; color: var(--gold); font-weight: 700; }
+
+/* Modal extras */
+.shop-modal-content { max-width: 520px; }
+.shop-modal-body { max-height: 60vh; overflow-y: auto; }
+.daily-modal-content { text-align: center; }
+.daily-modal-body { padding: 24px; }
+.daily-icon { font-size: 64px; margin-bottom: 16px; }
+.daily-amount { color: var(--gold); margin-bottom: 8px; }
+.daily-note { color: var(--text-secondary); margin-bottom: 24px; }
+.daily-claim-btn { width: 100%; }
+
+/* Game cards now rendered as <button>; reset native styles. */
+.game-card { font: inherit; color: inherit; text-align: center; display: block; width: 100%; }
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+        scroll-behavior: auto !important;
+    }
+    .confetti { display: none !important; }
+    #ambient-bg::before, #ambient-bg::after { animation: none !important; }
+}
+
+/* Hide live feed on small screens — it overlaps the game grid. */
+@media (max-width: 1100px) {
+    .live-feed { display: none; }
+}

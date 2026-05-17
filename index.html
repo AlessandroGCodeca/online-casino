@@ -4,7 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Royal Flush Casino — Free Online Casino Games</title>
-    <meta name="description" content="Play Slots, Blackjack, Roulette, Video Poker, and Crash free with virtual chips.">
+    <meta name="description" content="Play Slots, Blackjack, Roulette, Video Poker, Crash, Plinko and more free with virtual chips.">
+    <meta name="theme-color" content="#d4a843">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="manifest.json">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎰</text></svg>">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,9 +22,18 @@
             <a href="#" class="logo" id="logo-link"><span class="logo-icon">♠</span><span class="logo-text">Royal Flush</span></a>
         </div>
         <div class="header-center">
-            <div class="balance-display"><span class="balance-label">BALANCE</span><span class="balance-amount" id="balance-display">$10,000</span></div>
+            <div class="balance-display">
+                <span class="balance-label">BALANCE</span>
+                <span class="balance-amount" id="balance-display">$10,000</span>
+            </div>
+            <div id="vip-badge" class="vip-badge" title="VIP Level">
+                <span id="vip-icon">🥉</span>
+                <span id="vip-level-text">Bronze</span>
+                <div class="vip-xp-bar"><div class="vip-xp-fill" id="vip-xp-fill" style="width:0%"></div></div>
+            </div>
         </div>
         <div class="header-right">
+            <button id="shop-btn" class="icon-btn" title="Reward Shop">🛍️</button>
             <button id="theme-toggle" class="icon-btn" title="Toggle Theme">🌓</button>
             <button id="sound-toggle" class="icon-btn" title="Toggle Sound">🔊</button>
             <button id="stats-btn" class="icon-btn" title="Stats">📊</button>
@@ -32,6 +45,13 @@
             <p class="hero-subtitle">Your premium casino experience — play with <strong>$10,000</strong> in free chips</p>
             <button id="daily-bonus-btn" class="action-btn primary hidden" style="margin-top: 16px;">🎁 Claim Daily Bonus!</button>
         </section>
+
+        <!-- Live Feed -->
+        <div id="live-feed" class="live-feed slide-up" style="animation-delay: 0.15s;">
+            <div class="live-feed-header"><span class="live-dot"></span> LIVE ACTIVITY</div>
+            <div id="live-feed-list" class="live-feed-list"></div>
+        </div>
+
         <section class="games-grid" id="games-grid"></section>
         
         <section class="leaderboard slide-up" style="animation-delay: 0.6s; max-width: 800px; margin: 0 auto; padding: 0 24px 40px; text-align: center;">
@@ -50,6 +70,8 @@
         </div>
         <div id="game-area"></div>
     </section>
+
+    <!-- Stats Modal -->
     <div id="stats-modal" class="modal-overlay hidden">
         <div class="modal-content">
             <div class="modal-header"><h3>📊 Statistics & Achievements</h3><button id="close-stats" class="modal-close">✕</button></div>
@@ -61,15 +83,24 @@
         </div>
     </div>
     
+    <!-- Daily Bonus Modal -->
     <div id="daily-modal" class="modal-overlay hidden">
         <div class="modal-content" style="text-align: center;">
             <div class="modal-header"><h3>🎁 Daily Bonus</h3><button id="close-daily" class="modal-close">✕</button></div>
             <div class="modal-body">
                 <div style="font-size: 64px; margin-bottom: 16px;">💎</div>
-                <h2 style="color: var(--gold); margin-bottom: 8px;">You claimed $1,000!</h2>
+                <h2 id="daily-bonus-amount" style="color: var(--gold); margin-bottom: 8px;">Claim $1,000!</h2>
                 <p style="color: var(--text-secondary); margin-bottom: 24px;">Come back tomorrow for more free chips.</p>
-                <button id="claim-daily-btn" class="action-btn primary" style="width: 100%;">Awesome!</button>
+                <button id="claim-daily-btn" class="action-btn primary" style="width: 100%;">Claim!</button>
             </div>
+        </div>
+    </div>
+
+    <!-- Shop Modal -->
+    <div id="shop-modal" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width:520px;">
+            <div class="modal-header"><h3>🛍️ Reward Shop</h3><button id="close-shop" class="modal-close">✕</button></div>
+            <div id="shop-body" class="modal-body" style="max-height:60vh;overflow-y:auto;"></div>
         </div>
     </div>
 
@@ -87,5 +118,6 @@
     <script src="js/baccarat.js" defer></script>
     <script src="js/wheel.js" defer></script>
     <script src="js/keno.js" defer></script>
+    <script src="js/plinko.js" defer></script>
 </body>
 </html>

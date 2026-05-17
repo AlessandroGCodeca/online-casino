@@ -7,8 +7,25 @@ window.Casino = {
     theme: 'dark',
     lastDailyBonus: 0,
     achievements: [],
+    vip: { xp: 0, level: 0 },
+    inventory: { deck: 'default', theme: 'default', owned: ['default_deck', 'default_theme'] },
     stats: { totalWagered: 0, totalWon: 0, biggestWin: 0, gamesPlayed: 0 }
 };
+
+const VIP_TIERS = [
+    { name: 'Bronze', xp: 0, icon: '🥉', bonus: 1000 },
+    { name: 'Silver', xp: 5000, icon: '🥈', bonus: 2500 },
+    { name: 'Gold', xp: 25000, icon: '🥇', bonus: 5000 },
+    { name: 'Platinum', xp: 100000, icon: '💎', bonus: 10000 },
+    { name: 'Diamond', xp: 500000, icon: '👑', bonus: 25000 }
+];
+
+const SHOP_ITEMS = [
+    { id: 'neon_deck', name: 'Neon Deck', type: 'deck', price: 5000, icon: '🃏' },
+    { id: 'gold_deck', name: 'Gold Deck', type: 'deck', price: 20000, icon: '🎴' },
+    { id: 'purple_theme', name: 'Royal Purple Theme', type: 'theme', price: 10000, icon: '🟣' },
+    { id: 'crimson_theme', name: 'Crimson Theme', type: 'theme', price: 10000, icon: '🔴' }
+];
 
 const ACHIEVEMENTS_DATA = [
     { id: 'first_win', name: 'First Win', icon: '🎯', desc: 'Win your first game', reward: 500 },
@@ -28,7 +45,8 @@ const GAME_CARDS = [
     { id: 'dice', name: 'Hi-Lo Dice', icon: '🎲', desc: 'Predict over or under the target!', accent: '#3b82f6' },
     { id: 'baccarat', name: 'Baccarat', icon: '👑', desc: 'Classic high-roller card game!', accent: '#d4a843' },
     { id: 'wheel', name: 'Wheel of Fortune', icon: '🎡', desc: 'Spin for multiplier prizes!', accent: '#8b5cf6' },
-    { id: 'keno', name: 'Keno', icon: '🔢', desc: 'Pick numbers and match to win!', accent: '#ef4444' }
+    { id: 'keno', name: 'Keno', icon: '🔢', desc: 'Pick numbers and match to win!', accent: '#ef4444' },
+    { id: 'plinko', name: 'Plinko', icon: '🟢', desc: 'Drop the ball and hit the multipliers!', accent: '#22c55e' }
 ];
 
 /* ---- Init ---- */
@@ -37,8 +55,11 @@ document.addEventListener('DOMContentLoaded', () => {
     applyTheme();
     renderLobby();
     updateBalanceUI();
+    updateVIPUI();
     checkDailyBonus();
     renderLeaderboard();
+    initLiveFeed();
+    
     document.getElementById('back-to-lobby').addEventListener('click', showLobby);
     document.getElementById('logo-link').addEventListener('click', e => { e.preventDefault(); showLobby(); });
     document.getElementById('sound-toggle').addEventListener('click', toggleSound);
@@ -48,6 +69,17 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('stats-modal').addEventListener('click', e => { if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden'); });
     document.getElementById('close-daily').addEventListener('click', () => document.getElementById('daily-modal').classList.add('hidden'));
     document.getElementById('claim-daily-btn').addEventListener('click', claimDailyBonus);
+    
+    document.getElementById('shop-btn').addEventListener('click', openShop);
+    document.getElementById('close-shop').addEventListener('click', () => document.getElementById('shop-modal').classList.add('hidden'));
+    document.getElementById('shop-modal').addEventListener('click', e => { if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden'); });
+
+    // Register PWA Service Worker
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js').catch(() => {});
+        });
+    }
 });
 
 /* ---- State Persistence ---- */
@@ -61,6 +93,8 @@ function loadState() {
             Casino.theme = s.theme ?? 'dark';
             Casino.lastDailyBonus = s.lastDailyBonus ?? 0;
             Casino.achievements = s.achievements ?? [];
+            Casino.vip = s.vip ?? { xp: 0, level: 0 };
+            Casino.inventory = s.inventory ?? { deck: 'default', theme: 'default', owned: ['default_deck', 'default_theme'] };
         }
     } catch(e) {}
     if (Casino.balance <= 0) Casino.balance = 10000;
@@ -72,7 +106,9 @@ function saveState() {
         soundEnabled: Casino.soundEnabled,
         theme: Casino.theme,
         lastDailyBonus: Casino.lastDailyBonus,
-        achievements: Casino.achievements
+        achievements: Casino.achievements,
+        vip: Casino.vip,
+        inventory: Casino.inventory
     }));
 }
 
@@ -96,6 +132,12 @@ function placeBet(amount) {
     if (amount > Casino.balance || amount <= 0) return false;
     Casino.balance -= amount;
     Casino.stats.totalWagered += amount;
+    
+    // Add XP equal to bet amount
+    Casino.vip.xp += amount;
+    checkVIPLevelUp();
+    updateVIPUI();
+
     updateBalanceUI();
     const el = document.getElementById('balance-display');
     el.classList.remove('flash-green', 'flash-red');
@@ -104,9 +146,46 @@ function placeBet(amount) {
     saveState();
     return true;
 }
+
+function checkVIPLevelUp() {
+    let newLevel = 0;
+    for (let i = VIP_TIERS.length - 1; i >= 0; i--) {
+        if (Casino.vip.xp >= VIP_TIERS[i].xp) {
+            newLevel = i;
+            break;
+        }
+    }
+    if (newLevel > Casino.vip.level) {
+        Casino.vip.level = newLevel;
+        const tier = VIP_TIERS[newLevel];
+        showToast(`${tier.icon} VIP Level Up! You are now ${tier.name}!`);
+        playSound('jackpot');
+    }
+}
+
+function updateVIPUI() {
+    const tier = VIP_TIERS[Casino.vip.level];
+    const nextTier = VIP_TIERS[Casino.vip.level + 1];
+    
+    document.getElementById('vip-icon').textContent = tier.icon;
+    document.getElementById('vip-level-text').textContent = tier.name;
+    
+    if (nextTier) {
+        const xpInCurrentTier = Casino.vip.xp - tier.xp;
+        const xpNeededForNext = nextTier.xp - tier.xp;
+        const pct = Math.min(100, Math.max(0, (xpInCurrentTier / xpNeededForNext) * 100));
+        document.getElementById('vip-xp-fill').style.width = `${pct}%`;
+        document.getElementById('vip-badge').title = `XP: ${Casino.vip.xp} / ${nextTier.xp}`;
+    } else {
+        document.getElementById('vip-xp-fill').style.width = '100%';
+        document.getElementById('vip-badge').title = 'Max VIP Level!';
+    }
+}
+
 window.Casino.changeBalance = changeBalance;
 window.Casino.placeBet = placeBet;
 window.Casino.updateBalanceUI = updateBalanceUI;
+window.Casino.updateVIPUI = updateVIPUI;
 window.Casino.saveState = saveState;
 
 /* ---- Sound ---- */
@@ -294,18 +373,21 @@ function checkDailyBonus() {
     if (now - Casino.lastDailyBonus > msPerDay) {
         document.getElementById('daily-bonus-btn').classList.remove('hidden');
         document.getElementById('daily-bonus-btn').addEventListener('click', () => {
+            const tier = VIP_TIERS[Casino.vip.level];
+            document.getElementById('daily-bonus-amount').textContent = `Claim $${tier.bonus.toLocaleString()}!`;
             document.getElementById('daily-modal').classList.remove('hidden');
         }, { once: true });
     }
 }
 function claimDailyBonus() {
-    Casino.changeBalance(1000);
+    const tier = VIP_TIERS[Casino.vip.level];
+    Casino.changeBalance(tier.bonus);
     Casino.lastDailyBonus = Date.now();
     saveState();
     document.getElementById('daily-modal').classList.add('hidden');
     document.getElementById('daily-bonus-btn').classList.add('hidden');
     playSound('win');
-    showWinEffect(1000);
+    showWinEffect(tier.bonus);
 }
 
 /* ---- Leaderboard ---- */
@@ -362,6 +444,110 @@ function showWinEffect(amount) {
     setTimeout(() => { overlay.classList.add('hidden'); overlay.innerHTML = ''; }, 2500);
 }
 window.Casino.showWinEffect = showWinEffect;
+
+/* ---- Shop Logic ---- */
+function openShop() {
+    const body = document.getElementById('shop-body');
+    let html = '<div class="shop-grid">';
+    
+    SHOP_ITEMS.forEach(item => {
+        const owned = Casino.inventory.owned.includes(item.id);
+        const equipped = Casino.inventory[item.type] === item.id;
+        
+        html += `
+            <div class="shop-item">
+                <div class="shop-item-icon">${item.icon}</div>
+                <div class="shop-item-name">${item.name}</div>
+                ${!owned ? `<div class="shop-item-price">$${item.price.toLocaleString()}</div>` : '<div style="height:14px;margin-bottom:12px;"></div>'}
+                ${!owned ? 
+                    `<button class="shop-btn buy" onclick="Casino.buyItem('${item.id}')">Buy</button>` : 
+                    (equipped ? 
+                        `<button class="shop-btn equipped">Equipped</button>` : 
+                        `<button class="shop-btn equip" onclick="Casino.equipItem('${item.id}')">Equip</button>`)
+                }
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    body.innerHTML = html;
+    document.getElementById('shop-modal').classList.remove('hidden');
+}
+
+function buyItem(id) {
+    const item = SHOP_ITEMS.find(i => i.id === id);
+    if (!item) return;
+    if (Casino.inventory.owned.includes(id)) return;
+    
+    if (Casino.placeBet(item.price)) {
+        Casino.inventory.owned.push(id);
+        equipItem(id);
+        playSound('win');
+        showToast(`Purchased ${item.name}!`);
+    } else {
+        showToast("Not enough chips to buy this item.");
+        playSound('lose');
+    }
+}
+
+function equipItem(id) {
+    const item = SHOP_ITEMS.find(i => i.id === id);
+    if (!item || !Casino.inventory.owned.includes(id)) return;
+    
+    Casino.inventory[item.type] = id;
+    saveState();
+    openShop(); // Refresh UI
+    playSound('click');
+    showToast(`Equipped ${item.name}!`);
+    
+    if (item.type === 'theme') {
+        // Special theme logic could go here if needed
+        if (id === 'purple_theme') document.documentElement.style.setProperty('--bg-primary', '#1e1b4b');
+        else if (id === 'crimson_theme') document.documentElement.style.setProperty('--bg-primary', '#450a0a');
+        else document.documentElement.style.setProperty('--bg-primary', ''); // reset
+    }
+}
+
+window.Casino.buyItem = buyItem;
+window.Casino.equipItem = equipItem;
+
+/* ---- Live Feed ---- */
+function initLiveFeed() {
+    const names = ['CryptoKing','VegasPro','Lucky777','HighRoller','CardShark','DiamondHands','SlotQueen','JackpotJoey'];
+    const games = ['Slots','Blackjack','Roulette','Crash','Video Poker','Mines','Plinko'];
+    const list = document.getElementById('live-feed-list');
+    
+    function addFeedItem() {
+        if (!list) return;
+        const name = names[Math.floor(Math.random() * names.length)];
+        const game = games[Math.floor(Math.random() * games.length)];
+        const amount = Math.floor(Math.random() * 5000) + 100;
+        
+        let msg = '';
+        const r = Math.random();
+        if (r < 0.6) {
+            msg = `<strong>${name}</strong> won $${amount.toLocaleString()} on ${game}`;
+        } else if (r < 0.8) {
+            msg = `<strong>${name}</strong> just hit a ${Math.floor(Math.random() * 10) + 2}x multiplier on Crash!`;
+        } else {
+            const tier = VIP_TIERS[Math.floor(Math.random() * VIP_TIERS.length)];
+            msg = `<strong>${name}</strong> reached ${tier.icon} ${tier.name} VIP!`;
+        }
+        
+        const div = document.createElement('div');
+        div.className = 'live-feed-item';
+        div.innerHTML = msg;
+        
+        list.prepend(div);
+        if (list.children.length > 5) {
+            list.removeChild(list.lastChild);
+        }
+        
+        setTimeout(addFeedItem, 5000 + Math.random() * 10000);
+    }
+    
+    setTimeout(addFeedItem, 3000);
+}
 
 /* ---- Card Helpers ---- */
 function createCardElement(card, faceDown) {

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Royal Flush Casino — Free Online Casino Games</title>
+    <meta name="description" content="Play Slots, Blackjack, Roulette, Video Poker, and Crash free with virtual chips.">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎰</text></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="ambient-bg"></div>
+    <header id="top-bar">
+        <div class="header-left">
+            <a href="#" class="logo" id="logo-link"><span class="logo-icon">♠</span><span class="logo-text">Royal Flush</span></a>
+        </div>
+        <div class="header-center">
+            <div class="balance-display"><span class="balance-label">BALANCE</span><span class="balance-amount" id="balance-display">$10,000</span></div>
+        </div>
+        <div class="header-right">
+            <button id="sound-toggle" class="icon-btn" title="Toggle Sound">🔊</button>
+            <button id="stats-btn" class="icon-btn" title="Stats">📊</button>
+        </div>
+    </header>
+    <main id="lobby">
+        <section class="hero">
+            <h1 class="hero-title">Welcome to <span class="gold-text">Royal Flush</span></h1>
+            <p class="hero-subtitle">Your premium casino experience — play with <strong>$10,000</strong> in free chips</p>
+        </section>
+        <section class="games-grid" id="games-grid"></section>
+        <section class="lobby-footer"><p>🎲 Free entertainment with virtual currency only.</p></section>
+    </main>
+    <section id="game-container" class="hidden">
+        <div class="game-header">
+            <button id="back-to-lobby" class="back-btn">← Lobby</button>
+            <h2 id="game-title"></h2>
+            <div class="game-header-spacer"></div>
+        </div>
+        <div id="game-area"></div>
+    </section>
+    <div id="stats-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header"><h3>📊 Statistics</h3><button id="close-stats" class="modal-close">✕</button></div>
+            <div id="stats-body" class="modal-body"></div>
+        </div>
+    </div>
+    <div id="win-overlay" class="hidden"></div>
+    <script src="js/app.js" defer></script>
+    <script src="js/slots.js" defer></script>
+    <script src="js/blackjack.js" defer></script>
+    <script src="js/roulette.js" defer></script>
+    <script src="js/poker.js" defer></script>
+    <script src="js/crash.js" defer></script>
+</body>
+</html>

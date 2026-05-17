@@ -1,117 +1,164 @@
-/* Blackjack Game */
+/* Blackjack Game — Upgraded with Split, Insurance, Multi-hand, and slide animations */
 (function() {
-    let deck, playerHand, dealerHand, bet, gameOver, area;
+    let deck, hands = [], currentHandIdx = 0, dealerHand = [], mainBet = 100, gameOver = true, area, insuranceBet = 0;
     const DEFAULT_BET = 100;
 
     function init(gameArea) {
         area = gameArea;
-        bet = DEFAULT_BET;
+        mainBet = DEFAULT_BET;
+        renderUI();
+    }
+
+    function renderUI() {
         area.innerHTML = `
-            <div class="blackjack-table">
-                <div class="bj-section"><div class="bj-label">Dealer</div><div class="card-hand" id="bj-dealer"></div><div class="bj-score" id="bj-dealer-score"></div></div>
-                <hr class="bj-divider">
-                <div class="bj-section"><div class="bj-label">You</div><div class="card-hand" id="bj-player"></div><div class="bj-score" id="bj-player-score"></div></div>
-                <div class="game-message" id="bj-msg">Place your bet and deal!</div>
-                <div class="bj-actions" id="bj-actions">
-                    <button class="action-btn secondary" onclick="Casino.games.blackjack._setBet(50)">$50</button>
-                    <button class="action-btn secondary" onclick="Casino.games.blackjack._setBet(100)">$100</button>
-                    <button class="action-btn secondary" onclick="Casino.games.blackjack._setBet(250)">$250</button>
-                    <button class="action-btn secondary" onclick="Casino.games.blackjack._setBet(500)">$500</button>
+            <div class="blackjack-table" style="position:relative; overflow:hidden;">
+                <!-- Deck visual for animations -->
+                <div id="bj-deck-pos" style="position:absolute; top:-50px; right:-50px; width:72px; height:100px;"></div>
+                
+                <div class="bj-section">
+                    <div class="bj-label">Dealer</div>
+                    <div class="card-hand" id="bj-dealer" style="min-height:100px;"></div>
+                    <div class="bj-score" id="bj-dealer-score" style="min-height:24px;"></div>
                 </div>
-                <div class="bj-actions"><button class="action-btn primary" id="bj-deal-btn" onclick="Casino.games.blackjack._deal()">DEAL — $${bet}</button></div>
+                
+                <hr class="bj-divider">
+                
+                <div class="bj-section" id="bj-player-area">
+                    <!-- Hands will be injected here -->
+                </div>
+                
+                <div class="game-message" id="bj-msg" style="min-height:28px; margin:8px 0;">Place your bet and deal!</div>
+                
+                <div class="bj-actions" id="bj-actions">
+                    ${getBettingControls()}
+                </div>
             </div>`;
     }
 
-    function setBet(b) { bet = b; const btn = document.getElementById('bj-deal-btn'); if(btn) btn.textContent = `DEAL — $${b}`; Casino.playSound('click'); }
-
-    function deal() {
-        if (!Casino.placeBet(bet)) { msg('Not enough chips!', 'lose'); return; }
-        deck = Casino.createDeck();
-        playerHand = [deck.pop(), deck.pop()];
-        dealerHand = [deck.pop(), deck.pop()];
-        gameOver = false;
-        render(true);
-        const ps = handValue(playerHand);
-        if (ps === 21) { endRound(); return; }
-        showActions();
-        msg('Hit or Stand?', '');
-    }
-
-    function showActions() {
-        const acts = document.getElementById('bj-actions');
-        const canDouble = playerHand.length === 2 && Casino.balance >= bet;
-        acts.innerHTML = `
-            <button class="action-btn primary" onclick="Casino.games.blackjack._hit()">Hit</button>
-            <button class="action-btn danger" onclick="Casino.games.blackjack._stand()">Stand</button>
-            ${canDouble ? '<button class="action-btn secondary" onclick="Casino.games.blackjack._double()">Double</button>' : ''}`;
-    }
-
-    function hit() {
-        if (gameOver) return;
-        playerHand.push(deck.pop());
-        Casino.playSound('click');
-        render(true);
-        if (handValue(playerHand) > 21) endRound();
-        else if (handValue(playerHand) === 21) stand();
-    }
-
-    function stand() {
-        if (gameOver) return;
-        gameOver = true;
-        while (handValue(dealerHand) < 17) dealerHand.push(deck.pop());
-        render(false);
-        endRound();
-    }
-
-    function doubleDown() {
-        if (gameOver) return;
-        if (!Casino.placeBet(bet)) return;
-        bet *= 2;
-        playerHand.push(deck.pop());
-        render(true);
-        if (handValue(playerHand) > 21) endRound();
-        else stand();
-    }
-
-    function endRound() {
-        gameOver = true;
-        render(false);
-        const pv = handValue(playerHand), dv = handValue(dealerHand);
-        const pbj = playerHand.length === 2 && pv === 21;
-        let result, winnings = 0;
-        if (pv > 21) { result = 'Bust! You lose.'; msg(result, 'lose'); Casino.playSound('lose'); }
-        else if (dv > 21) { winnings = bet * 2; result = `Dealer busts! You win $${winnings}!`; }
-        else if (pbj && !(dealerHand.length === 2 && dv === 21)) { winnings = Math.floor(bet * 2.5); result = `Blackjack! You win $${winnings}!`; }
-        else if (pv > dv) { winnings = bet * 2; result = `You win $${winnings}!`; }
-        else if (pv === dv) { winnings = bet; result = 'Push — bet returned.'; msg(result, 'push'); Casino.changeBalance(winnings); showDealBtn(); bet = DEFAULT_BET; return; }
-        else { result = 'Dealer wins.'; msg(result, 'lose'); Casino.playSound('lose'); }
-        if (winnings > 0) {
-            Casino.changeBalance(winnings);
-            msg(result, 'win');
-            Casino.playSound(winnings >= bet * 2.5 ? 'jackpot' : 'win');
-            if (winnings >= 500) Casino.showWinEffect(winnings);
-        }
-        showDealBtn();
-        bet = DEFAULT_BET;
-    }
-
-    function showDealBtn() {
-        document.getElementById('bj-actions').innerHTML = `
+    function getBettingControls() {
+        return `
             <button class="action-btn secondary" onclick="Casino.games.blackjack._setBet(50)">$50</button>
             <button class="action-btn secondary" onclick="Casino.games.blackjack._setBet(100)">$100</button>
             <button class="action-btn secondary" onclick="Casino.games.blackjack._setBet(250)">$250</button>
-            <button class="action-btn secondary" onclick="Casino.games.blackjack._setBet(500)">$500</button>`;
-        document.getElementById('bj-actions').innerHTML += `<button class="action-btn primary" id="bj-deal-btn" onclick="Casino.games.blackjack._deal()">DEAL — $${bet}</button>`;
+            <button class="action-btn secondary" onclick="Casino.games.blackjack._setBet(500)">$500</button>
+            <button class="action-btn primary" id="bj-deal-btn" onclick="Casino.games.blackjack._deal()" style="margin-left:16px;">DEAL — $${mainBet}</button>`;
     }
 
-    function render(hideDealer) {
-        const de = document.getElementById('bj-dealer');
-        const pe = document.getElementById('bj-player');
-        de.innerHTML = ''; pe.innerHTML = '';
-        dealerHand.forEach((c,i) => de.appendChild(Casino.createCardElement(c, hideDealer && i === 1)));
-        playerHand.forEach(c => pe.appendChild(Casino.createCardElement(c, false)));
-        document.getElementById('bj-dealer-score').textContent = hideDealer ? handValue([dealerHand[0]]) + ' + ?' : handValue(dealerHand);
-        document.getElementById('bj-player-score').textContent = handValue(playerHand);
+    function setBet(b) {
+        if (!gameOver) return;
+        mainBet = b;
+        const btn = document.getElementById('bj-deal-btn');
+        if (btn) btn.textContent = `DEAL — $${b}`;
+        Casino.playSound('click');
+    }
+
+    function msg(text, type) {
+        const el = document.getElementById('bj-msg');
+        if (el) {
+            el.textContent = text;
+            el.className = 'game-message ' + (type || '');
+        }
+    }
+
+    async function deal() {
+        if (!Casino.placeBet(mainBet)) { msg('Not enough chips!', 'lose'); return; }
+        
+        gameOver = false;
+        insuranceBet = 0;
+        deck = Casino.createDeck();
+        
+        // Initialize player hands (supporting split later)
+        hands = [{ cards: [], bet: mainBet, status: 'playing', score: 0 }];
+        currentHandIdx = 0;
+        dealerHand = [];
+        
+        setupPlayerArea();
+        document.getElementById('bj-actions').innerHTML = ''; // Hide buttons during deal
+        msg('Dealing...', '');
+
+        // Deal sequence: Player 1, Dealer 1, Player 2, Dealer 2 (hidden)
+        await dealCardToHand(hands[0].cards, false, 'hand-0');
+        await dealCardToDealer(false);
+        await dealCardToHand(hands[0].cards, false, 'hand-0');
+        await dealCardToDealer(true);
+
+        updateScores();
+
+        // Check Insurance
+        if (dealerHand[0].display === 'A' && Casino.balance >= mainBet / 2) {
+            offerInsurance();
+            return;
+        }
+
+        checkInitialBlackjack();
+    }
+
+    function setupPlayerArea() {
+        const pArea = document.getElementById('bj-player-area');
+        pArea.innerHTML = '';
+        
+        hands.forEach((h, idx) => {
+            const div = document.createElement('div');
+            div.className = `player-hand-container ${idx === currentHandIdx ? 'active-hand' : ''}`;
+            div.style.cssText = `display:inline-block; margin:0 10px; padding:10px; border-radius:12px; transition:all 0.3s; border:2px solid ${idx === currentHandIdx ? 'var(--gold)' : 'transparent'}; background:${idx === currentHandIdx ? 'rgba(212,168,67,0.1)' : 'transparent'}`;
+            div.innerHTML = `
+                <div class="bj-label" style="display:flex; justify-content:center; gap:8px;">
+                    <span>Hand ${idx + 1}</span>
+                    <span style="color:var(--gold-light)">$${h.bet}</span>
+                </div>
+                <div class="card-hand" id="hand-${idx}" style="min-height:100px;"></div>
+                <div class="bj-score" id="score-${idx}" style="min-height:24px;"></div>
+            `;
+            pArea.appendChild(div);
+        });
+    }
+
+    async function dealCardToHand(handArr, faceDown, containerId) {
+        return new Promise(resolve => {
+            const card = deck.pop();
+            handArr.push(card);
+            
+            const container = document.getElementById(containerId);
+            const el = Casino.createCardElement(card, faceDown);
+            
+            // Slide animation setup
+            el.style.transform = 'translate(200px, -200px) rotate(45deg)';
+            el.style.opacity = '0';
+            el.style.position = 'relative'; // force layout
+            container.appendChild(el);
+            
+            Casino.playSound('click'); // card flick sound
+            
+            // Trigger animation
+            requestAnimationFrame(() => {
+                el.style.transition = 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+                el.style.transform = 'translate(0, 0) rotate(0)';
+                el.style.opacity = '1';
+                setTimeout(resolve, 400); // Wait for animation
+            });
+        });
+    }
+
+    async function dealCardToDealer(faceDown) {
+        return dealCardToHand(dealerHand, faceDown, 'bj-dealer');
+    }
+
+    function updateScores() {
+        // Dealer score (hide second card if game not over)
+        const dScoreEl = document.getElementById('bj-dealer-score');
+        if (dScoreEl) {
+            dScoreEl.textContent = gameOver ? handValue(dealerHand) : handValue([dealerHand[0]]) + ' + ?';
+        }
+
+        // Player scores
+        hands.forEach((h, idx) => {
+            h.score = handValue(h.cards);
+            const pScoreEl = document.getElementById(`score-${idx}`);
+            if (pScoreEl) {
+                pScoreEl.textContent = h.score;
+                if (h.score > 21) pScoreEl.innerHTML += ' <span style="color:var(--red);font-size:14px;">(BUST)</span>';
+            }
+        });
     }
 
     function handValue(hand) {
@@ -121,13 +168,247 @@
         return val;
     }
 
-    function msg(text, type) {
-        const el = document.getElementById('bj-msg');
-        el.textContent = text;
-        el.className = 'game-message ' + (type || '');
+    function offerInsurance() {
+        msg('Insurance? (Pays 2:1)', 'push');
+        const acts = document.getElementById('bj-actions');
+        acts.innerHTML = `
+            <button class="action-btn primary" onclick="Casino.games.blackjack._takeInsurance()">Yes ($${mainBet/2})</button>
+            <button class="action-btn secondary" onclick="Casino.games.blackjack._declineInsurance()">No</button>`;
     }
 
-    function destroy() {}
+    function takeInsurance() {
+        const cost = mainBet / 2;
+        if (Casino.placeBet(cost)) {
+            insuranceBet = cost;
+            checkInitialBlackjack();
+        } else {
+            msg('Not enough chips for insurance!', 'lose');
+            declineInsurance();
+        }
+    }
 
-    Casino.games.blackjack = { init, destroy, _deal: deal, _hit: hit, _stand: stand, _double: doubleDown, _setBet: setBet };
+    function declineInsurance() {
+        insuranceBet = 0;
+        checkInitialBlackjack();
+    }
+
+    function checkInitialBlackjack() {
+        const dVal = handValue(dealerHand);
+        const pVal = hands[0].score;
+        const dBJ = dealerHand.length === 2 && dVal === 21;
+        const pBJ = hands[0].cards.length === 2 && pVal === 21;
+
+        if (dBJ) {
+            // Flip dealer card
+            const dContainer = document.getElementById('bj-dealer');
+            dContainer.innerHTML = '';
+            dealerHand.forEach(c => dContainer.appendChild(Casino.createCardElement(c, false)));
+            gameOver = true;
+            updateScores();
+            
+            let w = 0;
+            if (insuranceBet > 0) {
+                w += insuranceBet * 3; // Pays 2:1 plus original
+                msg('Dealer Blackjack! Insurance paid.', 'win');
+            } else if (pBJ) {
+                w += mainBet; // Push
+                msg('Push. Both have Blackjack.', 'push');
+            } else {
+                msg('Dealer has Blackjack. You lose.', 'lose');
+            }
+            
+            if (w > 0) Casino.changeBalance(w);
+            resetRound();
+        } else {
+            if (insuranceBet > 0) msg('Nobody home! Insurance lost.', '');
+            if (pBJ) {
+                gameOver = true;
+                const win = Math.floor(mainBet * 2.5); // 3:2 payout
+                Casino.changeBalance(win);
+                msg(`BLACKJACK! You win $${win}!`, 'win');
+                Casino.playSound('jackpot');
+                Casino.showWinEffect(win);
+                resetRound();
+            } else {
+                playCurrentHand();
+            }
+        }
+    }
+
+    function playCurrentHand() {
+        if (currentHandIdx >= hands.length) {
+            dealerTurn();
+            return;
+        }
+
+        const hand = hands[currentHandIdx];
+        if (hand.status !== 'playing') {
+            currentHandIdx++;
+            playCurrentHand();
+            return;
+        }
+
+        setupPlayerArea(); // update active styling
+        msg(`Playing Hand ${currentHandIdx + 1}...`, '');
+        showActions();
+    }
+
+    function showActions() {
+        const acts = document.getElementById('bj-actions');
+        const hand = hands[currentHandIdx];
+        
+        const canDouble = hand.cards.length === 2 && Casino.balance >= hand.bet;
+        // Split allowed if 2 cards of same display value AND only 1 split so far (max 2 hands for UI simplicity)
+        const canSplit = hand.cards.length === 2 && hand.cards[0].display === hand.cards[1].display && hands.length < 2 && Casino.balance >= hand.bet;
+
+        acts.innerHTML = `
+            <button class="action-btn primary" onclick="Casino.games.blackjack._hit()">Hit</button>
+            <button class="action-btn danger" onclick="Casino.games.blackjack._stand()">Stand</button>
+            ${canDouble ? `<button class="action-btn secondary" onclick="Casino.games.blackjack._double()">Double ($${hand.bet})</button>` : ''}
+            ${canSplit ? `<button class="action-btn secondary" onclick="Casino.games.blackjack._split()">Split ($${hand.bet})</button>` : ''}
+        `;
+    }
+
+    async function hit() {
+        const hand = hands[currentHandIdx];
+        document.getElementById('bj-actions').innerHTML = ''; // prevent rapid clicks
+        
+        await dealCardToHand(hand.cards, false, `hand-${currentHandIdx}`);
+        updateScores();
+        
+        if (hand.score > 21) {
+            hand.status = 'bust';
+            Casino.playSound('lose');
+            setTimeout(() => {
+                currentHandIdx++;
+                playCurrentHand();
+            }, 800);
+        } else if (hand.score === 21) {
+            stand();
+        } else {
+            showActions();
+        }
+    }
+
+    function stand() {
+        hands[currentHandIdx].status = 'stand';
+        currentHandIdx++;
+        playCurrentHand();
+    }
+
+    async function doubleDown() {
+        const hand = hands[currentHandIdx];
+        if (!Casino.placeBet(hand.bet)) return;
+        
+        hand.bet *= 2;
+        setupPlayerArea(); // Update bet display
+        document.getElementById('bj-actions').innerHTML = '';
+        
+        await dealCardToHand(hand.cards, false, `hand-${currentHandIdx}`);
+        updateScores();
+        
+        if (hand.score > 21) {
+            hand.status = 'bust';
+            Casino.playSound('lose');
+        } else {
+            hand.status = 'stand';
+        }
+        
+        setTimeout(() => {
+            currentHandIdx++;
+            playCurrentHand();
+        }, 800);
+    }
+
+    async function split() {
+        const hand = hands[currentHandIdx];
+        if (!Casino.placeBet(hand.bet)) return;
+
+        document.getElementById('bj-actions').innerHTML = '';
+        
+        // Create new hand
+        const newHand = { cards: [hand.cards.pop()], bet: hand.bet, status: 'playing', score: 0 };
+        hands.push(newHand);
+        
+        setupPlayerArea(); // re-render containers
+        
+        // Deal second card to first hand
+        await dealCardToHand(hand.cards, false, `hand-0`);
+        // Deal second card to second hand
+        await dealCardToHand(hands[1].cards, false, `hand-1`);
+        
+        updateScores();
+        playCurrentHand();
+    }
+
+    async function dealerTurn() {
+        gameOver = true;
+        
+        // Flip hole card
+        const dContainer = document.getElementById('bj-dealer');
+        dContainer.innerHTML = '';
+        dealerHand.forEach(c => dContainer.appendChild(Casino.createCardElement(c, false)));
+        updateScores();
+
+        // Check if all hands busted
+        const allBusted = hands.every(h => h.status === 'bust');
+        
+        if (!allBusted) {
+            // Dealer draws to 17
+            while (handValue(dealerHand) < 17) {
+                await new Promise(r => setTimeout(r, 600));
+                await dealCardToDealer(false);
+                updateScores();
+            }
+        }
+
+        finalizeRound();
+    }
+
+    function finalizeRound() {
+        const dVal = handValue(dealerHand);
+        let totalWin = 0;
+        let msgs = [];
+
+        hands.forEach((h, i) => {
+            let label = hands.length > 1 ? `Hand ${i+1}: ` : '';
+            if (h.status === 'bust') {
+                msgs.push(`${label}Bust`);
+            } else if (dVal > 21) {
+                const w = h.bet * 2;
+                totalWin += w;
+                msgs.push(`${label}Win (Dealer Bust)`);
+            } else if (h.score > dVal) {
+                const w = h.bet * 2;
+                totalWin += w;
+                msgs.push(`${label}Win ($${w})`);
+            } else if (h.score === dVal) {
+                totalWin += h.bet;
+                msgs.push(`${label}Push`);
+            } else {
+                msgs.push(`${label}Lose`);
+            }
+        });
+
+        if (totalWin > 0) {
+            Casino.changeBalance(totalWin);
+            msg(msgs.join(' | '), 'win');
+            if (totalWin > mainBet * 2) { Casino.playSound('jackpot'); Casino.showWinEffect(totalWin); }
+            else Casino.playSound('win');
+        } else {
+            msg(msgs.join(' | '), 'lose');
+            Casino.playSound('lose');
+        }
+
+        resetRound();
+    }
+
+    function resetRound() {
+        setupPlayerArea(); // removes active highlight
+        document.getElementById('bj-actions').innerHTML = getBettingControls();
+    }
+
+    function destroy() { gameOver = true; }
+
+    Casino.games.blackjack = { init, destroy, _deal: deal, _hit: hit, _stand: stand, _double: doubleDown, _split: split, _takeInsurance: takeInsurance, _declineInsurance: declineInsurance, _setBet: setBet };
 })();

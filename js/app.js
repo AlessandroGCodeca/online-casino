@@ -64,6 +64,180 @@ const GAME_CARDS = [
     { id: 'plinko', name: 'Plinko', icon: '🟢', desc: 'Drop the ball and hit the multipliers!', accent: '#22c55e', category: 'instant' }
 ];
 
+const GAME_GRADIENTS = {
+    slots:     { g1: '#ec4899', g2: '#9f1239' },
+    blackjack: { g1: '#10b981', g2: '#064e3b' },
+    roulette:  { g1: '#a855f7', g2: '#4c1d95' },
+    poker:     { g1: '#3b82f6', g2: '#1e3a8a' },
+    crash:     { g1: '#f97316', g2: '#7c2d12' },
+    mines:     { g1: '#0ea5e9', g2: '#0c4a6e' },
+    dice:      { g1: '#06b6d4', g2: '#155e75' },
+    baccarat:  { g1: '#f59e0b', g2: '#451a03' },
+    wheel:     { g1: '#d946ef', g2: '#581c87' },
+    keno:      { g1: '#ef4444', g2: '#831843' },
+    plinko:    { g1: '#84cc16', g2: '#3f6212' }
+};
+
+const GAME_ART = {
+    slots: `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="60" cy="20" r="10" fill="#fde68a"/>
+        <polygon points="60,11 63,18 70,18 64,23 66,30 60,26 54,30 56,23 50,18 57,18" fill="#fbbf24"/>
+        <rect x="16" y="38" width="26" height="58" rx="6" fill="rgba(0,0,0,.45)" stroke="rgba(255,255,255,.4)" stroke-width="1.5"/>
+        <rect x="47" y="38" width="26" height="58" rx="6" fill="rgba(0,0,0,.45)" stroke="rgba(255,255,255,.4)" stroke-width="1.5"/>
+        <rect x="78" y="38" width="26" height="58" rx="6" fill="rgba(0,0,0,.45)" stroke="rgba(255,255,255,.4)" stroke-width="1.5"/>
+        <text x="29" y="78" font-size="26" font-weight="900" fill="#fde047" text-anchor="middle" font-family="Arial">7</text>
+        <text x="60" y="78" font-size="26" font-weight="900" fill="#fde047" text-anchor="middle" font-family="Arial">7</text>
+        <text x="91" y="78" font-size="26" font-weight="900" fill="#fde047" text-anchor="middle" font-family="Arial">7</text>
+        <rect x="14" y="98" width="92" height="3" rx="1.5" fill="#fbbf24" opacity=".7"/>
+    </svg>`,
+    blackjack: `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+        <g transform="rotate(-14 44 65)">
+            <rect x="20" y="35" width="42" height="58" rx="6" fill="#fff" stroke="rgba(0,0,0,.2)"/>
+            <text x="28" y="58" font-size="20" font-weight="900" fill="#0f172a" font-family="Arial">A</text>
+            <text x="28" y="78" font-size="22" fill="#0f172a" font-family="Arial">♠</text>
+        </g>
+        <g transform="rotate(14 78 60)">
+            <rect x="58" y="30" width="42" height="58" rx="6" fill="#fff" stroke="rgba(0,0,0,.2)"/>
+            <text x="66" y="53" font-size="20" font-weight="900" fill="#dc2626" font-family="Arial">K</text>
+            <text x="66" y="73" font-size="22" fill="#dc2626" font-family="Arial">♥</text>
+        </g>
+    </svg>`,
+    roulette: `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+        <polygon points="60,8 53,22 67,22" fill="#fbbf24"/>
+        <circle cx="60" cy="65" r="42" fill="#0a0e1a" stroke="#fbbf24" stroke-width="3"/>
+        <g>
+            <path d="M60 65 L60 23 A42 42 0 0 1 96 44 Z" fill="#dc2626"/>
+            <path d="M60 65 L96 44 A42 42 0 0 1 96 86 Z" fill="#1a1a2e"/>
+            <path d="M60 65 L96 86 A42 42 0 0 1 60 107 Z" fill="#dc2626"/>
+            <path d="M60 65 L60 107 A42 42 0 0 1 24 86 Z" fill="#1a1a2e"/>
+            <path d="M60 65 L24 86 A42 42 0 0 1 24 44 Z" fill="#dc2626"/>
+            <path d="M60 65 L24 44 A42 42 0 0 1 60 23 Z" fill="#15803d"/>
+        </g>
+        <circle cx="60" cy="65" r="10" fill="#fbbf24"/>
+        <circle cx="60" cy="65" r="5" fill="#0a0e1a"/>
+        <circle cx="92" cy="56" r="3.5" fill="#fff"/>
+    </svg>`,
+    poker: `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+        <g transform="translate(60 76)">
+            <g transform="rotate(-22)"><rect x="-14" y="-30" width="26" height="40" rx="4" fill="#fff"/><text x="-9" y="-15" font-size="12" font-weight="900" fill="#0f172a" font-family="Arial">10</text></g>
+            <g transform="rotate(-11)"><rect x="-14" y="-34" width="26" height="40" rx="4" fill="#fff"/><text x="-9" y="-19" font-size="12" font-weight="900" fill="#dc2626" font-family="Arial">J</text></g>
+            <g><rect x="-13" y="-36" width="26" height="40" rx="4" fill="#fff"/><text x="-9" y="-21" font-size="12" font-weight="900" fill="#0f172a" font-family="Arial">Q</text></g>
+            <g transform="rotate(11)"><rect x="-12" y="-34" width="26" height="40" rx="4" fill="#fff"/><text x="-7" y="-19" font-size="12" font-weight="900" fill="#dc2626" font-family="Arial">K</text></g>
+            <g transform="rotate(22)"><rect x="-12" y="-30" width="26" height="40" rx="4" fill="#fff"/><text x="-8" y="-15" font-size="12" font-weight="900" fill="#0f172a" font-family="Arial">A</text></g>
+        </g>
+        <text x="60" y="105" font-size="9" font-weight="900" fill="#fde68a" text-anchor="middle" letter-spacing="2" font-family="Arial">ROYAL FLUSH</text>
+    </svg>`,
+    crash: `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 108 Q40 90 60 70 T108 16" stroke="#fde68a" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <path d="M12 110 Q35 95 50 82" stroke="#fff" stroke-opacity=".4" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <g transform="translate(92 28) rotate(-45)">
+            <path d="M0 -16 L10 8 L0 16 L-10 8 Z" fill="#fff"/>
+            <path d="M0 -16 L5 -4 L-5 -4 Z" fill="#dc2626"/>
+            <circle cx="0" cy="-2" r="3.5" fill="#3b82f6"/>
+            <path d="M-10 8 L-15 18 L0 10 Z" fill="#fb923c"/>
+            <path d="M10 8 L15 18 L0 10 Z" fill="#fb923c"/>
+            <path d="M-4 16 L4 16 L0 28 Z" fill="#fbbf24"/>
+        </g>
+        <text x="14" y="98" font-size="14" font-weight="900" fill="#fde68a" font-family="Arial">2.45×</text>
+    </svg>`,
+    mines: `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+        <g transform="translate(38 56)">
+            <polygon points="0,-22 18,-10 14,22 -14,22 -18,-10" fill="#22d3ee" stroke="#fff" stroke-width="2"/>
+            <polygon points="-18,-10 18,-10 0,-22" fill="#67e8f9"/>
+            <polygon points="-18,-10 -14,22 0,-10" fill="#0891b2"/>
+            <polygon points="18,-10 14,22 0,-10" fill="#0e7490"/>
+            <line x1="-8" y1="-15" x2="-2" y2="-5" stroke="#fff" stroke-width="1.5"/>
+        </g>
+        <g transform="translate(82 70)">
+            <circle r="18" fill="#0a0e1a" stroke="#fff" stroke-width="2"/>
+            <circle cx="-5" cy="-6" r="4" fill="#fff" opacity=".4"/>
+            <path d="M0 -18 L6 -26 L12 -22" stroke="#fbbf24" stroke-width="2" fill="none" stroke-linecap="round"/>
+            <circle cx="12" cy="-22" r="3" fill="#ef4444"/>
+            <circle cx="14" cy="-26" r="1.5" fill="#fff"/>
+        </g>
+    </svg>`,
+    dice: `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+        <g transform="rotate(-12 40 60)">
+            <rect x="20" y="40" width="42" height="42" rx="8" fill="#fff" stroke="rgba(0,0,0,.15)"/>
+            <circle cx="32" cy="52" r="3.5" fill="#0f172a"/>
+            <circle cx="50" cy="52" r="3.5" fill="#0f172a"/>
+            <circle cx="41" cy="61" r="3.5" fill="#0f172a"/>
+            <circle cx="32" cy="70" r="3.5" fill="#0f172a"/>
+            <circle cx="50" cy="70" r="3.5" fill="#0f172a"/>
+        </g>
+        <g transform="rotate(12 80 65)">
+            <rect x="58" y="48" width="42" height="42" rx="8" fill="#fff" stroke="rgba(0,0,0,.15)"/>
+            <circle cx="70" cy="60" r="3.5" fill="#dc2626"/>
+            <circle cx="88" cy="60" r="3.5" fill="#dc2626"/>
+            <circle cx="70" cy="78" r="3.5" fill="#dc2626"/>
+            <circle cx="88" cy="78" r="3.5" fill="#dc2626"/>
+        </g>
+    </svg>`,
+    baccarat: `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+        <path d="M18 62 L24 32 L42 56 L60 22 L78 56 L96 32 L102 62 L96 90 L24 90 Z" fill="#fbbf24" stroke="#fff" stroke-width="2"/>
+        <rect x="24" y="85" width="72" height="10" rx="2" fill="#d97706"/>
+        <circle cx="24" cy="32" r="5" fill="#dc2626" stroke="#fff" stroke-width="1.5"/>
+        <circle cx="60" cy="22" r="6" fill="#dc2626" stroke="#fff" stroke-width="1.5"/>
+        <circle cx="96" cy="32" r="5" fill="#dc2626" stroke="#fff" stroke-width="1.5"/>
+        <circle cx="42" cy="70" r="4" fill="#22d3ee" stroke="#fff" stroke-width="1"/>
+        <circle cx="78" cy="70" r="4" fill="#22d3ee" stroke="#fff" stroke-width="1"/>
+    </svg>`,
+    wheel: `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+        <polygon points="60,8 53,22 67,22" fill="#fbbf24"/>
+        <circle cx="60" cy="63" r="46" fill="#0a0e1a"/>
+        <g>
+            <path d="M60 63 L60 17 A46 46 0 0 1 100 40 Z" fill="#ec4899"/>
+            <path d="M60 63 L100 40 A46 46 0 0 1 100 86 Z" fill="#fbbf24"/>
+            <path d="M60 63 L100 86 A46 46 0 0 1 60 109 Z" fill="#8b5cf6"/>
+            <path d="M60 63 L60 109 A46 46 0 0 1 20 86 Z" fill="#06b6d4"/>
+            <path d="M60 63 L20 86 A46 46 0 0 1 20 40 Z" fill="#22c55e"/>
+            <path d="M60 63 L20 40 A46 46 0 0 1 60 17 Z" fill="#ef4444"/>
+        </g>
+        <circle cx="60" cy="63" r="46" fill="none" stroke="#fbbf24" stroke-width="3"/>
+        <circle cx="60" cy="63" r="9" fill="#fff"/>
+        <text x="60" y="67" font-size="9" font-weight="900" fill="#0a0e1a" text-anchor="middle" font-family="Arial">SPIN</text>
+    </svg>`,
+    keno: `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+        <g>
+            <circle cx="34" cy="38" r="20" fill="#fbbf24" stroke="#fff" stroke-width="2.5"/>
+            <ellipse cx="28" cy="32" rx="6" ry="3" fill="#fef3c7" opacity=".7"/>
+            <text x="34" y="44" font-size="16" font-weight="900" text-anchor="middle" fill="#7c2d12" font-family="Arial">7</text>
+        </g>
+        <g>
+            <circle cx="82" cy="55" r="20" fill="#ec4899" stroke="#fff" stroke-width="2.5"/>
+            <ellipse cx="76" cy="49" rx="6" ry="3" fill="#fbcfe8" opacity=".7"/>
+            <text x="82" y="61" font-size="16" font-weight="900" text-anchor="middle" fill="#fff" font-family="Arial">23</text>
+        </g>
+        <g>
+            <circle cx="48" cy="90" r="20" fill="#3b82f6" stroke="#fff" stroke-width="2.5"/>
+            <ellipse cx="42" cy="84" rx="6" ry="3" fill="#bfdbfe" opacity=".7"/>
+            <text x="48" y="96" font-size="16" font-weight="900" text-anchor="middle" fill="#fff" font-family="Arial">42</text>
+        </g>
+    </svg>`,
+    plinko: `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+        <g fill="#fff">
+            <circle cx="60" cy="32" r="3"/>
+            <circle cx="48" cy="46" r="3"/><circle cx="72" cy="46" r="3"/>
+            <circle cx="36" cy="60" r="3"/><circle cx="60" cy="60" r="3"/><circle cx="84" cy="60" r="3"/>
+            <circle cx="24" cy="74" r="3"/><circle cx="48" cy="74" r="3"/><circle cx="72" cy="74" r="3"/><circle cx="96" cy="74" r="3"/>
+        </g>
+        <circle cx="60" cy="18" r="6" fill="#fbbf24" stroke="#fff" stroke-width="1.5"/>
+        <circle cx="58" cy="16" r="2" fill="#fef3c7"/>
+        <g>
+            <rect x="14" y="90" width="18" height="18" rx="2" fill="#22c55e" stroke="#fff" stroke-width="1.5"/>
+            <text x="23" y="103" font-size="9" font-weight="900" fill="#fff" text-anchor="middle" font-family="Arial">2×</text>
+            <rect x="34" y="90" width="18" height="18" rx="2" fill="#fbbf24" stroke="#fff" stroke-width="1.5"/>
+            <text x="43" y="103" font-size="9" font-weight="900" fill="#7c2d12" text-anchor="middle" font-family="Arial">10×</text>
+            <rect x="54" y="90" width="18" height="18" rx="2" fill="#ef4444" stroke="#fff" stroke-width="1.5"/>
+            <text x="63" y="103" font-size="9" font-weight="900" fill="#fff" text-anchor="middle" font-family="Arial">100×</text>
+            <rect x="74" y="90" width="18" height="18" rx="2" fill="#fbbf24" stroke="#fff" stroke-width="1.5"/>
+            <text x="83" y="103" font-size="9" font-weight="900" fill="#7c2d12" text-anchor="middle" font-family="Arial">10×</text>
+            <rect x="94" y="90" width="18" height="18" rx="2" fill="#22c55e" stroke="#fff" stroke-width="1.5"/>
+            <text x="103" y="103" font-size="9" font-weight="900" fill="#fff" text-anchor="middle" font-family="Arial">2×</text>
+        </g>
+    </svg>`
+};
+
 const MISSION_POOL = [
     { type: 'rounds', target: 10, name: 'Warm Up', desc: 'Play 10 rounds today', reward: 500, icon: '🎯' },
     { type: 'rounds', target: 25, name: 'Marathon', desc: 'Play 25 rounds today', reward: 1500, icon: '🏃' },
@@ -146,9 +320,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (search) search.addEventListener('input', () => renderLobby());
     document.querySelectorAll('.cat-tab').forEach(tab => {
         tab.addEventListener('click', () => {
-            document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.cat-tab').forEach(t => {
+                t.classList.remove('active');
+                t.setAttribute('aria-selected', 'false');
+            });
             tab.classList.add('active');
+            tab.setAttribute('aria-selected', 'true');
             renderLobby();
+            playSound('click');
         });
     });
 
@@ -410,12 +589,7 @@ window.Casino.playSound = playSound;
 /* ---- Lobby ---- */
 function getFilteredGames() {
     const q = ($('game-search')?.value || '').trim().toLowerCase();
-    const activeCat = document.querySelector('.cat-tab.active')?.dataset.cat || 'all';
-    return GAME_CARDS.filter(g => {
-        if (activeCat !== 'all' && g.category !== activeCat) return false;
-        if (q && !(g.name.toLowerCase().includes(q) || g.desc.toLowerCase().includes(q))) return false;
-        return true;
-    });
+    return GAME_CARDS.filter(g => q && (g.name.toLowerCase().includes(q) || g.desc.toLowerCase().includes(q)));
 }
 function topPlayedIds(n) {
     return Object.entries(Casino.playCounts)
@@ -424,32 +598,126 @@ function topPlayedIds(n) {
         .filter(e => e[1] > 0)
         .map(e => e[0]);
 }
+function buildGameCard(g, opts) {
+    opts = opts || {};
+    const grad = GAME_GRADIENTS[g.id] || { g1: g.accent, g2: '#0f172a' };
+    const art = GAME_ART[g.id] || '';
+    const isNew = !Casino.playCounts[g.id];
+    const isHot = opts.hot;
+    const badge = isHot ? '<span class="card-badge hot">🔥 HOT</span>' :
+                  isNew ? '<span class="card-badge new">NEW</span>' : '';
+    const card = document.createElement('button');
+    card.type = 'button';
+    card.className = 'game-card';
+    card.style.setProperty('--g1', grad.g1);
+    card.style.setProperty('--g2', grad.g2);
+    card.setAttribute('aria-label', `${g.name}: ${g.desc}`);
+    card.innerHTML = `
+        ${badge}
+        <div class="card-art">${art}</div>
+        <div class="card-meta">
+            <div class="card-name">${esc(g.name)}</div>
+            <div class="card-sub">ORIGINAL</div>
+        </div>
+        <div class="card-play"><span>▶ PLAY</span></div>
+    `;
+    card.addEventListener('click', () => openGame(g.id));
+    return card;
+}
+function buildRow(title, icon, games, rowClass) {
+    if (!games.length) return null;
+    const section = document.createElement('section');
+    section.className = 'game-row-section ' + (rowClass || '');
+    const header = document.createElement('div');
+    header.className = 'row-header';
+    header.innerHTML = `<h3>${icon ? `<span class="row-icon">${icon}</span>` : ''}${esc(title)}</h3>`;
+    section.appendChild(header);
+    const row = document.createElement('div');
+    row.className = 'game-row';
+    games.forEach(g => row.appendChild(buildGameCard(g, { hot: rowClass === 'row-hot' })));
+    section.appendChild(row);
+    return section;
+}
 function renderLobby() {
     const grid = $('games-grid');
     grid.innerHTML = '';
-    const hot = new Set(topPlayedIds(3));
-    const filtered = getFilteredGames();
+    const q = ($('game-search')?.value || '').trim().toLowerCase();
+    const activeCat = document.querySelector('.cat-tab.active')?.dataset.cat || 'all';
 
-    if (filtered.length === 0) {
-        grid.innerHTML = `<div class="no-results">No games match your search.</div>`;
+    if (q) {
+        const filtered = getFilteredGames();
+        if (filtered.length === 0) {
+            grid.innerHTML = `<div class="no-results">No games match "${esc(q)}".</div>`;
+            return;
+        }
+        const wrap = document.createElement('div');
+        wrap.className = 'game-grid-inner';
+        filtered.forEach(g => wrap.appendChild(buildGameCard(g)));
+        grid.appendChild(wrap);
         return;
     }
 
-    filtered.forEach((g, index) => {
-        const card = document.createElement('button');
-        card.type = 'button';
-        card.className = 'game-card slide-up';
-        card.style.animationDelay = `${0.05 * index}s`;
-        card.style.setProperty('--card-accent', g.accent);
-        card.setAttribute('aria-label', `${g.name}: ${g.desc}`);
-        const isNew = !Casino.playCounts[g.id];
-        const isHot = hot.has(g.id);
-        const badge = isHot ? '<span class="card-badge hot">🔥 HOT</span>' :
-                      isNew ? '<span class="card-badge new">NEW</span>' : '';
-        card.innerHTML = `${badge}<span class="game-card-icon" aria-hidden="true">${esc(g.icon)}</span><h3 class="game-card-name">${esc(g.name)}</h3><p class="game-card-desc">${esc(g.desc)}</p><span class="game-card-btn">Play Now</span>`;
-        card.addEventListener('click', () => openGame(g.id));
-        grid.appendChild(card);
+    const categoryDefs = [
+        { cat: 'cards',   title: 'Card Games',  icon: '🃏' },
+        { cat: 'spin',    title: 'Spin & Win',  icon: '🎡' },
+        { cat: 'instant', title: 'Instant Play', icon: '⚡' }
+    ];
+
+    if (activeCat === 'all') {
+        // Hot row: top-played, padded with default order to always show 6.
+        const hotIds = topPlayedIds(6);
+        const padding = GAME_CARDS.map(g => g.id).filter(id => !hotIds.includes(id));
+        const hotList = [...hotIds, ...padding].slice(0, 6).map(id => GAME_CARDS.find(g => g.id === id));
+        const hot = buildRow('Trending Now', '🔥', hotList, 'row-hot');
+        if (hot) grid.appendChild(hot);
+
+        categoryDefs.forEach(d => {
+            const games = GAME_CARDS.filter(g => g.category === d.cat);
+            const sec = buildRow(d.title, d.icon, games);
+            if (sec) grid.appendChild(sec);
+        });
+
+        const bigWins = buildBigWinsRow();
+        if (bigWins) grid.appendChild(bigWins);
+    } else {
+        const games = GAME_CARDS.filter(g => g.category === activeCat);
+        const def = categoryDefs.find(d => d.cat === activeCat);
+        const sec = buildRow(def ? def.title : 'Games', def ? def.icon : '', games);
+        if (sec) {
+            sec.querySelector('.game-row').classList.add('game-row-grid');
+            grid.appendChild(sec);
+        }
+    }
+}
+
+function buildBigWinsRow() {
+    const wins = (Casino.betHistory || []).filter(b => b.won > 0).slice(0, 8);
+    if (!wins.length) return null;
+    const section = document.createElement('section');
+    section.className = 'game-row-section big-wins-section';
+    section.innerHTML = `<div class="row-header"><h3><span class="row-icon live-dot-inline"></span>Recent Big Wins</h3></div>`;
+    const row = document.createElement('div');
+    row.className = 'big-wins-row';
+    wins.forEach(b => {
+        const g = GAME_CARDS.find(c => c.id === b.game);
+        if (!g) return;
+        const grad = GAME_GRADIENTS[g.id] || { g1: g.accent, g2: '#0f172a' };
+        const tile = document.createElement('button');
+        tile.type = 'button';
+        tile.className = 'big-win-tile';
+        tile.style.setProperty('--g1', grad.g1);
+        tile.style.setProperty('--g2', grad.g2);
+        tile.setAttribute('aria-label', `Play ${g.name}, last win $${b.won.toLocaleString()}`);
+        tile.innerHTML = `
+            <div class="big-win-art">${GAME_ART[g.id] || ''}</div>
+            <div class="big-win-amount">+$${b.won.toLocaleString()}</div>
+            <div class="big-win-mult">${b.mult.toFixed(2)}×</div>
+        `;
+        tile.addEventListener('click', () => openGame(g.id));
+        row.appendChild(tile);
     });
+    section.appendChild(row);
+    return section;
 }
 
 function renderRecentlyPlayed() {
@@ -465,12 +733,14 @@ function renderRecentlyPlayed() {
     Casino.recentlyPlayed.slice(0, RECENT_MAX).forEach(id => {
         const g = GAME_CARDS.find(c => c.id === id);
         if (!g) return;
+        const grad = GAME_GRADIENTS[g.id] || { g1: g.accent, g2: '#0f172a' };
         const tile = document.createElement('button');
         tile.type = 'button';
         tile.className = 'recent-tile';
-        tile.style.setProperty('--card-accent', g.accent);
+        tile.style.setProperty('--g1', grad.g1);
+        tile.style.setProperty('--g2', grad.g2);
         tile.setAttribute('aria-label', `Resume ${g.name}`);
-        tile.innerHTML = `<span class="recent-tile-icon" aria-hidden="true">${esc(g.icon)}</span><span class="recent-tile-name">${esc(g.name)}</span>`;
+        tile.innerHTML = `<div class="recent-tile-art">${GAME_ART[g.id] || ''}</div><span class="recent-tile-name">${esc(g.name)}</span>`;
         tile.addEventListener('click', () => openGame(id));
         row.appendChild(tile);
     });

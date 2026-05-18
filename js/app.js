@@ -13,8 +13,8 @@ window.Casino = {
     lastRescue: 0,
     achievements: [],
     vip: { xp: 0, level: 0 },
-    inventory: { deck: 'default', theme: 'default', owned: ['default_deck', 'default_theme'] },
-    stats: { totalWagered: 0, totalWon: 0, biggestWin: 0, gamesPlayed: 0, winStreak: 0, bestStreak: 0, jackpots: 0, fastSpins: 0, freeSpinTriggers: 0, bonusesBought: 0, maxChain: 0 },
+    inventory: { deck: 'default', theme: 'default', avatar: 'default', confetti: 'default', owned: ['default_deck', 'default_theme', 'default_avatar', 'default_confetti'] },
+    stats: { totalWagered: 0, totalWon: 0, biggestWin: 0, gamesPlayed: 0, winStreak: 0, bestStreak: 0, jackpots: 0, fastSpins: 0, freeSpinTriggers: 0, bonusesBought: 0, maxChain: 0, dailyClaims: 0, missionsCompleted: 0 },
     recentlyPlayed: [],
     playCounts: {},
     betHistory: [],
@@ -28,7 +28,8 @@ const RESCUE_COOLDOWN_MS = 6 * 60 * 60 * 1000; // 6h
 const BET_HISTORY_MAX = 30;
 const RECENT_MAX = 6;
 
-const DEFAULT_STATS = { totalWagered: 0, totalWon: 0, biggestWin: 0, gamesPlayed: 0, winStreak: 0, bestStreak: 0, jackpots: 0, fastSpins: 0, freeSpinTriggers: 0, bonusesBought: 0, maxChain: 0 };
+const DEFAULT_STATS = { totalWagered: 0, totalWon: 0, biggestWin: 0, gamesPlayed: 0, winStreak: 0, bestStreak: 0, jackpots: 0, fastSpins: 0, freeSpinTriggers: 0, bonusesBought: 0, maxChain: 0, dailyClaims: 0, missionsCompleted: 0 };
+const DEFAULT_INVENTORY = { deck: 'default', theme: 'default', avatar: 'default', confetti: 'default', owned: ['default_deck', 'default_theme', 'default_avatar', 'default_confetti'] };
 const DEFAULT_DAILY = { date: '', rounds: 0, wins: 0, wagered: 0, gamesSet: [], bestMult: 0 };
 
 const VIP_TIERS = [
@@ -40,25 +41,79 @@ const VIP_TIERS = [
 ];
 
 const SHOP_ITEMS = [
-    { id: 'neon_deck', name: 'Neon Deck', type: 'deck', price: 5000, icon: '🃏' },
-    { id: 'gold_deck', name: 'Gold Deck', type: 'deck', price: 20000, icon: '🎴' },
-    { id: 'purple_theme', name: 'Royal Purple Theme', type: 'theme', price: 10000, icon: '🟣' },
-    { id: 'crimson_theme', name: 'Crimson Theme', type: 'theme', price: 10000, icon: '🔴' }
+    // Themes
+    { id: 'purple_theme',   name: 'Royal Purple',  type: 'theme', price: 10000, icon: '🟣' },
+    { id: 'crimson_theme',  name: 'Crimson Night', type: 'theme', price: 10000, icon: '🔴' },
+    { id: 'ocean_theme',    name: 'Deep Ocean',    type: 'theme', price: 12000, icon: '🌊' },
+    { id: 'forest_theme',   name: 'Forest Green',  type: 'theme', price: 12000, icon: '🌲' },
+    { id: 'midnight_theme', name: 'Midnight Sky',  type: 'theme', price: 15000, icon: '🌌' },
+    { id: 'sunset_theme',   name: 'Sunset Glow',   type: 'theme', price: 15000, icon: '🌅' },
+    // Decks
+    { id: 'neon_deck',  name: 'Neon Deck',         type: 'deck',  price: 5000,  icon: '🃏' },
+    { id: 'gold_deck',  name: 'Gold Deck',         type: 'deck',  price: 20000, icon: '🎴' },
+    { id: 'holo_deck',  name: 'Hologram Deck',     type: 'deck',  price: 30000, icon: '✨' },
+    { id: 'jade_deck',  name: 'Jade Deck',         type: 'deck',  price: 15000, icon: '🟢' },
+    { id: 'ruby_deck',  name: 'Ruby Deck',         type: 'deck',  price: 15000, icon: '♦️' },
+    // Avatars
+    { id: 'avatar_crown',   name: 'Crown',         type: 'avatar', price: 3000,  icon: '👑' },
+    { id: 'avatar_diamond', name: 'Diamond',       type: 'avatar', price: 8000,  icon: '💎' },
+    { id: 'avatar_joker',   name: 'Joker',         type: 'avatar', price: 5000,  icon: '🃏' },
+    { id: 'avatar_dragon',  name: 'Dragon',        type: 'avatar', price: 12000, icon: '🐉' },
+    { id: 'avatar_phoenix', name: 'Phoenix',       type: 'avatar', price: 25000, icon: '🔥' },
+    // Confetti palettes
+    { id: 'confetti_neon',    name: 'Neon Confetti',    type: 'confetti', price: 4000, icon: '🟪' },
+    { id: 'confetti_rainbow', name: 'Rainbow Confetti', type: 'confetti', price: 6000, icon: '🌈' },
+    { id: 'confetti_gold',    name: 'Pure Gold',        type: 'confetti', price: 10000, icon: '🟡' }
 ];
 
+const CONFETTI_PALETTES = {
+    default: ['#d4a843','#f0d060','#22c55e','#ef4444','#3b82f6','#8b5cf6'],
+    confetti_neon:    ['#ff00ff','#00ffff','#39ff14','#ffeb04','#ff10f0','#7c3aed'],
+    confetti_rainbow: ['#ef4444','#f97316','#fbbf24','#22c55e','#3b82f6','#8b5cf6','#ec4899'],
+    confetti_gold:    ['#fde68a','#fbbf24','#f59e0b','#d97706','#92400e']
+};
+
+const THEME_COLORS = {
+    purple_theme:   '#1e1b4b',
+    crimson_theme:  '#450a0a',
+    ocean_theme:    '#082f49',
+    forest_theme:   '#14532d',
+    midnight_theme: '#020617',
+    sunset_theme:   '#7c2d12'
+};
+
 const ACHIEVEMENTS_DATA = [
-    { id: 'first_win', name: 'First Win', icon: '🎯', desc: 'Win your first game', reward: 500 },
-    { id: 'high_roller', name: 'High Roller', icon: '🎩', desc: 'Place a total of $10,000 in bets', reward: 1000 },
-    { id: 'lucky_streak', name: 'Lucky Streak', icon: '🔥', desc: 'Win 5 games in a row', reward: 2000 },
-    { id: 'jackpot', name: 'Jackpot!', icon: '🎰', desc: 'Hit a major jackpot in any game', reward: 5000 },
-    { id: 'veteran', name: 'Casino Veteran', icon: '👑', desc: 'Play 100 total rounds', reward: 10000 },
-    { id: 'speed_demon', name: 'Speed Demon', icon: '⚡', desc: 'Play 100 fast spins', reward: 3000 },
-    { id: 'free_frenzy', name: 'Free Spin Frenzy', icon: '✨', desc: 'Trigger 10 free-spin bonuses', reward: 5000 },
-    { id: 'chain_master', name: 'Chain Master', icon: '🔱', desc: 'Build a 5× hot-streak chain', reward: 5000 },
-    { id: 'bonus_hunter', name: 'Bonus Hunter', icon: '💰', desc: 'Buy 5 bonus rounds', reward: 3000 },
-    { id: 'diversifier', name: 'Diversifier', icon: '🌍', desc: 'Play 15 different games', reward: 5000 },
-    { id: 'whale', name: 'High Whale', icon: '🐋', desc: 'Wager a total of $100,000', reward: 15000 },
-    { id: 'sharpshooter', name: 'Sharpshooter', icon: '🎯', desc: 'Hit a single win of $10,000+', reward: 10000 }
+    // Foundation
+    { id: 'first_win',    name: 'First Win',      icon: '🎯', desc: 'Win your first game', reward: 500 },
+    { id: 'high_roller',  name: 'High Roller',    icon: '🎩', desc: 'Wager $10,000 total', reward: 1000 },
+    { id: 'lucky_streak', name: 'Lucky Streak',   icon: '🔥', desc: 'Win 5 games in a row', reward: 2000 },
+    { id: 'jackpot',      name: 'Jackpot!',       icon: '🎰', desc: 'Hit a major jackpot in any game', reward: 5000 },
+    { id: 'veteran',      name: 'Casino Veteran', icon: '👑', desc: 'Play 100 total rounds', reward: 10000 },
+    // Slot-specific
+    { id: 'speed_demon',  name: 'Speed Demon',    icon: '⚡', desc: 'Play 100 fast spins', reward: 3000 },
+    { id: 'free_frenzy',  name: 'Free Spin Frenzy', icon: '✨', desc: 'Trigger 10 free-spin bonuses', reward: 5000 },
+    { id: 'chain_master', name: 'Chain Master',   icon: '🔱', desc: 'Build a 5× hot-streak chain', reward: 5000 },
+    { id: 'bonus_hunter', name: 'Bonus Hunter',   icon: '💰', desc: 'Buy 5 bonus rounds', reward: 3000 },
+    { id: 'slot_royalty', name: 'Slot Royalty',   icon: '🎰', desc: 'Play all 21 slot themes', reward: 10000 },
+    // Diversity
+    { id: 'diversifier',  name: 'Diversifier',    icon: '🌍', desc: 'Play 15 different games', reward: 5000 },
+    { id: 'card_shark',   name: 'Card Shark',     icon: '🃏', desc: 'Play Blackjack, Baccarat & Video Poker', reward: 3000 },
+    { id: 'centurion',    name: 'Centurion',      icon: '🛡️', desc: 'Play 1,000 total rounds', reward: 25000 },
+    // Wagering
+    { id: 'whale',        name: 'High Whale',     icon: '🐋', desc: 'Wager $100,000 total', reward: 15000 },
+    { id: 'mythic_wager', name: 'Mythic Wager',   icon: '🌠', desc: 'Wager $1,000,000 total', reward: 100000 },
+    { id: 'sharpshooter', name: 'Sharpshooter',   icon: '🎯', desc: 'Hit a single win of $10,000+', reward: 10000 },
+    { id: 'profit_king',  name: 'Profit King',    icon: '💵', desc: 'Reach $50,000 lifetime net profit', reward: 10000 },
+    // VIP ladder
+    { id: 'silver_crown', name: 'Silver Crown',   icon: '🥈', desc: 'Reach Silver VIP', reward: 2500 },
+    { id: 'gold_crown',   name: 'Gold Crown',     icon: '🥇', desc: 'Reach Gold VIP', reward: 5000 },
+    { id: 'plat_crown',   name: 'Platinum Crown', icon: '💎', desc: 'Reach Platinum VIP', reward: 15000 },
+    { id: 'diamond_crown',name: 'Diamond Crown',  icon: '👑', desc: 'Reach Diamond VIP', reward: 50000 },
+    // Engagement / collection
+    { id: 'daily_devotee',name: 'Daily Devotee',  icon: '📅', desc: 'Claim daily bonus 7 times', reward: 3000 },
+    { id: 'pilgrim',      name: 'Pilgrim',        icon: '🕊️', desc: 'Claim daily bonus 30 times', reward: 15000 },
+    { id: 'mission_spec', name: 'Mission Specialist', icon: '🎯', desc: 'Complete 25 daily missions', reward: 5000 },
+    { id: 'theme_collector', name: 'Theme Collector', icon: '🎨', desc: 'Own 2 shop themes', reward: 3000 }
 ];
 
 const GAME_CARDS = [
@@ -327,6 +382,7 @@ document.addEventListener('DOMContentLoaded', () => {
     bindClick('fullscreen-btn', toggleFullscreen);
     bindClick('settings-btn', showSettings);
     bindClick('close-settings', () => closeModal('settings-modal'));
+    bindClick('close-audit', () => closeModal('audit-modal'));
 
     document.querySelectorAll('.modal-overlay').forEach(m => {
         m.addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(m.id); });
@@ -353,6 +409,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     initSidebar();
     initHelpBubble();
+    initAudit();
 
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
@@ -385,12 +442,22 @@ function loadState() {
             Casino.lastRescue = s.lastRescue ?? 0;
             Casino.achievements = s.achievements ?? [];
             Casino.vip = s.vip ?? { xp: 0, level: 0 };
-            Casino.inventory = s.inventory ?? { deck: 'default', theme: 'default', owned: ['default_deck', 'default_theme'] };
+            Casino.inventory = Object.assign({}, DEFAULT_INVENTORY, s.inventory || {});
+            // Ensure 'owned' contains all defaults.
+            DEFAULT_INVENTORY.owned.forEach(id => {
+                if (!Casino.inventory.owned.includes(id)) Casino.inventory.owned.push(id);
+            });
             Casino.recentlyPlayed = s.recentlyPlayed ?? [];
             Casino.playCounts = s.playCounts ?? {};
             Casino.betHistory = s.betHistory ?? [];
             Casino.missions = s.missions ?? { date: '', list: [] };
             Casino.dailyStats = Object.assign({}, DEFAULT_DAILY, s.dailyStats || {});
+            if (s.audit) {
+                Casino.audit.clientSeed = s.audit.clientSeed || '';
+                Casino.audit.serverSeed = s.audit.serverSeed || '';
+                Casino.audit.nonce = s.audit.nonce || 0;
+                Casino.audit.history = Array.isArray(s.audit.history) ? s.audit.history : [];
+            }
         }
     } catch(e) {}
     if (Casino.balance <= 0) Casino.balance = STARTING_BALANCE;
@@ -414,7 +481,13 @@ function saveState() {
             playCounts: Casino.playCounts,
             betHistory: Casino.betHistory,
             missions: Casino.missions,
-            dailyStats: Casino.dailyStats
+            dailyStats: Casino.dailyStats,
+            audit: {
+                clientSeed: Casino.audit.clientSeed,
+                serverSeed: Casino.audit.serverSeed,
+                nonce: Casino.audit.nonce,
+                history: Casino.audit.history
+            }
         }));
     } catch(e) {}
 }
@@ -506,6 +579,7 @@ function placeBet(amount) {
     if (Casino.currentGame && !Casino.dailyStats.gamesSet.includes(Casino.currentGame)) {
         Casino.dailyStats.gamesSet.push(Casino.currentGame);
     }
+    recordAuditRound(Casino.currentGame, amount);
     pendingBet = amount;
     pendingGameId = Casino.currentGame;
 
@@ -976,12 +1050,14 @@ function showStats() {
         Casino.lastDailyBonus = 0;
         Casino.lastRescue = 0;
         Casino.vip = { xp: 0, level: 0 };
-        Casino.inventory = { deck: 'default', theme: 'default', owned: ['default_deck', 'default_theme'] };
+        Casino.inventory = JSON.parse(JSON.stringify(DEFAULT_INVENTORY));
         Casino.recentlyPlayed = [];
         Casino.playCounts = {};
         Casino.betHistory = [];
         Casino.missions = { date: '', list: [] };
         Casino.dailyStats = Object.assign({}, DEFAULT_DAILY);
+        Casino.audit = { clientSeed: '', serverSeed: '', serverSeedHash: '', nonce: 0, history: [] };
+        initAudit();
         pendingBet = 0; pendingGameId = null;
         document.documentElement.style.removeProperty('--bg-primary');
         checkDailyReset();
@@ -1034,18 +1110,36 @@ function checkAchievements() {
             haptic([40, 40, 80]);
         }
     };
-    check('first_win', s.totalWon > 0);
-    check('high_roller', s.totalWagered >= 10000);
+    const playedIds = Object.keys(Casino.playCounts || {});
+    const playedSlots = playedIds.filter(id => id.startsWith('slot_') || id === 'slots').length;
+    const cardGamesPlayed = ['blackjack', 'baccarat', 'poker'].every(g => Casino.playCounts[g] > 0);
+    const ownedThemes = (Casino.inventory.owned || []).filter(id => id.endsWith('_theme') && id !== 'default_theme').length;
+
+    check('first_win',    s.totalWon > 0);
+    check('high_roller',  s.totalWagered >= 10000);
     check('lucky_streak', (s.bestStreak || 0) >= 5);
-    check('jackpot', (s.jackpots || 0) >= 1);
-    check('veteran', s.gamesPlayed >= 100);
-    check('speed_demon', (s.fastSpins || 0) >= 100);
-    check('free_frenzy', (s.freeSpinTriggers || 0) >= 10);
+    check('jackpot',      (s.jackpots || 0) >= 1);
+    check('veteran',      s.gamesPlayed >= 100);
+    check('speed_demon',  (s.fastSpins || 0) >= 100);
+    check('free_frenzy',  (s.freeSpinTriggers || 0) >= 10);
     check('chain_master', (s.maxChain || 0) >= 4);
     check('bonus_hunter', (s.bonusesBought || 0) >= 5);
-    check('diversifier', Object.keys(Casino.playCounts || {}).length >= 15);
-    check('whale', s.totalWagered >= 100000);
+    check('slot_royalty', playedSlots >= 21);
+    check('diversifier',  playedIds.length >= 15);
+    check('card_shark',   cardGamesPlayed);
+    check('centurion',    s.gamesPlayed >= 1000);
+    check('whale',        s.totalWagered >= 100000);
+    check('mythic_wager', s.totalWagered >= 1000000);
     check('sharpshooter', s.biggestWin >= 10000);
+    check('profit_king',  s.totalWon - s.totalWagered >= 50000);
+    check('silver_crown', (Casino.vip.level || 0) >= 1);
+    check('gold_crown',   (Casino.vip.level || 0) >= 2);
+    check('plat_crown',   (Casino.vip.level || 0) >= 3);
+    check('diamond_crown',(Casino.vip.level || 0) >= 4);
+    check('daily_devotee',(s.dailyClaims || 0) >= 7);
+    check('pilgrim',      (s.dailyClaims || 0) >= 30);
+    check('mission_spec', (s.missionsCompleted || 0) >= 25);
+    check('theme_collector', ownedThemes >= 2);
 }
 window.Casino.checkAchievements = checkAchievements;
 
@@ -1077,12 +1171,14 @@ function claimDailyBonus() {
     updateBalanceUI();
     flashBalance(true);
     Casino.lastDailyBonus = Date.now();
+    Casino.stats.dailyClaims = (Casino.stats.dailyClaims || 0) + 1;
     saveState();
     closeModal('daily-modal');
     $('daily-bonus-btn').classList.add('hidden');
     playSound('win');
     showWinEffect(tier.bonus);
     haptic([30, 30, 60]);
+    checkAchievements();
 }
 
 /* ---- Missions ---- */
@@ -1131,10 +1227,12 @@ function updateMissionProgress() {
             m.claimed = true;
             Casino.balance += m.reward;
             updateBalanceUI();
+            Casino.stats.missionsCompleted = (Casino.stats.missionsCompleted || 0) + 1;
             showToast(`✨ Mission Complete: ${m.name}! +$${m.reward.toLocaleString()}`);
             playSound('jackpot');
             haptic([40, 40, 80]);
             anyComplete = true;
+            checkAchievements();
         }
         if (prev !== m.progress) anyComplete = true;
     });
@@ -1246,10 +1344,24 @@ function applyTheme() {
     document.documentElement.setAttribute('data-theme', Casino.theme);
     $('theme-toggle').textContent = Casino.theme === 'dark' ? '🌓' : '☀️';
     const t = Casino.inventory.theme;
-    if (t === 'purple_theme') document.documentElement.style.setProperty('--bg-primary', '#1e1b4b');
-    else if (t === 'crimson_theme') document.documentElement.style.setProperty('--bg-primary', '#450a0a');
+    const themeColor = THEME_COLORS[t];
+    if (themeColor) document.documentElement.style.setProperty('--bg-primary', themeColor);
     else document.documentElement.style.removeProperty('--bg-primary');
     document.body.classList.toggle('no-animations', !Casino.animationsEnabled);
+    renderAvatar();
+}
+
+function renderAvatar() {
+    const el = document.getElementById('avatar-badge');
+    if (!el) return;
+    const avatarId = Casino.inventory.avatar;
+    const item = SHOP_ITEMS.find(i => i.id === avatarId);
+    if (item) {
+        el.textContent = item.icon;
+        el.style.display = 'flex';
+    } else {
+        el.style.display = 'none';
+    }
 }
 
 /* ---- Settings modal ---- */
@@ -1275,6 +1387,10 @@ function showSettings() {
             <input type="checkbox" id="settings-sound" ${Casino.soundEnabled ? 'checked' : ''} class="settings-toggle">
         </label>
         <p class="settings-note">Settings persist across sessions. Disable animations for the lowest-CPU experience.</p>
+        <div class="settings-row" style="border-top: 1px solid var(--glass-border); padding-top: 16px; margin-top: 8px;">
+            <span class="settings-label">🔒 Round Audit</span>
+            <button class="action-btn secondary" type="button" id="settings-audit-btn">View seeds & history</button>
+        </div>
     `;
     $('settings-volume').addEventListener('input', e => {
         Casino.volume = e.target.value / 100;
@@ -1302,7 +1418,79 @@ function showSettings() {
         saveState();
         if (e.target.checked) playSound('click');
     });
+    $('settings-audit-btn').addEventListener('click', () => {
+        closeModal('settings-modal');
+        showAuditModal();
+    });
     openModal('settings-modal');
+}
+
+/* ---- Round Audit modal ---- */
+function showAuditModal() {
+    const body = $('audit-body');
+    if (!body) return;
+    const renderHistoryRows = () => {
+        if (!Casino.audit.history.length) {
+            return '<div class="audit-empty">No rounds played yet.</div>';
+        }
+        return Casino.audit.history.slice(0, 15).map(h => `
+            <div class="audit-row">
+                <span class="audit-nonce">#${h.nonce}</span>
+                <span class="audit-game">${esc(h.game || 'unknown')}</span>
+                <span class="audit-bet">$${h.bet.toLocaleString()}</span>
+                <span class="audit-time">${new Date(h.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
+            </div>
+            <div class="audit-row-seed">
+                <span title="Client seed (you control this)">client: <code>${esc(h.clientSeed)}</code></span>
+                <span title="Hash of the server seed for this round">srv-hash: <code>${esc((h.serverSeedHash || '').slice(0, 16))}...</code></span>
+            </div>
+        `).join('');
+    };
+    body.innerHTML = `
+        <p class="audit-note">Each round is logged with the client seed you control and a hash of the
+        server seed. Rotate the server seed at any time to reveal what was used. Games still use
+        <code>Math.random()</code> for outcomes — this is a transparency log, not a cryptographic
+        fairness proof.</p>
+        <div class="audit-section">
+            <label class="audit-field">
+                <span class="audit-label">Client seed</span>
+                <input type="text" id="audit-client-seed" value="${esc(Casino.audit.clientSeed)}" class="audit-input" maxlength="64">
+            </label>
+            <label class="audit-field">
+                <span class="audit-label">Server seed hash (current)</span>
+                <code class="audit-hash" id="audit-hash">${esc(Casino.audit.serverSeedHash || 'computing…')}</code>
+            </label>
+            <div class="audit-field">
+                <span class="audit-label">Current nonce</span>
+                <code class="audit-hash">${Casino.audit.nonce}</code>
+            </div>
+            <div class="audit-buttons">
+                <button class="action-btn secondary" type="button" id="audit-rotate-btn">🔄 Rotate Server Seed</button>
+            </div>
+            <div id="audit-reveal" class="audit-reveal" hidden></div>
+        </div>
+        <div class="audit-section">
+            <h4>Recent rounds (last 15)</h4>
+            <div class="audit-history">${renderHistoryRows()}</div>
+        </div>
+    `;
+    $('audit-client-seed').addEventListener('change', e => {
+        Casino.audit.clientSeed = e.target.value.trim().slice(0, 64) || randomHex(8);
+        saveState();
+        showToast('Client seed updated.');
+    });
+    $('audit-rotate-btn').addEventListener('click', async () => {
+        const prev = await rotateServerSeed();
+        const reveal = $('audit-reveal');
+        if (reveal && prev) {
+            reveal.hidden = false;
+            reveal.innerHTML = `Previous server seed: <code>${esc(prev)}</code>`;
+        }
+        $('audit-hash').textContent = Casino.audit.serverSeedHash || '(unavailable)';
+        saveState();
+        playSound('click');
+    });
+    openModal('audit-modal');
 }
 
 /* ---- Win Effects ---- */
@@ -1315,7 +1503,8 @@ function showWinEffect(amount) {
     txt.textContent = `+$${amount.toLocaleString()}!`;
     overlay.appendChild(txt);
     if (!reducedMotion) {
-        const colors = ['#d4a843','#f0d060','#22c55e','#ef4444','#3b82f6','#8b5cf6'];
+        const palId = Casino.inventory.confetti || 'default';
+        const colors = CONFETTI_PALETTES[palId] || CONFETTI_PALETTES.default;
         for (let i = 0; i < 40; i++) {
             const c = document.createElement('div');
             c.className = 'confetti';
@@ -1333,25 +1522,51 @@ function showWinEffect(amount) {
 window.Casino.showWinEffect = showWinEffect;
 
 /* ---- Shop ---- */
+let shopCategory = 'all';
+
 function openShop() {
-    const body = $('shop-body');
-    body.innerHTML = `<div class="shop-grid">${SHOP_ITEMS.map(item => {
-        const owned = Casino.inventory.owned.includes(item.id);
-        const equipped = Casino.inventory[item.type] === item.id;
-        const buttonHtml = !owned
-            ? `<button class="shop-btn buy" type="button" data-action="buy" data-id="${esc(item.id)}">Buy</button>`
-            : (equipped
-                ? `<button class="shop-btn equipped" type="button" disabled>Equipped</button>`
-                : `<button class="shop-btn equip" type="button" data-action="equip" data-id="${esc(item.id)}">Equip</button>`);
-        return `
-            <div class="shop-item">
-                <div class="shop-item-icon" aria-hidden="true">${esc(item.icon)}</div>
-                <div class="shop-item-name">${esc(item.name)}</div>
-                ${!owned ? `<div class="shop-item-price">$${item.price.toLocaleString()}</div>` : '<div class="shop-item-price-placeholder"></div>'}
-                ${buttonHtml}
-            </div>`;
-    }).join('')}</div>`;
+    renderShop();
     openModal('shop-modal');
+}
+
+function renderShop() {
+    const body = $('shop-body');
+    if (!body) return;
+    const tabs = [
+        { id: 'all',      label: 'All' },
+        { id: 'theme',    label: '🎨 Themes' },
+        { id: 'deck',     label: '🃏 Decks' },
+        { id: 'avatar',   label: '👤 Avatars' },
+        { id: 'confetti', label: '✨ Confetti' }
+    ];
+    const filtered = shopCategory === 'all' ? SHOP_ITEMS : SHOP_ITEMS.filter(i => i.type === shopCategory);
+    body.innerHTML = `
+        <div class="shop-tabs">${tabs.map(t => `<button class="shop-tab${t.id === shopCategory ? ' active' : ''}" type="button" data-cat="${t.id}">${t.label}</button>`).join('')}</div>
+        <div class="shop-grid">${filtered.map(item => {
+            const owned = Casino.inventory.owned.includes(item.id);
+            const equipped = Casino.inventory[item.type] === item.id;
+            const buttonHtml = !owned
+                ? `<button class="shop-btn buy" type="button" data-action="buy" data-id="${esc(item.id)}">Buy</button>`
+                : (equipped
+                    ? `<button class="shop-btn equipped" type="button" disabled>Equipped</button>`
+                    : `<button class="shop-btn equip" type="button" data-action="equip" data-id="${esc(item.id)}">Equip</button>`);
+            return `
+                <div class="shop-item">
+                    <div class="shop-item-icon" aria-hidden="true">${esc(item.icon)}</div>
+                    <div class="shop-item-name">${esc(item.name)}</div>
+                    ${!owned ? `<div class="shop-item-price">$${item.price.toLocaleString()}</div>` : '<div class="shop-item-price-placeholder"></div>'}
+                    ${buttonHtml}
+                </div>`;
+        }).join('')}</div>`;
+
+    // Wire tabs
+    body.querySelectorAll('.shop-tab').forEach(t => {
+        t.addEventListener('click', () => {
+            shopCategory = t.dataset.cat;
+            renderShop();
+            playSound('click');
+        });
+    });
 }
 
 function onShopClick(e) {
@@ -1384,10 +1599,11 @@ function equipItem(id) {
     if (!item || !Casino.inventory.owned.includes(id)) return;
     Casino.inventory[item.type] = id;
     saveState();
-    openShop();
+    renderShop();
     playSound('click');
     showToast(`Equipped ${item.name}!`);
     if (item.type === 'theme') applyTheme();
+    if (item.type === 'avatar') renderAvatar();
 }
 
 window.Casino.buyItem = buyItem;
@@ -1510,6 +1726,62 @@ function shuffle(arr) {
     return arr;
 }
 Object.assign(window.Casino, { createCardElement, createDeck, shuffle, esc, haptic });
+
+/* ---- Round Audit (provably-fair-style transparency layer) ----
+   Each placeBet bumps a nonce and records the round's client/server-seed
+   pair so the player can inspect a tamper-evident log of recent rounds.
+   Outcomes themselves still use Math.random — this is a transparency
+   widget, not a cryptographic fairness proof. */
+Casino.audit = {
+    clientSeed: '',
+    serverSeed: '',
+    serverSeedHash: '',
+    nonce: 0,
+    history: []   // [{ nonce, game, bet, clientSeed, serverSeedHash, time }]
+};
+
+function randomHex(bytes) {
+    const arr = new Uint8Array(bytes);
+    (crypto && crypto.getRandomValues) ? crypto.getRandomValues(arr) :
+        arr.forEach((_, i) => arr[i] = Math.floor(Math.random() * 256));
+    return Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function sha256Hex(input) {
+    if (!crypto || !crypto.subtle) return '(hash unavailable)';
+    try {
+        const buf = new TextEncoder().encode(input);
+        const hashBuf = await crypto.subtle.digest('SHA-256', buf);
+        return Array.from(new Uint8Array(hashBuf)).map(b => b.toString(16).padStart(2, '0')).join('');
+    } catch(e) { return '(hash error)'; }
+}
+
+async function rotateServerSeed() {
+    const previous = Casino.audit.serverSeed;
+    Casino.audit.serverSeed = randomHex(16);
+    Casino.audit.serverSeedHash = await sha256Hex(Casino.audit.serverSeed);
+    Casino.audit.nonce = 0;
+    return previous;
+}
+
+async function initAudit() {
+    if (!Casino.audit.clientSeed) Casino.audit.clientSeed = randomHex(8);
+    if (!Casino.audit.serverSeed) Casino.audit.serverSeed = randomHex(16);
+    Casino.audit.serverSeedHash = await sha256Hex(Casino.audit.serverSeed);
+}
+
+function recordAuditRound(gameId, bet) {
+    Casino.audit.nonce++;
+    Casino.audit.history.unshift({
+        nonce: Casino.audit.nonce,
+        game: gameId,
+        bet: bet,
+        clientSeed: Casino.audit.clientSeed,
+        serverSeedHash: Casino.audit.serverSeedHash,
+        time: Date.now()
+    });
+    if (Casino.audit.history.length > 30) Casino.audit.history.length = 30;
+}
 
 /* ---- External game registration (used by slot-themes.js, etc.) ---- */
 window.Casino.registerGame = function(meta, gameLogic) {

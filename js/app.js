@@ -4,6 +4,9 @@ window.Casino = {
     games: {},
     currentGame: null,
     soundEnabled: true,
+    volume: 1.0,
+    animationsEnabled: true,
+    hapticsEnabled: true,
     theme: 'dark',
     lastDailyBonus: 0,
     lastRescue: 0,
@@ -277,7 +280,7 @@ function esc(s) {
 }
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 function haptic(pattern) {
-    if (!Casino.soundEnabled) return;
+    if (!Casino.soundEnabled || !Casino.hapticsEnabled) return;
     if (navigator.vibrate) try { navigator.vibrate(pattern); } catch(e) {}
 }
 function $(id) { return document.getElementById(id); }
@@ -314,6 +317,8 @@ document.addEventListener('DOMContentLoaded', () => {
     bindClick('daily-bonus-btn', showDailyModal);
     bindClick('rescue-btn', claimRescueChips);
     bindClick('fullscreen-btn', toggleFullscreen);
+    bindClick('settings-btn', showSettings);
+    bindClick('close-settings', () => closeModal('settings-modal'));
 
     document.querySelectorAll('.modal-overlay').forEach(m => {
         m.addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(m.id); });
@@ -365,6 +370,9 @@ function loadState() {
             Casino.stats = Object.assign({}, DEFAULT_STATS, s.stats || {});
             Casino.soundEnabled = s.soundEnabled ?? true;
             Casino.theme = s.theme ?? 'dark';
+            Casino.volume = s.volume ?? 1.0;
+            Casino.animationsEnabled = s.animationsEnabled ?? true;
+            Casino.hapticsEnabled = s.hapticsEnabled ?? true;
             Casino.lastDailyBonus = s.lastDailyBonus ?? 0;
             Casino.lastRescue = s.lastRescue ?? 0;
             Casino.achievements = s.achievements ?? [];
@@ -385,6 +393,9 @@ function saveState() {
             balance: Casino.balance,
             stats: Casino.stats,
             soundEnabled: Casino.soundEnabled,
+            volume: Casino.volume,
+            animationsEnabled: Casino.animationsEnabled,
+            hapticsEnabled: Casino.hapticsEnabled,
             theme: Casino.theme,
             lastDailyBonus: Casino.lastDailyBonus,
             lastRescue: Casino.lastRescue,
@@ -543,6 +554,31 @@ function updateVIPUI() {
 
 Object.assign(window.Casino, { changeBalance, placeBet, updateBalanceUI, updateVIPUI, saveState });
 
+/* Special "Bonus Buy" deduction — counts as wagered and grants XP,
+   but does NOT start a regular bet (so the win-tracking won't mark
+   the resulting free spins as one giant payout). Used by themed
+   slots' "Buy Bonus" button. */
+window.Casino.buyBonusFlat = function(amount) {
+    if (Casino.balance < amount || amount <= 0) return false;
+    Casino.balance -= amount;
+    Casino.stats.totalWagered += amount;
+    Casino.stats.gamesPlayed++;
+    Casino.dailyStats.wagered += amount;
+    Casino.dailyStats.rounds++;
+    if (Casino.currentGame && !Casino.dailyStats.gamesSet.includes(Casino.currentGame)) {
+        Casino.dailyStats.gamesSet.push(Casino.currentGame);
+    }
+    Casino.vip.xp += amount;
+    checkVIPLevelUp();
+    updateVIPUI();
+    updateBalanceUI();
+    flashBalance(false);
+    updateMissionProgress();
+    renderRescue();
+    saveState();
+    return true;
+};
+
 /* ---- Sound (shared AudioContext) ---- */
 let audioCtx = null;
 function primeAudio() {
@@ -569,7 +605,7 @@ function playSound(type) {
         const gain = ctx.createGain();
         osc.type = wave;
         osc.frequency.setValueAtTime(freq, ctx.currentTime + timeOffset);
-        gain.gain.setValueAtTime(vol, ctx.currentTime + timeOffset);
+        gain.gain.setValueAtTime(vol * Casino.volume, ctx.currentTime + timeOffset);
         gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + timeOffset + duration);
         osc.connect(gain);
         gain.connect(ctx.destination);
@@ -609,7 +645,7 @@ window.Casino.playTones = function(spec) {
             const wave = s.wave || 'sine';
             const start = s.start || 0;
             const dur = s.dur || 0.2;
-            const vol = s.vol != null ? s.vol : 0.06;
+            const vol = (s.vol != null ? s.vol : 0.06) * Casino.volume;
             const osc = ctx.createOscillator();
             const gain = ctx.createGain();
             osc.type = wave;
@@ -1198,6 +1234,60 @@ function applyTheme() {
     if (t === 'purple_theme') document.documentElement.style.setProperty('--bg-primary', '#1e1b4b');
     else if (t === 'crimson_theme') document.documentElement.style.setProperty('--bg-primary', '#450a0a');
     else document.documentElement.style.removeProperty('--bg-primary');
+    document.body.classList.toggle('no-animations', !Casino.animationsEnabled);
+}
+
+/* ---- Settings modal ---- */
+function showSettings() {
+    const body = $('settings-body');
+    if (!body) return;
+    body.innerHTML = `
+        <label class="settings-row">
+            <span class="settings-label">🔊 Volume</span>
+            <input type="range" id="settings-volume" min="0" max="100" step="1" value="${Math.round(Casino.volume * 100)}" class="settings-slider">
+            <span class="settings-value" id="settings-volume-val">${Math.round(Casino.volume * 100)}%</span>
+        </label>
+        <label class="settings-row">
+            <span class="settings-label">✨ Animations</span>
+            <input type="checkbox" id="settings-anim" ${Casino.animationsEnabled ? 'checked' : ''} class="settings-toggle">
+        </label>
+        <label class="settings-row">
+            <span class="settings-label">📳 Haptics (vibration)</span>
+            <input type="checkbox" id="settings-haptic" ${Casino.hapticsEnabled ? 'checked' : ''} class="settings-toggle">
+        </label>
+        <label class="settings-row">
+            <span class="settings-label">🔔 Sound effects</span>
+            <input type="checkbox" id="settings-sound" ${Casino.soundEnabled ? 'checked' : ''} class="settings-toggle">
+        </label>
+        <p class="settings-note">Settings persist across sessions. Disable animations for the lowest-CPU experience.</p>
+    `;
+    $('settings-volume').addEventListener('input', e => {
+        Casino.volume = e.target.value / 100;
+        $('settings-volume-val').textContent = e.target.value + '%';
+        saveState();
+    });
+    $('settings-volume').addEventListener('change', () => {
+        playSound('click'); // preview
+    });
+    $('settings-anim').addEventListener('change', e => {
+        Casino.animationsEnabled = e.target.checked;
+        document.body.classList.toggle('no-animations', !Casino.animationsEnabled);
+        saveState();
+    });
+    $('settings-haptic').addEventListener('change', e => {
+        Casino.hapticsEnabled = e.target.checked;
+        saveState();
+        if (e.target.checked) haptic([30, 30, 30]);
+    });
+    $('settings-sound').addEventListener('change', e => {
+        Casino.soundEnabled = e.target.checked;
+        const btn = $('sound-toggle');
+        btn.textContent = Casino.soundEnabled ? '🔊' : '🔇';
+        btn.setAttribute('aria-pressed', String(!Casino.soundEnabled));
+        saveState();
+        if (e.target.checked) playSound('click');
+    });
+    openModal('settings-modal');
 }
 
 /* ---- Win Effects ---- */

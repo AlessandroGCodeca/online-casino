@@ -56,6 +56,9 @@
         Casino.playTones(spec);
     }
 
+    const CHAIN_MULTS = [1, 2, 3, 4, 5];  // win-chain multipliers per consecutive win
+    const BONUS_BUY_MULT = 50;             // cost of "Buy Bonus" = 50× current bet
+
     function makeSlotGame(theme) {
         let bet = 100;
         let spinning = false;
@@ -63,6 +66,7 @@
         let freeSpinsLeft = 0;
         let freeSpinTotal = 0;       // total awarded in current round
         let freeSpinWinSum = 0;      // cumulative win during current round
+        let winChain = 0;            // consecutive paid-spin wins (caps CHAIN_MULTS)
         const baseSym = theme.symbols[0];
         const freeSpinMult = theme.freeSpinMultiplier || 2;
         const freeSpinGrant = theme.freeSpinGrant || 8;
@@ -71,10 +75,11 @@
 
         function init(gameArea) {
             area = gameArea;
-            freeSpinsLeft = 0; freeSpinTotal = 0; freeSpinWinSum = 0;
+            freeSpinsLeft = 0; freeSpinTotal = 0; freeSpinWinSum = 0; winChain = 0;
             renderUI();
             resetReels();
             wireControls();
+            updateBonusBtn();
         }
 
         function renderUI() {
@@ -98,6 +103,11 @@
                         <span class="ts-fs-text"><span class="ts-fs-icon">✨</span> FREE SPINS: <b data-role="fscount">0</b> / <b data-role="fstotal">0</b></span>
                         <span class="ts-fs-mult">${freeSpinMult}× ALL WINS</span>
                     </div>
+                    <div class="ts-chain-bar" data-role="chainbar" style="display:none;">
+                        <span class="ts-chain-text">🔥 HOT STREAK</span>
+                        <div class="ts-chain-dots" data-role="chaindots"></div>
+                        <span class="ts-chain-mult" data-role="chainmult">×2 next win</span>
+                    </div>
                     <div class="ts-reels-row">
                         <div class="ts-reel"><div class="ts-strip" data-reel="0"></div></div>
                         <div class="ts-reel"><div class="ts-strip" data-reel="1"></div></div>
@@ -115,6 +125,7 @@
                         <button class="bet-btn" type="button" data-bet="500">$500</button>
                     </div>
                     <button class="action-btn primary ts-spin" type="button" data-role="spin">SPIN — $${bet}</button>
+                    <button class="action-btn ts-bonus-buy" type="button" data-role="buybonus" title="Pay 50× bet to instantly trigger free spins">💰 BUY BONUS<span class="ts-bonus-cost" data-role="bonuscost"> ($${(bet * BONUS_BUY_MULT).toLocaleString()})</span></button>
                 </div>
                 <div class="ts-paytable">
                     <div class="ts-paytable-head">
@@ -132,10 +143,32 @@
                     if (spinning || freeSpinsLeft > 0) return;
                     bet = parseInt(btn.dataset.bet, 10);
                     updateSpinBtn();
+                    updateBonusBtn();
                     Casino.playSound('click');
                 });
             });
             $$('[data-role=spin]').addEventListener('click', spin);
+            $$('[data-role=buybonus]').addEventListener('click', buyBonus);
+        }
+
+        function buyBonus() {
+            if (spinning || freeSpinsLeft > 0) return;
+            const cost = bet * BONUS_BUY_MULT;
+            if (!Casino.buyBonusFlat(cost)) {
+                showMsg(`Need $${cost.toLocaleString()} to buy bonus`, 'lose');
+                return;
+            }
+            freeSpinsLeft = freeSpinGrant;
+            freeSpinTotal = freeSpinGrant;
+            freeSpinWinSum = 0;
+            winChain = 0;
+            showMsg(`💰 Bonus bought! ${freeSpinGrant} free spins at ${freeSpinMult}×`, 'win');
+            playThemeSound(theme, 'freeSpin');
+            Casino.showWinEffect(freeSpinGrant);
+            updateFsBar();
+            updateChainBar();
+            updateBonusBtn();
+            setTimeout(() => { if (!spinning) spin(); }, 1200);
         }
 
         function resetReels() {
@@ -164,6 +197,31 @@
             } else {
                 bar.style.display = 'none';
             }
+        }
+
+        function updateChainBar() {
+            const bar = $$('[data-role=chainbar]');
+            if (!bar) return;
+            if (winChain > 0) {
+                bar.style.display = 'flex';
+                const dots = $$('[data-role=chaindots]');
+                dots.innerHTML = CHAIN_MULTS.slice(1).map((_, i) =>
+                    `<span class="ts-chain-dot${i < winChain ? ' lit' : ''}"></span>`).join('');
+                const nextMult = CHAIN_MULTS[Math.min(winChain, CHAIN_MULTS.length - 1)];
+                $$('[data-role=chainmult]').textContent = `×${nextMult} next win`;
+            } else {
+                bar.style.display = 'none';
+            }
+        }
+
+        function updateBonusBtn() {
+            const btn = $$('[data-role=buybonus]');
+            const costEl = $$('[data-role=bonuscost]');
+            if (!btn || !costEl) return;
+            const cost = bet * BONUS_BUY_MULT;
+            costEl.textContent = ` ($${cost.toLocaleString()})`;
+            btn.disabled = spinning || freeSpinsLeft > 0 || Casino.balance < cost;
+            btn.style.display = (freeSpinsLeft > 0) ? 'none' : '';
         }
 
         function showMsg(text, cls) {
@@ -265,6 +323,21 @@
                 freeSpinWinSum += win;
             }
 
+            // Win Chain — consecutive paid-spin wins multiply the next payout.
+            // Doesn't apply on the very first win of a chain, builds from there.
+            if (!wasFreeSpin && win > 0 && winChain > 0) {
+                const chainMult = CHAIN_MULTS[Math.min(winChain, CHAIN_MULTS.length - 1)];
+                if (chainMult > 1) {
+                    win *= chainMult;
+                    label = `[🔥 CHAIN ${chainMult}×] ` + label;
+                }
+            }
+            // Update chain state (only on paid spins so free-spin no-wins don't break it).
+            if (!wasFreeSpin) {
+                if (win > 0) winChain = Math.min(winChain + 1, CHAIN_MULTS.length - 1);
+                else winChain = 0;
+            }
+
             if (win > 0) {
                 Casino.changeBalance(win);
                 showMsg(label, 'win');
@@ -284,6 +357,8 @@
             if (btn) btn.disabled = false;
             updateSpinBtn();
             updateFsBar();
+            updateChainBar();
+            updateBonusBtn();
 
             // Auto-continue free spin round.
             if (freeSpinsLeft > 0) {

@@ -1,5 +1,8 @@
 /* Themed single-line 3-reel slot machines.
-   One generic engine + 10 theme configs registered as Casino games. */
+   Generic engine + 20 themes registered as separate games.
+   Each theme has: symbol set with wild + scatter, weighted distribution,
+   payout table, color gradient, illustrated card art, sound palette,
+   and free-spin bonus rounds with a configurable multiplier. */
 (function () {
     'use strict';
 
@@ -15,26 +18,74 @@
         return symbols[symbols.length - 1];
     }
 
+    /* Theme-specific sound: builds tone spec from the theme's palette
+       and hands it to Casino.playTones (single shared AudioContext). */
+    function playThemeSound(theme, type) {
+        if (!Casino.playTones) return;
+        const pal = theme.palette || [400, 500, 600, 700];
+        const wave = theme.wave || 'sine';
+        let spec = [];
+        if (type === 'reelStop') {
+            spec = [{ freq: pal[0], wave, dur: 0.07, vol: 0.04 }];
+        } else if (type === 'spinStart') {
+            spec = [
+                { freq: pal[pal.length - 1] || pal[0], wave, dur: 0.12, vol: 0.04 },
+                { freq: pal[0] * 0.7, wave, start: 0.06, dur: 0.14, vol: 0.04 }
+            ];
+        } else if (type === 'win') {
+            spec = pal.map((f, i) => ({ freq: f, wave, start: i * 0.09, dur: 0.28, vol: 0.07 }));
+        } else if (type === 'bigWin') {
+            spec = [
+                ...pal.map((f, i) => ({ freq: f, wave, start: i * 0.08, dur: 0.3, vol: 0.07 })),
+                ...pal.map((f, i) => ({ freq: f * 2, wave, start: (pal.length + i) * 0.08, dur: 0.3, vol: 0.07 })),
+                ...pal.map((f, i) => ({ freq: f * 1.5, wave: 'triangle', start: i * 0.08, dur: 0.4, vol: 0.04 }))
+            ];
+        } else if (type === 'lose') {
+            spec = [
+                { freq: pal[0], wave, dur: 0.25, vol: 0.05 },
+                { freq: pal[0] * 0.6, wave, start: 0.18, dur: 0.4, vol: 0.05 }
+            ];
+        } else if (type === 'freeSpin') {
+            for (let octave = 0; octave < 2; octave++) {
+                pal.forEach((f, i) => {
+                    spec.push({ freq: f * (1 + octave * 0.5), wave, start: (octave * pal.length + i) * 0.1, dur: 0.35, vol: 0.07 });
+                    spec.push({ freq: f * 1.5 * (1 + octave * 0.3), wave: 'triangle', start: (octave * pal.length + i) * 0.1, dur: 0.3, vol: 0.04 });
+                });
+            }
+        }
+        Casino.playTones(spec);
+    }
+
     function makeSlotGame(theme) {
         let bet = 100;
         let spinning = false;
         let area = null;
+        let freeSpinsLeft = 0;
+        let freeSpinTotal = 0;       // total awarded in current round
+        let freeSpinWinSum = 0;      // cumulative win during current round
         const baseSym = theme.symbols[0];
+        const freeSpinMult = theme.freeSpinMultiplier || 2;
+        const freeSpinGrant = theme.freeSpinGrant || 8;
 
         function $$(sel) { return area && area.querySelector(sel); }
 
         function init(gameArea) {
             area = gameArea;
+            freeSpinsLeft = 0; freeSpinTotal = 0; freeSpinWinSum = 0;
             renderUI();
             resetReels();
             wireControls();
         }
 
         function renderUI() {
-            const payHtml = theme.symbols.map((s, i) => {
-                const pay = theme.payouts[s];
-                return `<span class="ts-pay-item"><span class="ts-sym">${s}</span>×3 = <b>${pay}×</b></span>`;
-            }).join('');
+            const payHtml = theme.symbols
+                .filter(s => theme.payouts[s])
+                .map(s => `<span class="ts-pay-item"><span class="ts-sym">${s}</span>×3 = <b>${theme.payouts[s]}×</b></span>`)
+                .join('');
+
+            const scatterInfo = theme.scatter
+                ? ` · <span class="ts-sym">${theme.scatter}</span> Scatter (3 = ${freeSpinGrant} free spins, ${freeSpinMult}×)`
+                : '';
 
             area.innerHTML = `
             <div class="themed-slot" style="--ts-g1:${theme.g1};--ts-g2:${theme.g2};--ts-accent:${theme.accent || '#fbbf24'}">
@@ -42,6 +93,10 @@
                     <div class="ts-banner">
                         <span class="ts-banner-icon">${theme.icon}</span>
                         <span class="ts-banner-title">${theme.name}</span>
+                    </div>
+                    <div class="ts-freespin-bar" data-role="fsbar" style="display:none;">
+                        <span class="ts-fs-text"><span class="ts-fs-icon">✨</span> FREE SPINS: <b data-role="fscount">0</b> / <b data-role="fstotal">0</b></span>
+                        <span class="ts-fs-mult">${freeSpinMult}× ALL WINS</span>
                     </div>
                     <div class="ts-reels-row">
                         <div class="ts-reel"><div class="ts-strip" data-reel="0"></div></div>
@@ -64,7 +119,7 @@
                 <div class="ts-paytable">
                     <div class="ts-paytable-head">
                         <span>Payouts (×bet)</span>
-                        <span><span class="ts-sym">${theme.wild}</span> Wild · Substitutes any symbol</span>
+                        <span><span class="ts-sym">${theme.wild}</span> Wild${scatterInfo}</span>
                     </div>
                     <div class="ts-paytable-grid">${payHtml}</div>
                 </div>
@@ -74,9 +129,9 @@
         function wireControls() {
             area.querySelectorAll('.bet-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
-                    if (spinning) return;
+                    if (spinning || freeSpinsLeft > 0) return;
                     bet = parseInt(btn.dataset.bet, 10);
-                    $$('.ts-spin').textContent = `SPIN — $${bet}`;
+                    updateSpinBtn();
                     Casino.playSound('click');
                 });
             });
@@ -92,19 +147,52 @@
             }
         }
 
+        function updateSpinBtn() {
+            const btn = $$('[data-role=spin]');
+            if (!btn) return;
+            if (freeSpinsLeft > 0) btn.textContent = `FREE SPIN (${freeSpinsLeft} left)`;
+            else btn.textContent = `SPIN — $${bet}`;
+        }
+
+        function updateFsBar() {
+            const bar = $$('[data-role=fsbar]');
+            if (!bar) return;
+            if (freeSpinsLeft > 0 || freeSpinTotal > 0) {
+                bar.style.display = 'flex';
+                $$('[data-role=fscount]').textContent = freeSpinsLeft;
+                $$('[data-role=fstotal]').textContent = freeSpinTotal;
+            } else {
+                bar.style.display = 'none';
+            }
+        }
+
+        function showMsg(text, cls) {
+            const m = $$('[data-role=msg]');
+            if (!m) return;
+            m.textContent = text;
+            m.className = 'ts-message game-message ' + (cls || '');
+        }
+
         function spin() {
             if (spinning) return;
-            if (!Casino.placeBet(bet)) {
-                $$('[data-role=msg]').textContent = 'Not enough chips!';
-                $$('[data-role=msg]').className = 'ts-message game-message lose';
-                return;
+            const usingFreeSpin = freeSpinsLeft > 0;
+
+            if (!usingFreeSpin) {
+                if (!Casino.placeBet(bet)) {
+                    showMsg('Not enough chips!', 'lose');
+                    return;
+                }
+            } else {
+                freeSpinsLeft--;
+                updateFsBar();
             }
+
             spinning = true;
             const btn = $$('[data-role=spin]');
-            btn.disabled = true; btn.textContent = 'SPINNING...';
-            $$('[data-role=msg]').textContent = 'Good luck!';
-            $$('[data-role=msg]').className = 'ts-message game-message';
-            Casino.playSound('click');
+            btn.disabled = true;
+            btn.textContent = usingFreeSpin ? `FREE SPIN...` : 'SPINNING...';
+            showMsg(usingFreeSpin ? '✨ Free spin!' : 'Good luck!', '');
+            playThemeSound(theme, 'spinStart');
 
             const result = [pick(), pick(), pick()];
             const spinCounts = [16, 22, 28];
@@ -122,63 +210,103 @@
                     strip.style.transition = `transform ${1.4 + r * 0.5}s cubic-bezier(0.2, 0.85, 0.25, 1)`;
                     strip.style.transform = `translateY(${offset}px)`;
                 });
-                setTimeout(() => Casino.playSound('click'), (1.4 + r * 0.5) * 1000);
+                setTimeout(() => playThemeSound(theme, 'reelStop'), (1.4 + r * 0.5) * 1000);
             });
 
-            setTimeout(() => evaluate(result), (1.4 + 2 * 0.5) * 1000 + 200);
+            setTimeout(() => evaluate(result, usingFreeSpin), (1.4 + 2 * 0.5) * 1000 + 250);
         }
 
         function pick() { return weightedPick(theme.symbols, theme.weights); }
 
-        function evaluate(result) {
-            const msg = $$('[data-role=msg]');
+        function evaluate(result, wasFreeSpin) {
+            const scatterCount = theme.scatter ? result.filter(s => s === theme.scatter).length : 0;
             const wild = theme.wild;
-            // Determine "matched symbol" by treating wilds as flexible.
-            const nonWild = result.filter(s => s !== wild);
-            let payoutSym = null;
-            if (nonWild.length === 0) {
-                // 3 wilds → top payout × 5
-                payoutSym = '__triple_wild__';
-            } else if (nonWild.every(s => s === nonWild[0])) {
-                payoutSym = nonWild[0]; // all matching (with wilds substituting)
+            let win = 0, label = '', isBig = false;
+
+            // Three-scatter bonus: free spins (in addition to any normal line wins).
+            if (scatterCount >= 3) {
+                freeSpinsLeft += freeSpinGrant;
+                freeSpinTotal += freeSpinGrant;
+                label = `${theme.scatter}×3 BONUS! +${freeSpinGrant} FREE SPINS (${freeSpinMult}×)`;
+                showMsg(label, 'win');
+                playThemeSound(theme, 'freeSpin');
+                Casino.showWinEffect(freeSpinGrant);
+                updateFsBar();
+                finishSpinAndContinue();
+                return;
             }
 
-            let win = 0, label = '';
-            if (payoutSym === '__triple_wild__') {
-                const maxPayout = Math.max(...Object.values(theme.payouts));
-                win = bet * maxPayout * 5;
-                label = `🎆 TRIPLE ${wild} MEGA JACKPOT! 🎆`;
-            } else if (payoutSym && result.length === 3) {
-                const mult = theme.payouts[payoutSym] || 0;
-                win = bet * mult;
-                const wildsUsed = result.filter(s => s === wild).length;
-                label = wildsUsed
-                    ? `3× ${payoutSym} (${wildsUsed} wild!) — Won $${win.toLocaleString()}!`
-                    : `3× ${payoutSym}! Won $${win.toLocaleString()}!`;
+            // Normal payline eval — treat scatters as neutral (not a match).
+            const matchPool = result.filter(s => s !== theme.scatter);
+            if (matchPool.length === result.length) { // no scatters in result
+                const nonWild = result.filter(s => s !== wild);
+                if (nonWild.length === 0) {
+                    // 3 wilds = mega jackpot (5× top symbol payout)
+                    const maxPay = Math.max(...Object.values(theme.payouts));
+                    win = bet * maxPay * 5;
+                    label = `🎆 TRIPLE ${wild} MEGA JACKPOT! 🎆`;
+                    isBig = true;
+                } else if (nonWild.every(s => s === nonWild[0])) {
+                    const sym = nonWild[0];
+                    const mult = theme.payouts[sym] || 0;
+                    if (mult > 0) {
+                        win = bet * mult;
+                        const wildsUsed = result.filter(s => s === wild).length;
+                        label = wildsUsed
+                            ? `3× ${sym} (${wildsUsed} wild${wildsUsed > 1 ? 's' : ''}!) — Won $${win.toLocaleString()}!`
+                            : `3× ${sym}! Won $${win.toLocaleString()}!`;
+                    }
+                }
+            }
+
+            if (wasFreeSpin && win > 0) {
+                win *= freeSpinMult;
+                label = `[FREE ${freeSpinMult}×] ` + label;
+                freeSpinWinSum += win;
             }
 
             if (win > 0) {
                 Casino.changeBalance(win);
-                msg.textContent = label;
-                msg.className = 'ts-message game-message win';
-                if (win >= bet * 25) { Casino.showWinEffect(win); Casino.playSound('jackpot'); }
-                else Casino.playSound('win');
+                showMsg(label, 'win');
+                if (isBig || win >= bet * 25) { Casino.showWinEffect(win); playThemeSound(theme, 'bigWin'); }
+                else playThemeSound(theme, 'win');
             } else {
-                msg.textContent = result.join(' · ') + ' — no win, try again';
-                msg.className = 'ts-message game-message lose';
-                Casino.playSound('lose');
+                showMsg(result.join('  ·  ') + ' — no win', 'lose');
+                if (!wasFreeSpin) playThemeSound(theme, 'lose');
             }
 
-            spinning = false;
-            const btn = $$('[data-role=spin]');
-            btn.disabled = false;
-            btn.textContent = `SPIN — $${bet}`;
+            finishSpinAndContinue();
         }
 
-        return { init, destroy() { spinning = false; } };
+        function finishSpinAndContinue() {
+            spinning = false;
+            const btn = $$('[data-role=spin]');
+            if (btn) btn.disabled = false;
+            updateSpinBtn();
+            updateFsBar();
+
+            // Auto-continue free spin round.
+            if (freeSpinsLeft > 0) {
+                setTimeout(() => { if (!spinning && freeSpinsLeft > 0) spin(); }, 1600);
+            } else if (freeSpinTotal > 0) {
+                // Round just ended — show summary.
+                const summary = freeSpinWinSum > 0
+                    ? `🎉 Free spins complete! Total won: $${freeSpinWinSum.toLocaleString()}`
+                    : `Free spins complete — no wins this round.`;
+                setTimeout(() => showMsg(summary, freeSpinWinSum > 0 ? 'win' : ''), 200);
+                freeSpinTotal = 0;
+                freeSpinWinSum = 0;
+                updateFsBar();
+            }
+        }
+
+        return {
+            init,
+            destroy() { spinning = false; freeSpinsLeft = 0; freeSpinTotal = 0; freeSpinWinSum = 0; }
+        };
     }
 
-    /* Lobby card art — a themed slot frame with the centerpiece symbol. */
+    /* Lobby card art — themed slot frame with the centerpiece symbol. */
     function makeArt(centerEmoji, accentEmoji) {
         return `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
             <rect x="14" y="38" width="92" height="58" rx="10" fill="rgba(0,0,0,.45)" stroke="rgba(255,255,255,.4)" stroke-width="2"/>
@@ -194,6 +322,7 @@
     }
 
     const THEMES = [
+        // ---- Original 10 (now with scatter + palette + free spins) ----
         {
             id: 'slot_egypt', name: 'Pharaoh Riches', icon: '𓂀',
             desc: 'Treasures of the Nile await',
@@ -201,10 +330,11 @@
             studio: 'PYRAMID GAMING',
             art: makeArt('☥', '𓂀'),
             tagline: 'Awaken the gods of Egypt!',
-            symbols: ['🐍', '🪲', '☥', '🏺', '𓂀', '🔱'],
-            weights: [0.32, 0.25, 0.18, 0.13, 0.08, 0.04],
+            symbols: ['🐍', '🪲', '☥', '🏺', '𓂀', '🔱', '⭐'],
+            weights: [0.30, 0.22, 0.18, 0.13, 0.08, 0.04, 0.05],
             payouts: { '🐍': 4, '🪲': 8, '☥': 15, '🏺': 40, '𓂀': 100, '🔱': 250 },
-            wild: '🔱'
+            wild: '🔱', scatter: '⭐',
+            palette: [220, 247, 262, 330, 392], wave: 'sine'
         },
         {
             id: 'slot_fruit', name: 'Fruit Cocktail', icon: '🍒',
@@ -213,10 +343,11 @@
             studio: 'CLASSIC REELS',
             art: makeArt('🍒', '🍋'),
             tagline: 'Sun-kissed and juicy wins!',
-            symbols: ['🍒', '🍋', '🍊', '🍇', '🍉', '🔔', '7️⃣'],
-            weights: [0.28, 0.22, 0.18, 0.13, 0.10, 0.06, 0.03],
+            symbols: ['🍒', '🍋', '🍊', '🍇', '🍉', '🔔', '7️⃣', '🍓'],
+            weights: [0.26, 0.20, 0.17, 0.12, 0.09, 0.06, 0.05, 0.05],
             payouts: { '🍒': 3, '🍋': 5, '🍊': 8, '🍇': 12, '🍉': 25, '🔔': 75, '7️⃣': 200 },
-            wild: '7️⃣'
+            wild: '7️⃣', scatter: '🍓',
+            palette: [262, 330, 392, 523], wave: 'triangle'
         },
         {
             id: 'slot_pirate', name: "Pirate's Bounty", icon: '🏴‍☠️',
@@ -225,10 +356,11 @@
             studio: 'BLACKBEARD STUDIOS',
             art: makeArt('💀', '🏴‍☠️'),
             tagline: 'Plunder the seven seas!',
-            symbols: ['🦜', '⚓', '⚔️', '🗝️', '💀', '🪙', '🏴‍☠️'],
-            weights: [0.30, 0.22, 0.18, 0.13, 0.10, 0.05, 0.02],
+            symbols: ['🦜', '⚓', '⚔️', '🗝️', '💀', '🪙', '🏴‍☠️', '🗺️'],
+            weights: [0.28, 0.20, 0.17, 0.12, 0.10, 0.05, 0.03, 0.05],
             payouts: { '🦜': 3, '⚓': 6, '⚔️': 10, '🗝️': 20, '💀': 50, '🪙': 100, '🏴‍☠️': 300 },
-            wild: '🏴‍☠️'
+            wild: '🏴‍☠️', scatter: '🗺️',
+            palette: [196, 247, 294, 392], wave: 'sawtooth'
         },
         {
             id: 'slot_aztec', name: 'Aztec Gold', icon: '🗿',
@@ -237,10 +369,11 @@
             studio: 'JUNGLE PRAGMA',
             art: makeArt('🗿', '🌞'),
             tagline: 'Awaken ancient riches!',
-            symbols: ['🌿', '🐍', '🐆', '🌞', '🗿', '💎', '👑'],
-            weights: [0.30, 0.22, 0.18, 0.13, 0.09, 0.05, 0.03],
+            symbols: ['🌿', '🐍', '🐆', '🌞', '🗿', '💎', '👑', '🌋'],
+            weights: [0.28, 0.20, 0.17, 0.12, 0.09, 0.05, 0.03, 0.06],
             payouts: { '🌿': 3, '🐍': 5, '🐆': 10, '🌞': 20, '🗿': 50, '💎': 100, '👑': 250 },
-            wild: '👑'
+            wild: '👑', scatter: '🌋',
+            palette: [196, 233, 277, 349, 415], wave: 'sine'
         },
         {
             id: 'slot_western', name: 'Wild West', icon: '🤠',
@@ -249,10 +382,11 @@
             studio: 'SADDLE UP GAMES',
             art: makeArt('🐎', '🤠'),
             tagline: 'High noon — draw to win!',
-            symbols: ['🌵', '👢', '🐎', '🔫', '⭐', '💰', '🤠'],
-            weights: [0.30, 0.22, 0.18, 0.13, 0.09, 0.05, 0.03],
+            symbols: ['🌵', '👢', '🐎', '🔫', '⭐', '💰', '🤠', '🎯'],
+            weights: [0.28, 0.20, 0.17, 0.12, 0.09, 0.05, 0.03, 0.06],
             payouts: { '🌵': 3, '👢': 5, '🐎': 10, '🔫': 20, '⭐': 50, '💰': 100, '🤠': 200 },
-            wild: '🤠'
+            wild: '🤠', scatter: '🎯',
+            palette: [261, 329, 392, 466, 523], wave: 'triangle'
         },
         {
             id: 'slot_space', name: 'Galaxy Spin', icon: '🚀',
@@ -261,10 +395,11 @@
             studio: 'NEON COSMOS',
             art: makeArt('🪐', '🚀'),
             tagline: 'Blast off to cosmic wins!',
-            symbols: ['💫', '⭐', '🛸', '👽', '🪐', '☄️', '🚀'],
-            weights: [0.30, 0.22, 0.18, 0.13, 0.09, 0.05, 0.03],
+            symbols: ['💫', '⭐', '🛸', '👽', '🪐', '☄️', '🚀', '🌌'],
+            weights: [0.27, 0.20, 0.17, 0.12, 0.09, 0.05, 0.03, 0.07],
             payouts: { '💫': 3, '⭐': 5, '🛸': 10, '👽': 20, '🪐': 50, '☄️': 100, '🚀': 300 },
-            wild: '🚀'
+            wild: '🚀', scatter: '🌌',
+            palette: [220, 247, 277, 311, 349, 392], wave: 'sine'
         },
         {
             id: 'slot_dragon', name: "Dragon's Fortune", icon: '🐉',
@@ -273,10 +408,11 @@
             studio: 'IMPERIAL ORIENT',
             art: makeArt('🐉', '🏮'),
             tagline: 'Summon the dragon!',
-            symbols: ['🎋', '🏮', '🐟', '☯️', '🪙', '💰', '🐉'],
-            weights: [0.30, 0.22, 0.18, 0.13, 0.09, 0.05, 0.03],
+            symbols: ['🎋', '🏮', '🐟', '☯️', '🪙', '💰', '🐉', '🧧'],
+            weights: [0.27, 0.20, 0.17, 0.12, 0.09, 0.05, 0.03, 0.07],
             payouts: { '🎋': 3, '🏮': 5, '🐟': 10, '☯️': 20, '🪙': 50, '💰': 125, '🐉': 250 },
-            wild: '🐉'
+            wild: '🐉', scatter: '🧧',
+            palette: [261, 293, 349, 392, 440], wave: 'sine'
         },
         {
             id: 'slot_candy', name: 'Sweet Bonanza', icon: '🍭',
@@ -285,10 +421,11 @@
             studio: 'CANDY KINGDOM',
             art: makeArt('🍭', '🍬'),
             tagline: 'A sugar rush of wins!',
-            symbols: ['🍪', '🍫', '🍩', '🧁', '🍰', '🍬', '🍭'],
-            weights: [0.30, 0.22, 0.18, 0.13, 0.09, 0.05, 0.03],
+            symbols: ['🍪', '🍫', '🍩', '🧁', '🍰', '🍬', '🍭', '🌈'],
+            weights: [0.27, 0.20, 0.17, 0.12, 0.09, 0.05, 0.03, 0.07],
             payouts: { '🍪': 3, '🍫': 5, '🍩': 10, '🧁': 20, '🍰': 40, '🍬': 80, '🍭': 200 },
-            wild: '🍭'
+            wild: '🍭', scatter: '🌈',
+            palette: [392, 440, 523, 587, 659], wave: 'triangle'
         },
         {
             id: 'slot_halloween', name: 'Halloween Spooks', icon: '🎃',
@@ -297,10 +434,11 @@
             studio: 'MIDNIGHT REELS',
             art: makeArt('🎃', '👻'),
             tagline: 'Boo! Win big this Hallows Eve!',
-            symbols: ['🕷️', '🦇', '👻', '🧙', '💀', '🎃', '👹'],
-            weights: [0.30, 0.22, 0.18, 0.13, 0.09, 0.05, 0.03],
+            symbols: ['🕷️', '🦇', '👻', '🧙', '💀', '🎃', '👹', '🕯️'],
+            weights: [0.27, 0.20, 0.17, 0.12, 0.09, 0.05, 0.03, 0.07],
             payouts: { '🕷️': 3, '🦇': 5, '👻': 10, '🧙': 20, '💀': 50, '🎃': 100, '👹': 250 },
-            wild: '🎃'
+            wild: '🎃', scatter: '🕯️',
+            palette: [220, 261, 311, 369, 440], wave: 'square'
         },
         {
             id: 'slot_norse', name: 'Norse Gods', icon: '⚒️',
@@ -309,10 +447,143 @@
             studio: 'VALHALLA STUDIOS',
             art: makeArt('⚒️', '⚡'),
             tagline: 'For Asgard and gold!',
-            symbols: ['🌳', '🛡️', '🐺', '🦅', '⚡', '👁️', '⚒️'],
-            weights: [0.30, 0.22, 0.18, 0.13, 0.09, 0.05, 0.03],
+            symbols: ['🌳', '🛡️', '🐺', '🦅', '⚡', '👁️', '⚒️', '🪓'],
+            weights: [0.27, 0.20, 0.17, 0.12, 0.09, 0.05, 0.03, 0.07],
             payouts: { '🌳': 3, '🛡️': 5, '🐺': 10, '🦅': 20, '⚡': 50, '👁️': 100, '⚒️': 250 },
-            wild: '⚒️'
+            wild: '⚒️', scatter: '🪓',
+            palette: [110, 147, 196, 247, 294], wave: 'sawtooth'
+        },
+
+        // ---- 10 new themes ----
+        {
+            id: 'slot_olympus', name: 'Olympus Gods', icon: '⚡',
+            desc: 'Zeus and Hera throw lightning jackpots',
+            g1: '#0891b2', g2: '#1e1b4b', accent: '#fbbf24',
+            studio: 'OLYMPUS HALL',
+            art: makeArt('🏛️', '⚡'),
+            tagline: 'Hear the thunder of Olympus!',
+            symbols: ['🍇', '🦉', '🏛️', '🌊', '⚔️', '👑', '⚡', '🌟'],
+            weights: [0.26, 0.20, 0.17, 0.12, 0.10, 0.06, 0.03, 0.06],
+            payouts: { '🍇': 3, '🦉': 5, '🏛️': 10, '🌊': 20, '⚔️': 50, '👑': 100, '⚡': 250 },
+            wild: '⚡', scatter: '🌟',
+            palette: [196, 247, 294, 392, 494], wave: 'sine'
+        },
+        {
+            id: 'slot_atlantis', name: 'Atlantis Treasures', icon: '🧜‍♀️',
+            desc: 'Sunken city, pearls and kraken gold',
+            g1: '#06b6d4', g2: '#164e63', accent: '#fde047',
+            studio: 'DEEP BLUE STUDIOS',
+            art: makeArt('🐚', '🧜‍♀️'),
+            tagline: 'Dive for sunken treasure!',
+            symbols: ['🐚', '🐠', '🦀', '🐙', '🧜‍♀️', '🦑', '💎', '⭐'],
+            weights: [0.27, 0.20, 0.17, 0.13, 0.09, 0.05, 0.03, 0.06],
+            payouts: { '🐚': 3, '🐠': 5, '🦀': 10, '🐙': 20, '🧜‍♀️': 50, '🦑': 100, '💎': 250 },
+            wild: '💎', scatter: '⭐',
+            palette: [220, 277, 330, 415, 494], wave: 'sine'
+        },
+        {
+            id: 'slot_cyber', name: 'Cyber Spin', icon: '🤖',
+            desc: 'Neon-drenched future jackpots',
+            g1: '#22d3ee', g2: '#581c87', accent: '#f472b6',
+            studio: 'NEON FUTURE',
+            art: makeArt('💾', '🤖'),
+            tagline: 'Hack the matrix for chips!',
+            symbols: ['💾', '🎮', '📡', '🤖', '🔋', '💿', '🌐', '👾'],
+            weights: [0.27, 0.20, 0.17, 0.13, 0.09, 0.05, 0.03, 0.06],
+            payouts: { '💾': 3, '🎮': 5, '📡': 10, '🤖': 20, '🔋': 50, '💿': 100, '🌐': 250 },
+            wild: '🌐', scatter: '👾',
+            palette: [110, 220, 277, 330, 440], wave: 'square'
+        },
+        {
+            id: 'slot_dj', name: 'DJ Beats', icon: '🎧',
+            desc: 'Drop the bass, drop the chips',
+            g1: '#a855f7', g2: '#1e1b4b', accent: '#22d3ee',
+            studio: 'CLUB NIGHTS',
+            art: makeArt('🎧', '🎵'),
+            tagline: 'Spin the decks!',
+            symbols: ['🎵', '🎷', '🎸', '🎹', '🎤', '🎧', '🪩', '💫'],
+            weights: [0.27, 0.20, 0.17, 0.13, 0.09, 0.05, 0.03, 0.06],
+            payouts: { '🎵': 3, '🎷': 5, '🎸': 10, '🎹': 20, '🎤': 50, '🎧': 100, '🪩': 250 },
+            wild: '🪩', scatter: '💫',
+            palette: [110, 165, 220, 330, 440, 523], wave: 'sawtooth'
+        },
+        {
+            id: 'slot_rome', name: 'Rome Triumph', icon: '🏛️',
+            desc: 'Roman legions march to victory',
+            g1: '#dc2626', g2: '#3b0764', accent: '#fbbf24',
+            studio: 'IMPERIAL GAMES',
+            art: makeArt('🛡️', '👑'),
+            tagline: 'Veni, vidi, vici!',
+            symbols: ['🍇', '⚔️', '🛡️', '🏛️', '🦅', '👑', '⚜️', '🌟'],
+            weights: [0.27, 0.20, 0.17, 0.13, 0.09, 0.05, 0.03, 0.06],
+            payouts: { '🍇': 3, '⚔️': 5, '🛡️': 10, '🏛️': 20, '🦅': 50, '👑': 100, '⚜️': 250 },
+            wild: '⚜️', scatter: '🌟',
+            palette: [220, 277, 330, 369, 415, 494], wave: 'sine'
+        },
+        {
+            id: 'slot_viking', name: 'Viking Raid', icon: '🪓',
+            desc: 'For Odin! For gold!',
+            g1: '#1e40af', g2: '#1e1b4b', accent: '#cbd5e1',
+            studio: 'LONGSHIP STUDIOS',
+            art: makeArt('🪓', '⚔️'),
+            tagline: 'Raid the kingdom of gold!',
+            symbols: ['🍺', '🛡️', '🪓', '🐺', '⚔️', '🪙', '👑', '🔥'],
+            weights: [0.27, 0.20, 0.17, 0.13, 0.09, 0.05, 0.03, 0.06],
+            payouts: { '🍺': 3, '🛡️': 5, '🪓': 10, '🐺': 20, '⚔️': 50, '🪙': 100, '👑': 250 },
+            wild: '👑', scatter: '🔥',
+            palette: [98, 147, 196, 247, 294], wave: 'triangle'
+        },
+        {
+            id: 'slot_safari', name: 'Safari Wild', icon: '🦁',
+            desc: 'African plains, lions and elephants',
+            g1: '#ca8a04', g2: '#365314', accent: '#fde047',
+            studio: 'SAVANNA REELS',
+            art: makeArt('🦁', '🌅'),
+            tagline: 'King of the jungle!',
+            symbols: ['🌿', '🦓', '🦒', '🐘', '🦏', '🦁', '💎', '🌅'],
+            weights: [0.27, 0.20, 0.17, 0.13, 0.09, 0.05, 0.03, 0.06],
+            payouts: { '🌿': 3, '🦓': 5, '🦒': 10, '🐘': 20, '🦏': 50, '🦁': 100, '💎': 250 },
+            wild: '💎', scatter: '🌅',
+            palette: [196, 247, 294, 349, 440], wave: 'sine'
+        },
+        {
+            id: 'slot_frozen', name: 'Frozen Festival', icon: '❄️',
+            desc: 'Snow, gifts, and yuletide gold',
+            g1: '#0ea5e9', g2: '#1e1b4b', accent: '#fda4af',
+            studio: 'POLAR STAR',
+            art: makeArt('🎁', '❄️'),
+            tagline: 'Ho ho ho!',
+            symbols: ['🔔', '🎁', '🍪', '⛄', '🦌', '🎅', '🌟', '✨'],
+            weights: [0.27, 0.20, 0.17, 0.13, 0.09, 0.05, 0.03, 0.06],
+            payouts: { '🔔': 3, '🎁': 5, '🍪': 10, '⛄': 20, '🦌': 50, '🎅': 100, '🌟': 250 },
+            wild: '🌟', scatter: '✨',
+            palette: [523, 587, 659, 698, 784], wave: 'sine'
+        },
+        {
+            id: 'slot_fairy', name: 'Fairy Castle', icon: '🏰',
+            desc: 'Princesses, dragons and enchanted gems',
+            g1: '#a855f7', g2: '#831843', accent: '#fde047',
+            studio: 'STORYBOOK SPIN',
+            art: makeArt('🏰', '👸'),
+            tagline: 'Once upon a jackpot!',
+            symbols: ['🦄', '🧚', '🐸', '👸', '🏰', '👑', '💎', '🌠'],
+            weights: [0.27, 0.20, 0.17, 0.13, 0.09, 0.05, 0.03, 0.06],
+            payouts: { '🦄': 3, '🧚': 5, '🐸': 10, '👸': 20, '🏰': 50, '👑': 100, '💎': 250 },
+            wild: '💎', scatter: '🌠',
+            palette: [392, 440, 494, 587, 659], wave: 'triangle'
+        },
+        {
+            id: 'slot_mardi', name: 'Mardi Gras', icon: '🎭',
+            desc: 'Carnival of color and gold',
+            g1: '#a855f7', g2: '#15803d', accent: '#fbbf24',
+            studio: 'CARNIVAL GAMES',
+            art: makeArt('🎭', '🎉'),
+            tagline: 'Let the good times roll!',
+            symbols: ['🎵', '🪅', '🎺', '🎭', '🎊', '🍾', '👑', '🎉'],
+            weights: [0.27, 0.20, 0.17, 0.13, 0.09, 0.05, 0.03, 0.06],
+            payouts: { '🎵': 3, '🪅': 5, '🎺': 10, '🎭': 20, '🎊': 50, '🍾': 100, '👑': 250 },
+            wild: '👑', scatter: '🎉',
+            palette: [261, 311, 392, 466, 523], wave: 'triangle'
         }
     ];
 

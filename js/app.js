@@ -596,6 +596,35 @@ function playSound(type) {
 }
 window.Casino.playSound = playSound;
 
+/* Play an arbitrary sequence of tones — used by themed games for
+   genre-specific sound palettes (Egyptian pentatonic vs. cyberpunk
+   square waves, etc.). */
+window.Casino.playTones = function(spec) {
+    if (!Casino.soundEnabled) return;
+    primeAudio();
+    if (!audioCtx || !Array.isArray(spec)) return;
+    const ctx = audioCtx;
+    try {
+        spec.forEach(s => {
+            const wave = s.wave || 'sine';
+            const start = s.start || 0;
+            const dur = s.dur || 0.2;
+            const vol = s.vol != null ? s.vol : 0.06;
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = wave;
+            osc.frequency.setValueAtTime(s.freq, ctx.currentTime + start);
+            if (s.freqEnd) osc.frequency.exponentialRampToValueAtTime(s.freqEnd, ctx.currentTime + start + dur);
+            gain.gain.setValueAtTime(vol, ctx.currentTime + start);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + start + dur);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(ctx.currentTime + start);
+            osc.stop(ctx.currentTime + start + dur);
+        });
+    } catch(e) {}
+};
+
 /* ---- Lobby ---- */
 function getFilteredGames() {
     const q = ($('game-search')?.value || '').trim().toLowerCase();

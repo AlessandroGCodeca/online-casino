@@ -1,12 +1,14 @@
 # 🎰 Royal Flush Casino
 
-A polished, fully client-side online casino with **21 games** — built with vanilla HTML, CSS & JavaScript. No frameworks, no build step, no dependencies, no real money.
+A polished, fully client-side online casino with **31 games** — built with vanilla HTML, CSS & JavaScript. No frameworks, no build step, no dependencies, no real money.
 
 **[▶ Play Now](https://AlessandroGCodeca.github.io/online-casino/)**
 
 ## Games
 
-### 🎰 Slots (11)
+### 🎰 Slots (21)
+Every themed slot has its own symbol set, weighted distribution, payout table, wild symbol, scatter symbol that triggers **8 free spins at 2×** multiplier, themed sound palette (mystical Egyptian pentatonic, neon cyberpunk square waves, country triangles for the Wild West, etc.), and a triple-wild mega jackpot at 5× the top payout.
+
 | Game | Description |
 |------|-------------|
 | Mega Jackpot | 3×3 reels with 5 paylines, wilds, scatters and free-spin bonus rounds |
@@ -20,6 +22,16 @@ A polished, fully client-side online casino with **21 games** — built with van
 | Sweet Bonanza | Candy-coated wins — lollipops, donuts and gummies |
 | Halloween Spooks | Pumpkins, ghosts and witches' brew |
 | Norse Gods | Thor's hammer, Odin's eye and Valhalla payouts |
+| Olympus Gods | Zeus and Hera throw lightning jackpots |
+| Atlantis Treasures | Sunken city — pearls, kraken and mermaid gold |
+| Cyber Spin | Neon-drenched future jackpots with square-wave sound |
+| DJ Beats | Club nights — drop the bass, drop the chips |
+| Rome Triumph | Roman legions march to gold |
+| Viking Raid | Longships, axes and Asgard plunder |
+| Safari Wild | African plains — lions, elephants, savanna gold |
+| Frozen Festival | Snow, gifts and yuletide wins |
+| Fairy Castle | Princesses, dragons and enchanted gems |
+| Mardi Gras | Carnival of color and confetti |
 
 ### 🃏 Card Games
 | Game | Description |

@@ -64,6 +64,13 @@ const GAME_CARDS = [
     { id: 'plinko', name: 'Plinko', icon: '🟢', desc: 'Drop the ball and hit the multipliers!', accent: '#22c55e', category: 'instant' }
 ];
 
+const GAME_STUDIOS = {
+    slots: 'ROYAL ORIGINALS', blackjack: 'CLASSIC CASINO', roulette: 'EUROPEAN STYLE',
+    poker: 'CLASSIC CASINO', crash: 'ROYAL ORIGINALS', mines: 'ROYAL ORIGINALS',
+    dice: 'PROVABLY FAIR', baccarat: 'HIGH ROLLER', wheel: 'ROYAL ORIGINALS',
+    keno: 'LOTTERY HALL', plinko: 'ROYAL ORIGINALS'
+};
+
 const GAME_GRADIENTS = {
     slots:     { g1: '#ec4899', g2: '#9f1239' },
     blackjack: { g1: '#10b981', g2: '#064e3b' },
@@ -330,6 +337,9 @@ document.addEventListener('DOMContentLoaded', () => {
             playSound('click');
         });
     });
+
+    initSidebar();
+    initHelpBubble();
 
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
@@ -612,17 +622,42 @@ function buildGameCard(g, opts) {
     card.style.setProperty('--g1', grad.g1);
     card.style.setProperty('--g2', grad.g2);
     card.setAttribute('aria-label', `${g.name}: ${g.desc}`);
+    const studio = GAME_STUDIOS[g.id] || 'ORIGINAL';
     card.innerHTML = `
         ${badge}
         <div class="card-art">${art}</div>
         <div class="card-meta">
             <div class="card-name">${esc(g.name)}</div>
-            <div class="card-sub">ORIGINAL</div>
+            <div class="card-sub">${esc(studio)}</div>
         </div>
         <div class="card-play"><span>▶ PLAY</span></div>
     `;
     card.addEventListener('click', () => openGame(g.id));
+    attachTilt(card);
     return card;
+}
+
+/* Pointer-driven 3D tilt on cards. Skipped under prefers-reduced-motion
+   and on touch-primary devices. */
+const isTouchPrimary = matchMedia('(hover: none)').matches;
+function attachTilt(card) {
+    if (reducedMotion || isTouchPrimary) return;
+    let rafId = 0;
+    card.addEventListener('pointermove', e => {
+        const r = card.getBoundingClientRect();
+        const x = (e.clientX - r.left) / r.width;  // 0..1
+        const y = (e.clientY - r.top) / r.height;  // 0..1
+        const rx = (0.5 - y) * 8;  // tilt up to 8deg
+        const ry = (x - 0.5) * 10;
+        cancelAnimationFrame(rafId);
+        rafId = requestAnimationFrame(() => {
+            card.style.transform = `perspective(900px) rotateX(${rx}deg) rotateY(${ry}deg) translateY(-6px) scale(1.025)`;
+        });
+    });
+    card.addEventListener('pointerleave', () => {
+        cancelAnimationFrame(rafId);
+        card.style.transform = '';
+    });
 }
 function buildRow(title, icon, games, rowClass) {
     if (!games.length) return null;
@@ -760,6 +795,14 @@ function openGame(id) {
     Casino.playCounts[id] = (Casino.playCounts[id] || 0) + 1;
     saveState();
 
+    // Apply themed background tint
+    const grad = GAME_GRADIENTS[id];
+    if (grad) {
+        document.documentElement.style.setProperty('--game-g1', grad.g1);
+        document.documentElement.style.setProperty('--game-g2', grad.g2);
+        document.body.classList.add('in-game');
+    }
+
     lobby.classList.add('fade-out');
     setTimeout(() => {
         lobby.classList.add('hidden');
@@ -809,6 +852,9 @@ function showLobby() {
     }, delay);
 
     if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+
+    // Clear themed background tint
+    document.body.classList.remove('in-game');
 }
 
 /* ---- Stats & Achievements ---- */
@@ -1329,3 +1375,87 @@ function shuffle(arr) {
     return arr;
 }
 Object.assign(window.Casino, { createCardElement, createDeck, shuffle, esc, haptic });
+
+/* ---- Sidebar ---- */
+function initSidebar() {
+    const sidebar = document.querySelector('.sidebar');
+    if (!sidebar) return;
+    sidebar.querySelectorAll('[data-nav]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const nav = btn.dataset.nav;
+            playSound('click');
+            if (Casino.currentGame) showLobby();
+            // Defer so showLobby's transition has time to remove .hidden
+            setTimeout(() => handleSidebarNav(nav, btn), Casino.currentGame ? 320 : 0);
+        });
+    });
+}
+function handleSidebarNav(nav, btn) {
+    if (nav === 'home') {
+        // Reset filter to All, scroll to top.
+        const allTab = document.querySelector('.cat-tab[data-cat="all"]');
+        if (allTab) allTab.click();
+        window.scrollTo({ top: 0, behavior: reducedMotion ? 'auto' : 'smooth' });
+        markActiveSidebar(btn);
+    } else if (nav === 'cat') {
+        const tab = document.querySelector(`.cat-tab[data-cat="${btn.dataset.cat}"]`);
+        if (tab) tab.click();
+        scrollToSelector('#games-grid');
+        markActiveSidebar(btn);
+    } else if (nav === 'trending') {
+        const allTab = document.querySelector('.cat-tab[data-cat="all"]');
+        if (allTab && !allTab.classList.contains('active')) allTab.click();
+        scrollToSelector('#games-grid');
+        markActiveSidebar(btn);
+    } else if (nav === 'missions') {
+        scrollToSelector('.missions-section');
+        markActiveSidebar(btn);
+    } else if (nav === 'leaderboard') {
+        scrollToSelector('.leaderboard');
+        markActiveSidebar(btn);
+    } else if (nav === 'shop') {
+        openShop();
+    } else if (nav === 'stats') {
+        showStats();
+    }
+}
+function markActiveSidebar(btn) {
+    document.querySelectorAll('.sidebar-btn').forEach(b => b.classList.remove('active'));
+    if (btn && btn.classList.contains('sidebar-btn')) btn.classList.add('active');
+}
+function scrollToSelector(sel) {
+    const el = document.querySelector(sel);
+    if (!el) return;
+    const top = el.getBoundingClientRect().top + window.scrollY - 60;
+    window.scrollTo({ top, behavior: reducedMotion ? 'auto' : 'smooth' });
+}
+
+/* ---- Help bubble ---- */
+function initHelpBubble() {
+    const bubble = $('help-bubble');
+    const panel = $('help-panel');
+    if (!bubble || !panel) return;
+    bubble.addEventListener('click', () => {
+        const open = !panel.classList.contains('hidden');
+        if (open) {
+            panel.classList.add('hidden');
+            panel.setAttribute('aria-hidden', 'true');
+        } else {
+            panel.classList.remove('hidden');
+            panel.setAttribute('aria-hidden', 'false');
+        }
+        playSound('click');
+    });
+    $('close-help').addEventListener('click', () => {
+        panel.classList.add('hidden');
+        panel.setAttribute('aria-hidden', 'true');
+    });
+    // Close on outside click
+    document.addEventListener('click', e => {
+        if (panel.classList.contains('hidden')) return;
+        if (!panel.contains(e.target) && !bubble.contains(e.target)) {
+            panel.classList.add('hidden');
+            panel.setAttribute('aria-hidden', 'true');
+        }
+    });
+}

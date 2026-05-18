@@ -71,6 +71,128 @@ body {
 kbd { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 4px; padding: 1px 6px; font-size: 11px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--text-secondary); }
 
 .noscript-warning { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: var(--bg-primary); color: var(--text); padding: 40px; text-align: center; font-size: 18px; z-index: 9999; }
+
+/* In-game themed background tint (set when a game is open) */
+#game-tint {
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    opacity: 0;
+    background:
+        radial-gradient(ellipse 80% 60% at 50% 0%, var(--game-g1, transparent) 0%, transparent 60%),
+        radial-gradient(ellipse 80% 60% at 50% 100%, var(--game-g2, transparent) 0%, transparent 60%);
+    transition: opacity 0.5s ease;
+}
+body.in-game #game-tint { opacity: 0.22; }
+
+/* Left sidebar nav rail */
+.sidebar {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    width: 72px;
+    background: rgba(10, 14, 26, 0.85);
+    backdrop-filter: blur(20px);
+    border-right: 1px solid var(--glass-border);
+    z-index: 90;
+    flex-direction: column;
+    align-items: center;
+    padding: 14px 0;
+    gap: 8px;
+}
+.sidebar-brand {
+    display: flex; align-items: center; justify-content: center;
+    width: 48px; height: 48px;
+    background: linear-gradient(135deg, var(--green), #15803d);
+    border: none;
+    border-radius: 14px;
+    cursor: pointer;
+    margin-bottom: 8px;
+    box-shadow: 0 6px 16px rgba(34, 197, 94, 0.35);
+    transition: transform 0.2s ease;
+}
+.sidebar-brand:hover { transform: scale(1.06); }
+.sidebar-brand-icon { font-size: 24px; color: #fff; font-weight: 900; }
+.sidebar-nav { display: flex; flex-direction: column; gap: 4px; align-items: center; width: 100%; }
+.sidebar-btn {
+    position: relative;
+    width: 44px; height: 44px;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 20px;
+    border-radius: 10px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.18s ease;
+}
+.sidebar-btn:hover { background: var(--glass-bg); color: var(--text); transform: scale(1.05); }
+.sidebar-btn.active { background: rgba(212, 168, 67, 0.15); color: var(--gold-light); box-shadow: inset 3px 0 0 var(--gold); }
+.sidebar-tip {
+    position: absolute;
+    left: calc(100% + 12px);
+    background: rgba(10, 14, 26, 0.95);
+    color: var(--text);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--glass-border);
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(-4px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    z-index: 100;
+}
+.sidebar-btn:hover .sidebar-tip,
+.sidebar-btn:focus-visible .sidebar-tip { opacity: 1; transform: translateX(0); }
+.sidebar-divider { width: 32px; height: 1px; background: var(--glass-border); margin: 8px 0; }
+
+/* Push main content to make room for sidebar on wide screens */
+@media (min-width: 900px) {
+    .sidebar { display: flex; }
+    #top-bar, #lobby, #game-container { padding-left: 72px; }
+    .live-feed { left: 96px; }
+    .skip-link { left: 72px; }
+}
+
+/* Floating help bubble */
+.help-bubble {
+    position: fixed; bottom: 24px; right: 24px;
+    width: 56px; height: 56px;
+    background: linear-gradient(135deg, var(--green), #15803d);
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 24px;
+    color: #fff;
+    box-shadow: 0 10px 30px rgba(34, 197, 94, 0.4);
+    z-index: 150;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.help-bubble:hover { transform: scale(1.08); box-shadow: 0 14px 40px rgba(34, 197, 94, 0.55); }
+.help-panel {
+    position: fixed; bottom: 96px; right: 24px;
+    width: 320px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--glass-border);
+    border-radius: 14px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    z-index: 150;
+    overflow: hidden;
+    animation: slideUp 0.25s ease;
+}
+.help-panel-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--glass-border); }
+.help-panel-header h4 { font-size: 15px; font-weight: 800; color: var(--text); }
+.help-panel-body { padding: 16px 18px; font-size: 13px; color: var(--text-secondary); line-height: 1.5; }
+.help-panel-body p { margin-bottom: 12px; }
+.help-shortcuts { display: grid; gap: 8px; margin: 12px 0; }
+.help-shortcuts div { display: flex; align-items: center; gap: 8px; color: var(--text); }
+.help-foot { font-size: 12px; color: var(--text-muted); margin-top: 12px; }
+
+@media (max-width: 600px) {
+    .help-bubble { width: 48px; height: 48px; font-size: 20px; bottom: 16px; right: 16px; }
+    .help-panel { width: calc(100vw - 32px); right: 16px; bottom: 76px; }
+}
 .fade-out { opacity: 0; pointer-events: none; transition: opacity 0.3s; }
 .fade-in { opacity: 1; transition: opacity 0.3s; }
 .slide-up { animation: slideUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
@@ -404,7 +526,7 @@ kbd { background: var(--glass-bg); border: 1px solid var(--glass-border); border
 .you-tag { background: var(--gold); color: #0a0e1a; padding: 1px 8px; border-radius: 10px; font-size: 10px; font-weight: 800; letter-spacing: 1px; margin-left: 6px; vertical-align: middle; }
 
 /* Toasts */
-.toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 1000; display: flex; flex-direction: column; gap: 12px; pointer-events: none; max-width: calc(100vw - 48px); }
+.toast-container { position: fixed; bottom: 96px; right: 24px; z-index: 1000; display: flex; flex-direction: column; gap: 12px; pointer-events: none; max-width: calc(100vw - 48px); }
 .toast { background: var(--bg-secondary); border: 1px solid var(--gold); border-radius: 8px; padding: 12px 16px; color: var(--text); box-shadow: 0 4px 12px rgba(0,0,0,0.3); font-weight: 600; font-size: 14px; animation: slideUp 0.3s forwards; pointer-events: auto; }
 .toast-leaving { animation: fadeOut 0.3s forwards; }
 @keyframes fadeOut { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(8px); } }

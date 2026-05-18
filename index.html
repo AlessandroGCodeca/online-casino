@@ -18,6 +18,27 @@
 <body>
     <a href="#games-grid" class="skip-link">Skip to games</a>
     <div id="ambient-bg" aria-hidden="true"></div>
+    <div id="game-tint" aria-hidden="true"></div>
+
+    <!-- Left navigation rail -->
+    <aside class="sidebar" aria-label="Quick navigation">
+        <button class="sidebar-brand" type="button" data-nav="home" aria-label="Home">
+            <span class="sidebar-brand-icon" aria-hidden="true">♠</span>
+        </button>
+        <nav class="sidebar-nav">
+            <button class="sidebar-btn" type="button" data-nav="trending" aria-label="Trending games"><span aria-hidden="true">🔥</span><span class="sidebar-tip">Trending</span></button>
+            <button class="sidebar-btn" type="button" data-nav="cat" data-cat="cards" aria-label="Card games"><span aria-hidden="true">🃏</span><span class="sidebar-tip">Cards</span></button>
+            <button class="sidebar-btn" type="button" data-nav="cat" data-cat="spin" aria-label="Spin games"><span aria-hidden="true">🎡</span><span class="sidebar-tip">Spin</span></button>
+            <button class="sidebar-btn" type="button" data-nav="cat" data-cat="instant" aria-label="Instant games"><span aria-hidden="true">⚡</span><span class="sidebar-tip">Instant</span></button>
+            <div class="sidebar-divider" aria-hidden="true"></div>
+            <button class="sidebar-btn" type="button" data-nav="missions" aria-label="Daily missions"><span aria-hidden="true">🎯</span><span class="sidebar-tip">Missions</span></button>
+            <button class="sidebar-btn" type="button" data-nav="leaderboard" aria-label="Top winners"><span aria-hidden="true">🏆</span><span class="sidebar-tip">Top Winners</span></button>
+            <div class="sidebar-divider" aria-hidden="true"></div>
+            <button class="sidebar-btn" type="button" data-nav="shop" aria-label="Reward shop"><span aria-hidden="true">🛍️</span><span class="sidebar-tip">Shop</span></button>
+            <button class="sidebar-btn" type="button" data-nav="stats" aria-label="Statistics"><span aria-hidden="true">📊</span><span class="sidebar-tip">Stats</span></button>
+        </nav>
+    </aside>
+
     <header id="top-bar">
         <div class="header-left">
             <a href="#" class="logo" id="logo-link" aria-label="Royal Flush Casino home"><span class="logo-icon" aria-hidden="true">♠</span><span class="logo-text">Royal Flush</span></a>
@@ -143,6 +164,27 @@
     <div id="toast-container" class="toast-container" aria-live="polite" aria-atomic="false"></div>
 
     <div id="win-overlay" class="hidden" aria-hidden="true"></div>
+
+    <!-- Floating help bubble -->
+    <button id="help-bubble" class="help-bubble" type="button" aria-label="Help and keyboard shortcuts" title="Help">
+        <span aria-hidden="true">💬</span>
+    </button>
+    <div id="help-panel" class="help-panel hidden" role="dialog" aria-labelledby="help-panel-title" aria-hidden="true">
+        <div class="help-panel-header">
+            <h4 id="help-panel-title">Quick Help</h4>
+            <button id="close-help" class="modal-close" type="button" aria-label="Close help">✕</button>
+        </div>
+        <div class="help-panel-body">
+            <p>Royal Flush is a free, virtual-currency casino — no real money, ever.</p>
+            <div class="help-shortcuts">
+                <div><kbd>Esc</kbd> Back to lobby / close modal</div>
+                <div><kbd>Space</kbd> Trigger primary action</div>
+                <div><kbd>/</kbd> Focus search</div>
+                <div><kbd>Tab</kbd> Navigate buttons</div>
+            </div>
+            <p class="help-foot">Out of chips? Wait for the rescue button or claim your daily bonus.</p>
+        </div>
+    </div>
 
     <noscript>
         <div class="noscript-warning">Royal Flush Casino requires JavaScript to run. Please enable it and reload the page.</div>

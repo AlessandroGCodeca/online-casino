@@ -51,7 +51,7 @@ const ACHIEVEMENTS_DATA = [
 ];
 
 const GAME_CARDS = [
-    { id: 'slots', name: 'Slot Machine', icon: '🎰', desc: 'Spin the reels and hit the jackpot!', accent: '#e74c3c', category: 'spin' },
+    { id: 'slots', name: 'Mega Jackpot', icon: '🎰', desc: '3×3 with 5 paylines and free spins!', accent: '#e74c3c', category: 'slots' },
     { id: 'blackjack', name: 'Blackjack', icon: '🃏', desc: 'Beat the dealer to 21!', accent: '#22c55e', category: 'cards' },
     { id: 'roulette', name: 'Roulette', icon: '🎡', desc: 'Place your bets on the wheel!', accent: '#8b5cf6', category: 'spin' },
     { id: 'poker', name: 'Video Poker', icon: '🂡', desc: 'Jacks or Better draw poker!', accent: '#3b82f6', category: 'cards' },
@@ -693,6 +693,7 @@ function renderLobby() {
     }
 
     const categoryDefs = [
+        { cat: 'slots',   title: 'Slots',       icon: '🎰' },
         { cat: 'cards',   title: 'Card Games',  icon: '🃏' },
         { cat: 'spin',    title: 'Spin & Win',  icon: '🎡' },
         { cat: 'instant', title: 'Instant Play', icon: '⚡' }
@@ -1375,6 +1376,25 @@ function shuffle(arr) {
     return arr;
 }
 Object.assign(window.Casino, { createCardElement, createDeck, shuffle, esc, haptic });
+
+/* ---- External game registration (used by slot-themes.js, etc.) ---- */
+window.Casino.registerGame = function(meta, gameLogic) {
+    if (Casino.games[meta.id]) return;  // already registered
+    GAME_CARDS.push({
+        id: meta.id,
+        name: meta.name,
+        icon: meta.icon || '🎰',
+        desc: meta.desc || '',
+        accent: meta.g1 || '#d4a843',
+        category: meta.category || 'slots'
+    });
+    GAME_GRADIENTS[meta.id] = { g1: meta.g1, g2: meta.g2 };
+    GAME_ART[meta.id] = meta.art || '';
+    GAME_STUDIOS[meta.id] = meta.studio || 'ORIGINAL';
+    Casino.games[meta.id] = gameLogic;
+    // If the lobby has already rendered, refresh it.
+    if (document.getElementById('games-grid')?.childElementCount) renderLobby();
+};
 
 /* ---- Sidebar ---- */
 function initSidebar() {

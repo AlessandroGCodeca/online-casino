@@ -1,24 +1,47 @@
 # 🎰 Royal Flush Casino
 
-A polished, fully client-side online casino with **11 games** — built with vanilla HTML, CSS & JavaScript. No frameworks, no build step, no dependencies, no real money.
+A polished, fully client-side online casino with **21 games** — built with vanilla HTML, CSS & JavaScript. No frameworks, no build step, no dependencies, no real money.
 
 **[▶ Play Now](https://AlessandroGCodeca.github.io/online-casino/)**
 
 ## Games
 
+### 🎰 Slots (11)
 | Game | Description |
 |------|-------------|
-| 🎰 Slot Machine | 3×3 reels with 5 paylines, wilds, scatters and free-spin bonus rounds |
-| 🃏 Blackjack | Classic 21 — Hit, Stand, Double Down |
-| 🎡 Roulette | European roulette with spinning wheel animation |
-| 🂡 Video Poker | Jacks or Better with hold/draw mechanic |
-| 🚀 Crash | Cash out before the multiplier crashes! |
-| 💣 Mines | Reveal gems, avoid the mines |
-| 🎲 Hi-Lo Dice | Predict over or under the target |
-| 👑 Baccarat | Player vs banker — classic high-roller card game |
-| 🎡 Wheel of Fortune | Spin for multiplier prizes |
-| 🔢 Keno | Pick numbers and match to win |
-| 🟢 Plinko | Drop the ball and hit the multipliers |
+| Mega Jackpot | 3×3 reels with 5 paylines, wilds, scatters and free-spin bonus rounds |
+| Pharaoh Riches | Egyptian-themed reels — hieroglyphs, scarabs and golden tridents |
+| Fruit Cocktail | Classic fruit machine — cherries, sevens and bells |
+| Pirate's Bounty | Skulls, swords and treasure on the high seas |
+| Aztec Gold | Jungle temples — jaguars, totems and emerald crowns |
+| Wild West | Cowboys, six-shooters and saddle-up jackpots |
+| Galaxy Spin | Cosmic reels — rockets, planets and alien wilds |
+| Dragon's Fortune | Imperial Orient — koi, lanterns and dragon multipliers |
+| Sweet Bonanza | Candy-coated wins — lollipops, donuts and gummies |
+| Halloween Spooks | Pumpkins, ghosts and witches' brew |
+| Norse Gods | Thor's hammer, Odin's eye and Valhalla payouts |
+
+### 🃏 Card Games
+| Game | Description |
+|------|-------------|
+| Blackjack | Classic 21 — Hit, Stand, Double Down |
+| Video Poker | Jacks or Better with hold/draw mechanic |
+| Baccarat | Player vs banker — classic high-roller card game |
+
+### 🎡 Spin
+| Game | Description |
+|------|-------------|
+| Roulette | European roulette with spinning wheel animation |
+| Wheel of Fortune | Spin for multiplier prizes |
+
+### ⚡ Instant
+| Game | Description |
+|------|-------------|
+| Crash | Cash out before the multiplier crashes! |
+| Mines | Reveal gems, avoid the mines |
+| Hi-Lo Dice | Predict over or under the target |
+| Keno | Pick numbers and match to win |
+| Plinko | Drop the ball and hit the multipliers |
 
 ## Features
 

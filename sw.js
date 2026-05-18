@@ -1,4 +1,4 @@
-const CACHE_NAME = 'royal-flush-v3';
+const CACHE_NAME = 'royal-flush-v4';
 const FONT_CACHE = 'royal-flush-fonts-v1';
 const ASSETS = [
     './',
@@ -6,6 +6,7 @@ const ASSETS = [
     './css/style.css',
     './js/app.js',
     './js/slots.js',
+    './js/slot-themes.js',
     './js/blackjack.js',
     './js/roulette.js',
     './js/poker.js',

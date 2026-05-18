@@ -193,6 +193,112 @@ body.in-game #game-tint { opacity: 0.22; }
     .help-bubble { width: 48px; height: 48px; font-size: 20px; bottom: 16px; right: 16px; }
     .help-panel { width: calc(100vw - 32px); right: 16px; bottom: 76px; }
 }
+
+/* ---- Themed slot games (shared engine) ---- */
+.themed-slot {
+    background: linear-gradient(165deg, var(--ts-g1), var(--ts-g2));
+    border-radius: 20px;
+    padding: 24px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.15);
+    position: relative;
+    overflow: hidden;
+}
+.themed-slot::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(circle at 30% 0%, rgba(255,255,255,0.18), transparent 55%),
+                radial-gradient(circle at 80% 100%, rgba(0,0,0,0.35), transparent 60%);
+    pointer-events: none;
+}
+.ts-frame { position: relative; z-index: 1; }
+.ts-banner {
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+    margin-bottom: 18px;
+    padding: 10px 16px;
+    background: rgba(0,0,0,0.35);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 12px;
+    backdrop-filter: blur(6px);
+}
+.ts-banner-icon { font-size: 32px; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.5)); }
+.ts-banner-title { font-family: var(--font-display); font-size: 24px; font-weight: 900; color: #fff; letter-spacing: 1.5px; text-transform: uppercase; text-shadow: 0 2px 8px rgba(0,0,0,0.6); }
+.ts-reels-row {
+    display: flex; gap: 10px; justify-content: center;
+    background: rgba(0,0,0,0.55);
+    border: 2px solid var(--ts-accent, #fbbf24);
+    border-radius: 14px;
+    padding: 12px;
+    position: relative;
+    height: 130px;
+    overflow: hidden;
+}
+.ts-reel {
+    width: 90px;
+    height: 90px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+}
+.ts-strip { display: flex; flex-direction: column; }
+.ts-cell {
+    width: 90px;
+    height: 90px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 56px;
+    line-height: 1;
+}
+.ts-payline {
+    position: absolute;
+    left: 12px; right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    height: 3px;
+    background: var(--ts-accent, #fbbf24);
+    box-shadow: 0 0 12px var(--ts-accent, #fbbf24);
+    z-index: 2;
+    pointer-events: none;
+}
+.ts-message { margin-top: 16px; color: #fff; text-shadow: 0 2px 6px rgba(0,0,0,0.5); }
+.ts-message.win { color: #4ade80; }
+.ts-message.lose { color: #fca5a5; }
+.ts-controls { background: rgba(0,0,0,0.3); border-color: rgba(255,255,255,0.15); }
+.ts-spin { background: linear-gradient(135deg, var(--ts-accent, #fbbf24), #b45309); color: #0a0e1a; box-shadow: 0 6px 20px rgba(0,0,0,0.4); }
+.ts-paytable {
+    margin-top: 14px;
+    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 10px;
+    padding: 12px 14px;
+    color: rgba(255,255,255,0.85);
+    font-size: 12px;
+}
+.ts-paytable-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding-bottom: 8px; margin-bottom: 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.12);
+    font-weight: 700;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.ts-paytable-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+    gap: 6px 14px;
+}
+.ts-pay-item { display: inline-flex; align-items: center; gap: 4px; }
+.ts-pay-item b { color: var(--ts-accent, #fbbf24); }
+.ts-sym { font-size: 16px; }
+
+@media (max-width: 600px) {
+    .themed-slot { padding: 16px; }
+    .ts-banner-title { font-size: 18px; }
+    .ts-reel, .ts-cell { width: 72px; height: 72px; }
+    .ts-cell { font-size: 44px; }
+    .ts-reels-row { height: 100px; padding: 8px; }
+}
 .fade-out { opacity: 0; pointer-events: none; transition: opacity 0.3s; }
 .fade-in { opacity: 1; transition: opacity 0.3s; }
 .slide-up { animation: slideUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both; }

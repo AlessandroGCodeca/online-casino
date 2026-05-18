@@ -7,13 +7,14 @@ window.Casino = {
     volume: 1.0,
     animationsEnabled: true,
     hapticsEnabled: true,
+    fastSpin: false,
     theme: 'dark',
     lastDailyBonus: 0,
     lastRescue: 0,
     achievements: [],
     vip: { xp: 0, level: 0 },
     inventory: { deck: 'default', theme: 'default', owned: ['default_deck', 'default_theme'] },
-    stats: { totalWagered: 0, totalWon: 0, biggestWin: 0, gamesPlayed: 0, winStreak: 0, bestStreak: 0, jackpots: 0 },
+    stats: { totalWagered: 0, totalWon: 0, biggestWin: 0, gamesPlayed: 0, winStreak: 0, bestStreak: 0, jackpots: 0, fastSpins: 0, freeSpinTriggers: 0, bonusesBought: 0, maxChain: 0 },
     recentlyPlayed: [],
     playCounts: {},
     betHistory: [],
@@ -27,7 +28,7 @@ const RESCUE_COOLDOWN_MS = 6 * 60 * 60 * 1000; // 6h
 const BET_HISTORY_MAX = 30;
 const RECENT_MAX = 6;
 
-const DEFAULT_STATS = { totalWagered: 0, totalWon: 0, biggestWin: 0, gamesPlayed: 0, winStreak: 0, bestStreak: 0, jackpots: 0 };
+const DEFAULT_STATS = { totalWagered: 0, totalWon: 0, biggestWin: 0, gamesPlayed: 0, winStreak: 0, bestStreak: 0, jackpots: 0, fastSpins: 0, freeSpinTriggers: 0, bonusesBought: 0, maxChain: 0 };
 const DEFAULT_DAILY = { date: '', rounds: 0, wins: 0, wagered: 0, gamesSet: [], bestMult: 0 };
 
 const VIP_TIERS = [
@@ -50,7 +51,14 @@ const ACHIEVEMENTS_DATA = [
     { id: 'high_roller', name: 'High Roller', icon: '🎩', desc: 'Place a total of $10,000 in bets', reward: 1000 },
     { id: 'lucky_streak', name: 'Lucky Streak', icon: '🔥', desc: 'Win 5 games in a row', reward: 2000 },
     { id: 'jackpot', name: 'Jackpot!', icon: '🎰', desc: 'Hit a major jackpot in any game', reward: 5000 },
-    { id: 'veteran', name: 'Casino Veteran', icon: '👑', desc: 'Play 100 total rounds', reward: 10000 }
+    { id: 'veteran', name: 'Casino Veteran', icon: '👑', desc: 'Play 100 total rounds', reward: 10000 },
+    { id: 'speed_demon', name: 'Speed Demon', icon: '⚡', desc: 'Play 100 fast spins', reward: 3000 },
+    { id: 'free_frenzy', name: 'Free Spin Frenzy', icon: '✨', desc: 'Trigger 10 free-spin bonuses', reward: 5000 },
+    { id: 'chain_master', name: 'Chain Master', icon: '🔱', desc: 'Build a 5× hot-streak chain', reward: 5000 },
+    { id: 'bonus_hunter', name: 'Bonus Hunter', icon: '💰', desc: 'Buy 5 bonus rounds', reward: 3000 },
+    { id: 'diversifier', name: 'Diversifier', icon: '🌍', desc: 'Play 15 different games', reward: 5000 },
+    { id: 'whale', name: 'High Whale', icon: '🐋', desc: 'Wager a total of $100,000', reward: 15000 },
+    { id: 'sharpshooter', name: 'Sharpshooter', icon: '🎯', desc: 'Hit a single win of $10,000+', reward: 10000 }
 ];
 
 const GAME_CARDS = [
@@ -1031,6 +1039,13 @@ function checkAchievements() {
     check('lucky_streak', (s.bestStreak || 0) >= 5);
     check('jackpot', (s.jackpots || 0) >= 1);
     check('veteran', s.gamesPlayed >= 100);
+    check('speed_demon', (s.fastSpins || 0) >= 100);
+    check('free_frenzy', (s.freeSpinTriggers || 0) >= 10);
+    check('chain_master', (s.maxChain || 0) >= 4);
+    check('bonus_hunter', (s.bonusesBought || 0) >= 5);
+    check('diversifier', Object.keys(Casino.playCounts || {}).length >= 15);
+    check('whale', s.totalWagered >= 100000);
+    check('sharpshooter', s.biggestWin >= 10000);
 }
 window.Casino.checkAchievements = checkAchievements;
 

@@ -5,15 +5,15 @@
     let dropping = false;
 
     const RISKS = {
-        low:    { 8: [1.5,1.2,1.1,1,0.5,1,1.1,1.2,1.5],
-                 12: [3,2,1.5,1.2,1.1,1,0.5,1,1.1,1.2,1.5,2,3],
-                 16: [5,3,2,1.5,1.2,1.1,1,0.5,0.3,0.5,1,1.1,1.2,1.5,2,3,5] },
-        medium: { 8: [5,2,1.5,1,0.5,1,1.5,2,5],
-                 12: [10,5,3,2,1.5,1,0.5,1,1.5,2,3,5,10],
-                 16: [25,10,5,3,2,1.5,1,0.5,0.3,0.5,1,1.5,2,3,5,10,25] },
-        high:   { 8: [15,5,2,1,0.3,1,2,5,15],
-                 12: [50,15,5,3,1.5,1,0.3,1,1.5,3,5,15,50],
-                 16: [100,50,15,5,3,2,1,0.5,0.2,0.5,1,2,3,5,15,50,100] }
+        low:    { 8: [3, 2, 1.2, 0.9, 0.4, 0.9, 1.2, 2, 3],
+                 12: [5, 2.5, 1.5, 1.1, 0.7, 0.5, 0.3, 0.5, 0.7, 1.1, 1.5, 2.5, 5],
+                 16: [10, 5, 2.5, 1.5, 1.1, 0.9, 0.6, 0.4, 0.2, 0.4, 0.6, 0.9, 1.1, 1.5, 2.5, 5, 10] },
+        medium: { 8: [15, 3, 1.2, 0.7, 0.3, 0.7, 1.2, 3, 15],
+                 12: [29, 10, 4, 1.5, 0.9, 0.5, 0.3, 0.5, 0.9, 1.5, 4, 10, 29],
+                 16: [110, 35, 12, 4, 1.5, 0.9, 0.5, 0.3, 0.2, 0.3, 0.5, 0.9, 1.5, 4, 12, 35, 110] },
+        high:   { 8: [25, 5, 1, 0.3, 0.1, 0.3, 1, 5, 25],
+                 12: [120, 25, 5, 1.5, 0.6, 0.3, 0.1, 0.3, 0.6, 1.5, 5, 25, 120],
+                 16: [500, 100, 25, 5, 1, 0.5, 0.3, 0.1, 0.05, 0.1, 0.3, 0.5, 1, 5, 25, 100, 500] }
     };
 
     const PEG_R = 4, BALL_R = 7;
@@ -176,20 +176,15 @@
                     // Add randomness on each bounce
                     ball.vx += (Math.random() - 0.5) * 1.5;
 
-                    // Tick sound
-                    try {
-                        if (Casino.soundEnabled) {
-                            const ac = new (window.AudioContext || window.webkitAudioContext)();
-                            const osc = ac.createOscillator();
-                            const g = ac.createGain();
-                            osc.type = 'sine';
-                            osc.frequency.value = 800 + Math.random() * 400;
-                            g.gain.setValueAtTime(0.02, ac.currentTime);
-                            g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.03);
-                            osc.connect(g); g.connect(ac.destination);
-                            osc.start(); osc.stop(ac.currentTime + 0.03);
-                        }
-                    } catch(e) {}
+                    // Tick sound (single shared AudioContext via Casino.playTones).
+                    if (Casino.playTones) {
+                        Casino.playTones([{
+                            freq: 800 + Math.random() * 400,
+                            wave: 'sine',
+                            dur: 0.03,
+                            vol: 0.02
+                        }]);
+                    }
                 }
             });
 
@@ -202,6 +197,7 @@
                 ball.active = false;
                 ball.vy = 0;
                 ball.vx = 0;
+                ball.landedTime = Date.now();
 
                 // Find which slot
                 let slotIdx = 0;
@@ -240,12 +236,13 @@
             }
         });
 
+        // Remove balls that have been landed for > 700ms (clear visual clutter).
+        const now = Date.now();
+        balls = balls.filter(b => b.active || (b.landedTime && now - b.landedTime < 700));
+
         drawFrame();
 
-        // Clean up old inactive balls
-        if (balls.length > 10) balls = balls.filter(b => b.active || Date.now() - (b.landedTime || Date.now()) < 2000);
-
-        if (anyActive) {
+        if (anyActive || balls.length > 0) {
             animId = requestAnimationFrame(animate);
         } else {
             dropping = false;
@@ -297,7 +294,17 @@
         });
 
         // Draw balls
+        const now = Date.now();
         balls.forEach(ball => {
+            // Fade out landed balls in the last 300ms before they're removed (700ms total lifetime).
+            let alpha = 1;
+            if (!ball.active && ball.landedTime) {
+                const sinceLanded = now - ball.landedTime;
+                if (sinceLanded > 400) alpha = Math.max(0, 1 - (sinceLanded - 400) / 300);
+            }
+            if (alpha <= 0) return;
+            ctx.globalAlpha = alpha;
+
             // Trail
             if (ball.trail && ball.trail.length > 1) {
                 ctx.beginPath();
@@ -326,6 +333,7 @@
             ctx.fill();
             ctx.shadowBlur = 0;
         });
+        ctx.globalAlpha = 1;
     }
 
     function destroy() {

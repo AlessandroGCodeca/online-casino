@@ -58,6 +58,15 @@
 
     const CHAIN_MULTS = [1, 2, 3, 4, 5];  // win-chain multipliers per consecutive win
     const BONUS_BUY_MULT = 50;             // cost of "Buy Bonus" = 50× current bet
+    const AUTO_OPTIONS = [10, 25, 50, 100];
+
+    // Spin animation timing — toggled by Casino.fastSpin.
+    function getTiming() {
+        if (Casino.fastSpin) {
+            return { base: 0.4, inc: 0.15, finishPad: 100, continuePad: 350 };
+        }
+        return { base: 1.4, inc: 0.5, finishPad: 250, continuePad: 1600 };
+    }
 
     function makeSlotGame(theme) {
         let bet = 100;
@@ -67,6 +76,10 @@
         let freeSpinTotal = 0;       // total awarded in current round
         let freeSpinWinSum = 0;      // cumulative win during current round
         let winChain = 0;            // consecutive paid-spin wins (caps CHAIN_MULTS)
+        let autoSpinsLeft = 0;       // remaining auto spins (0 = not auto)
+        let autoStopOnWin = false;   // stop auto when any paid spin wins
+        let autoTimer = null;        // setTimeout id for queued auto continuation
+        let lastPaidWasWin = false;  // tracked per paid spin for auto-stop checks
         const baseSym = theme.symbols[0];
         const freeSpinMult = theme.freeSpinMultiplier || 2;
         const freeSpinGrant = theme.freeSpinGrant || 8;
@@ -125,7 +138,26 @@
                         <button class="bet-btn" type="button" data-bet="500">$500</button>
                     </div>
                     <button class="action-btn primary ts-spin" type="button" data-role="spin">SPIN — $${bet}</button>
+                    <button class="ts-icon-btn ts-fast" type="button" data-role="fast" aria-pressed="${Casino.fastSpin ? 'true' : 'false'}" title="Fast Spin">⚡</button>
+                    <button class="ts-icon-btn ts-auto" type="button" data-role="auto" title="Auto Spin">🔁</button>
                     <button class="action-btn ts-bonus-buy" type="button" data-role="buybonus" title="Pay 50× bet to instantly trigger free spins">💰 BUY BONUS<span class="ts-bonus-cost" data-role="bonuscost"> ($${(bet * BONUS_BUY_MULT).toLocaleString()})</span></button>
+                </div>
+                <div class="ts-auto-panel" data-role="autopanel" hidden>
+                    <div class="ts-auto-row">
+                        <span class="ts-auto-label">Auto spins:</span>
+                        ${AUTO_OPTIONS.map(n => `<button class="ts-auto-count" type="button" data-count="${n}">${n}</button>`).join('')}
+                    </div>
+                    <label class="ts-auto-row ts-auto-stop">
+                        <input type="checkbox" data-role="autostop"> Stop on any paid-spin win
+                    </label>
+                    <div class="ts-auto-row">
+                        <button class="action-btn primary ts-auto-start" type="button" data-role="autostart">START AUTO</button>
+                        <button class="ts-icon-btn" type="button" data-role="autoclose" title="Close">✕</button>
+                    </div>
+                </div>
+                <div class="ts-auto-status" data-role="autostatus" hidden>
+                    🔁 AUTO SPINNING — <b data-role="autocount">0</b> remaining
+                    <button class="ts-auto-stop-btn" type="button" data-role="autoabort">STOP</button>
                 </div>
                 <div class="ts-paytable">
                     <div class="ts-paytable-head">
@@ -140,7 +172,7 @@
         function wireControls() {
             area.querySelectorAll('.bet-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
-                    if (spinning || freeSpinsLeft > 0) return;
+                    if (spinning || freeSpinsLeft > 0 || autoSpinsLeft > 0) return;
                     bet = parseInt(btn.dataset.bet, 10);
                     updateSpinBtn();
                     updateBonusBtn();
@@ -149,6 +181,77 @@
             });
             $$('[data-role=spin]').addEventListener('click', spin);
             $$('[data-role=buybonus]').addEventListener('click', buyBonus);
+            $$('[data-role=fast]').addEventListener('click', toggleFast);
+            $$('[data-role=auto]').addEventListener('click', toggleAutoPanel);
+            $$('[data-role=autoclose]').addEventListener('click', () => { $$('[data-role=autopanel]').hidden = true; });
+            $$('[data-role=autostart]').addEventListener('click', startAutoSpins);
+            $$('[data-role=autoabort]').addEventListener('click', stopAutoSpins);
+            area.querySelectorAll('.ts-auto-count').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    area.querySelectorAll('.ts-auto-count').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    Casino.playSound('click');
+                });
+            });
+            // Default selection
+            const def = area.querySelector('.ts-auto-count[data-count="10"]');
+            if (def) def.classList.add('active');
+            // Reflect persisted fast-spin state
+            applyFastBtn();
+        }
+
+        function applyFastBtn() {
+            const btn = $$('[data-role=fast]');
+            if (!btn) return;
+            btn.classList.toggle('active', !!Casino.fastSpin);
+            btn.setAttribute('aria-pressed', Casino.fastSpin ? 'true' : 'false');
+            btn.title = Casino.fastSpin ? 'Fast Spin: ON' : 'Fast Spin: OFF';
+        }
+
+        function toggleFast() {
+            Casino.fastSpin = !Casino.fastSpin;
+            Casino.saveState();
+            applyFastBtn();
+            Casino.playSound('click');
+        }
+
+        function toggleAutoPanel() {
+            const panel = $$('[data-role=autopanel]');
+            if (!panel) return;
+            panel.hidden = !panel.hidden;
+            Casino.playSound('click');
+        }
+
+        function startAutoSpins() {
+            if (spinning) return;
+            const active = area.querySelector('.ts-auto-count.active');
+            const count = active ? parseInt(active.dataset.count, 10) : 10;
+            autoSpinsLeft = count;
+            autoStopOnWin = !!$$('[data-role=autostop]').checked;
+            $$('[data-role=autopanel]').hidden = true;
+            updateAutoStatus();
+            Casino.playSound('click');
+            // Kick off first spin.
+            if (!spinning) spin();
+        }
+
+        function stopAutoSpins() {
+            autoSpinsLeft = 0;
+            if (autoTimer) { clearTimeout(autoTimer); autoTimer = null; }
+            updateAutoStatus();
+            updateSpinBtn();
+            Casino.playSound('click');
+        }
+
+        function updateAutoStatus() {
+            const status = $$('[data-role=autostatus]');
+            if (!status) return;
+            if (autoSpinsLeft > 0) {
+                status.hidden = false;
+                $$('[data-role=autocount]').textContent = autoSpinsLeft;
+            } else {
+                status.hidden = true;
+            }
         }
 
         function buyBonus() {
@@ -158,6 +261,7 @@
                 showMsg(`Need $${cost.toLocaleString()} to buy bonus`, 'lose');
                 return;
             }
+            Casino.stats.bonusesBought = (Casino.stats.bonusesBought || 0) + 1;
             freeSpinsLeft = freeSpinGrant;
             freeSpinTotal = freeSpinGrant;
             freeSpinWinSum = 0;
@@ -168,7 +272,8 @@
             updateFsBar();
             updateChainBar();
             updateBonusBtn();
-            setTimeout(() => { if (!spinning) spin(); }, 1200);
+            if (typeof Casino.checkAchievements === 'function') Casino.checkAchievements();
+            setTimeout(() => { if (!spinning) spin(); }, Casino.fastSpin ? 600 : 1200);
         }
 
         function resetReels() {
@@ -238,11 +343,17 @@
             if (!usingFreeSpin) {
                 if (!Casino.placeBet(bet)) {
                     showMsg('Not enough chips!', 'lose');
+                    stopAutoSpins();
                     return;
                 }
             } else {
                 freeSpinsLeft--;
                 updateFsBar();
+            }
+
+            // Stat tracking — count fast spins for the speed_demon achievement.
+            if (Casino.fastSpin && !usingFreeSpin) {
+                Casino.stats.fastSpins = (Casino.stats.fastSpins || 0) + 1;
             }
 
             spinning = true;
@@ -253,7 +364,8 @@
             playThemeSound(theme, 'spinStart');
 
             const result = [pick(), pick(), pick()];
-            const spinCounts = [16, 22, 28];
+            const t = getTiming();
+            const spinCounts = Casino.fastSpin ? [8, 12, 16] : [16, 22, 28];
 
             result.forEach((sym, r) => {
                 const strip = area.querySelector(`[data-reel="${r}"]`);
@@ -264,14 +376,15 @@
                 strip.style.transform = 'translateY(0)';
                 void strip.offsetWidth;
                 const offset = -(spinCounts[r]) * SYMBOL_ROW;
+                const dur = t.base + r * t.inc;
                 requestAnimationFrame(() => {
-                    strip.style.transition = `transform ${1.4 + r * 0.5}s cubic-bezier(0.2, 0.85, 0.25, 1)`;
+                    strip.style.transition = `transform ${dur}s cubic-bezier(0.2, 0.85, 0.25, 1)`;
                     strip.style.transform = `translateY(${offset}px)`;
                 });
-                setTimeout(() => playThemeSound(theme, 'reelStop'), (1.4 + r * 0.5) * 1000);
+                setTimeout(() => playThemeSound(theme, 'reelStop'), dur * 1000);
             });
 
-            setTimeout(() => evaluate(result, usingFreeSpin), (1.4 + 2 * 0.5) * 1000 + 250);
+            setTimeout(() => evaluate(result, usingFreeSpin), (t.base + 2 * t.inc) * 1000 + t.finishPad);
         }
 
         function pick() { return weightedPick(theme.symbols, theme.weights); }
@@ -281,15 +394,21 @@
             const wild = theme.wild;
             let win = 0, label = '', isBig = false;
 
+            // Track auto-stop signal for the spin that just completed.
+            if (!wasFreeSpin) lastPaidWasWin = false;
+
             // Three-scatter bonus: free spins (in addition to any normal line wins).
             if (scatterCount >= 3) {
                 freeSpinsLeft += freeSpinGrant;
                 freeSpinTotal += freeSpinGrant;
+                Casino.stats.freeSpinTriggers = (Casino.stats.freeSpinTriggers || 0) + 1;
+                if (!wasFreeSpin) lastPaidWasWin = true;
                 label = `${theme.scatter}×3 BONUS! +${freeSpinGrant} FREE SPINS (${freeSpinMult}×)`;
                 showMsg(label, 'win');
                 playThemeSound(theme, 'freeSpin');
                 Casino.showWinEffect(freeSpinGrant);
                 updateFsBar();
+                if (typeof Casino.checkAchievements === 'function') Casino.checkAchievements();
                 finishSpinAndContinue();
                 return;
             }
@@ -334,8 +453,16 @@
             }
             // Update chain state (only on paid spins so free-spin no-wins don't break it).
             if (!wasFreeSpin) {
-                if (win > 0) winChain = Math.min(winChain + 1, CHAIN_MULTS.length - 1);
-                else winChain = 0;
+                lastPaidWasWin = win > 0;
+                if (win > 0) {
+                    winChain = Math.min(winChain + 1, CHAIN_MULTS.length - 1);
+                    if (winChain > (Casino.stats.maxChain || 0)) {
+                        Casino.stats.maxChain = winChain;
+                        if (typeof Casino.checkAchievements === 'function') Casino.checkAchievements();
+                    }
+                } else {
+                    winChain = 0;
+                }
             }
 
             if (win > 0) {
@@ -360,11 +487,16 @@
             updateChainBar();
             updateBonusBtn();
 
+            const t = getTiming();
+
             // Auto-continue free spin round.
             if (freeSpinsLeft > 0) {
-                setTimeout(() => { if (!spinning && freeSpinsLeft > 0) spin(); }, 1600);
-            } else if (freeSpinTotal > 0) {
-                // Round just ended — show summary.
+                autoTimer = setTimeout(() => { if (!spinning && freeSpinsLeft > 0) spin(); }, t.continuePad);
+                return;
+            }
+
+            // Free spin round just ended — show summary.
+            if (freeSpinTotal > 0) {
                 const summary = freeSpinWinSum > 0
                     ? `🎉 Free spins complete! Total won: $${freeSpinWinSum.toLocaleString()}`
                     : `Free spins complete — no wins this round.`;
@@ -373,11 +505,38 @@
                 freeSpinWinSum = 0;
                 updateFsBar();
             }
+
+            // Auto-spin continuation (only counts paid spins).
+            if (autoSpinsLeft > 0) {
+                autoSpinsLeft--;
+                updateAutoStatus();
+                if (autoSpinsLeft <= 0) {
+                    stopAutoSpins();
+                    showToast('🔁 Auto spins complete.');
+                } else if (autoStopOnWin && lastPaidWasWin) {
+                    stopAutoSpins();
+                    showMsg('Auto stopped: you won!', 'win');
+                } else if (Casino.balance < bet) {
+                    stopAutoSpins();
+                    showMsg('Auto stopped: low balance.', 'lose');
+                } else {
+                    autoTimer = setTimeout(() => { if (autoSpinsLeft > 0) spin(); }, t.continuePad);
+                }
+            }
+        }
+
+        function showToast(text) {
+            if (typeof Casino.showToast === 'function') Casino.showToast(text);
         }
 
         return {
             init,
-            destroy() { spinning = false; freeSpinsLeft = 0; freeSpinTotal = 0; freeSpinWinSum = 0; }
+            destroy() {
+                spinning = false;
+                freeSpinsLeft = 0; freeSpinTotal = 0; freeSpinWinSum = 0;
+                autoSpinsLeft = 0;
+                if (autoTimer) { clearTimeout(autoTimer); autoTimer = null; }
+            }
         };
     }
 

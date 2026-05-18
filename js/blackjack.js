@@ -96,11 +96,11 @@
     function setupPlayerArea() {
         const pArea = document.getElementById('bj-player-area');
         pArea.innerHTML = '';
-        
+
         hands.forEach((h, idx) => {
             const div = document.createElement('div');
-            div.className = `player-hand-container ${idx === currentHandIdx ? 'active-hand' : ''}`;
-            div.style.cssText = `display:inline-block; margin:0 10px; padding:10px; border-radius:12px; transition:all 0.3s; border:2px solid ${idx === currentHandIdx ? 'var(--gold)' : 'transparent'}; background:${idx === currentHandIdx ? 'rgba(212,168,67,0.1)' : 'transparent'}`;
+            div.className = `player-hand-container ${idx === currentHandIdx && !gameOver ? 'active-hand' : ''}`;
+            div.style.cssText = `display:inline-block; margin:0 10px; padding:10px; border-radius:12px; transition:all 0.3s; border:2px solid ${idx === currentHandIdx && !gameOver ? 'var(--gold)' : 'transparent'}; background:${idx === currentHandIdx && !gameOver ? 'rgba(212,168,67,0.1)' : 'transparent'}`;
             div.innerHTML = `
                 <div class="bj-label" style="display:flex; justify-content:center; gap:8px;">
                     <span>Hand ${idx + 1}</span>
@@ -110,6 +110,9 @@
                 <div class="bj-score" id="score-${idx}" style="min-height:24px;"></div>
             `;
             pArea.appendChild(div);
+            // Re-render existing cards (so we don't lose them when re-rendering the area).
+            const handDiv = div.querySelector('.card-hand');
+            h.cards.forEach(c => handDiv.appendChild(Casino.createCardElement(c, false)));
         });
     }
 

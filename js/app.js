@@ -14,7 +14,7 @@ window.Casino = {
     lastRescue: 0,
     achievements: [],
     vip: { xp: 0, level: 0 },
-    inventory: { deck: 'default', theme: 'default', avatar: 'default', confetti: 'default', owned: ['default_deck', 'default_theme', 'default_avatar', 'default_confetti'] },
+    inventory: {},
     stats: { totalWagered: 0, totalWon: 0, biggestWin: 0, gamesPlayed: 0, winStreak: 0, bestStreak: 0, jackpots: 0, fastSpins: 0, freeSpinTriggers: 0, bonusesBought: 0, maxChain: 0, dailyClaims: 0, missionsCompleted: 0 },
     recentlyPlayed: [],
     playCounts: {},
@@ -32,7 +32,6 @@ const BET_HISTORY_MAX = 30;
 const RECENT_MAX = 6;
 
 const DEFAULT_STATS = { totalWagered: 0, totalWon: 0, biggestWin: 0, gamesPlayed: 0, winStreak: 0, bestStreak: 0, jackpots: 0, fastSpins: 0, freeSpinTriggers: 0, bonusesBought: 0, maxChain: 0, dailyClaims: 0, missionsCompleted: 0 };
-const DEFAULT_INVENTORY = { deck: 'default', theme: 'default', avatar: 'default', confetti: 'default', owned: ['default_deck', 'default_theme', 'default_avatar', 'default_confetti'] };
 const DEFAULT_DAILY = { date: '', rounds: 0, wins: 0, wagered: 0, gamesSet: [], bestMult: 0 };
 
 const VIP_TIERS = [
@@ -43,47 +42,8 @@ const VIP_TIERS = [
     { name: 'Diamond', xp: 500000, icon: '👑', bonus: 25000 }
 ];
 
-const SHOP_ITEMS = [
-    // Themes
-    { id: 'purple_theme',   name: 'Royal Purple',  type: 'theme', price: 10000, icon: '🟣' },
-    { id: 'crimson_theme',  name: 'Crimson Night', type: 'theme', price: 10000, icon: '🔴' },
-    { id: 'ocean_theme',    name: 'Deep Ocean',    type: 'theme', price: 12000, icon: '🌊' },
-    { id: 'forest_theme',   name: 'Forest Green',  type: 'theme', price: 12000, icon: '🌲' },
-    { id: 'midnight_theme', name: 'Midnight Sky',  type: 'theme', price: 15000, icon: '🌌' },
-    { id: 'sunset_theme',   name: 'Sunset Glow',   type: 'theme', price: 15000, icon: '🌅' },
-    // Decks
-    { id: 'neon_deck',  name: 'Neon Deck',         type: 'deck',  price: 5000,  icon: '🃏' },
-    { id: 'gold_deck',  name: 'Gold Deck',         type: 'deck',  price: 20000, icon: '🎴' },
-    { id: 'holo_deck',  name: 'Hologram Deck',     type: 'deck',  price: 30000, icon: '✨' },
-    { id: 'jade_deck',  name: 'Jade Deck',         type: 'deck',  price: 15000, icon: '🟢' },
-    { id: 'ruby_deck',  name: 'Ruby Deck',         type: 'deck',  price: 15000, icon: '♦️' },
-    // Avatars
-    { id: 'avatar_crown',   name: 'Crown',         type: 'avatar', price: 3000,  icon: '👑' },
-    { id: 'avatar_diamond', name: 'Diamond',       type: 'avatar', price: 8000,  icon: '💎' },
-    { id: 'avatar_joker',   name: 'Joker',         type: 'avatar', price: 5000,  icon: '🃏' },
-    { id: 'avatar_dragon',  name: 'Dragon',        type: 'avatar', price: 12000, icon: '🐉' },
-    { id: 'avatar_phoenix', name: 'Phoenix',       type: 'avatar', price: 25000, icon: '🔥' },
-    // Confetti palettes
-    { id: 'confetti_neon',    name: 'Neon Confetti',    type: 'confetti', price: 4000, icon: '🟪' },
-    { id: 'confetti_rainbow', name: 'Rainbow Confetti', type: 'confetti', price: 6000, icon: '🌈' },
-    { id: 'confetti_gold',    name: 'Pure Gold',        type: 'confetti', price: 10000, icon: '🟡' }
-];
-
-const CONFETTI_PALETTES = {
-    default: ['#d4a843','#f0d060','#22c55e','#ef4444','#3b82f6','#8b5cf6'],
-    confetti_neon:    ['#ff00ff','#00ffff','#39ff14','#ffeb04','#ff10f0','#7c3aed'],
-    confetti_rainbow: ['#ef4444','#f97316','#fbbf24','#22c55e','#3b82f6','#8b5cf6','#ec4899'],
-    confetti_gold:    ['#fde68a','#fbbf24','#f59e0b','#d97706','#92400e']
-};
-
-const THEME_COLORS = {
-    purple_theme:   '#1e1b4b',
-    crimson_theme:  '#450a0a',
-    ocean_theme:    '#082f49',
-    forest_theme:   '#14532d',
-    midnight_theme: '#020617',
-    sunset_theme:   '#7c2d12'
-};
+// Single confetti palette — keep it lush.
+const CONFETTI_COLORS = ['#fde047','#fbbf24','#22c55e','#ef4444','#3b82f6','#8b5cf6','#ec4899'];
 
 const ACHIEVEMENTS_DATA = [
     // Foundation
@@ -115,8 +75,7 @@ const ACHIEVEMENTS_DATA = [
     // Engagement / collection
     { id: 'daily_devotee',name: 'Daily Devotee',  icon: '📅', desc: 'Claim daily bonus 7 times', reward: 3000 },
     { id: 'pilgrim',      name: 'Pilgrim',        icon: '🕊️', desc: 'Claim daily bonus 30 times', reward: 15000 },
-    { id: 'mission_spec', name: 'Mission Specialist', icon: '🎯', desc: 'Complete 25 daily missions', reward: 5000 },
-    { id: 'theme_collector', name: 'Theme Collector', icon: '🎨', desc: 'Own 2 shop themes', reward: 3000 }
+    { id: 'mission_spec', name: 'Mission Specialist', icon: '🎯', desc: 'Complete 25 daily missions', reward: 5000 }
 ];
 
 const GAME_CARDS = [
@@ -378,8 +337,6 @@ document.addEventListener('DOMContentLoaded', () => {
     bindClick('close-stats', () => closeModal('stats-modal'));
     bindClick('close-daily', () => closeModal('daily-modal'));
     bindClick('claim-daily-btn', claimDailyBonus);
-    bindClick('shop-btn', openShop);
-    bindClick('close-shop', () => closeModal('shop-modal'));
     bindClick('daily-bonus-btn', showDailyModal);
     bindClick('rescue-btn', claimRescueChips);
     bindClick('fullscreen-btn', toggleFullscreen);
@@ -390,9 +347,6 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.modal-overlay').forEach(m => {
         m.addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(m.id); });
     });
-
-    // Shop delegated interactions (CSP-friendly).
-    $('shop-body').addEventListener('click', onShopClick);
 
     // Search + category filter
     const search = $('game-search');
@@ -448,11 +402,6 @@ function loadState() {
             Casino.lastRescue = s.lastRescue ?? 0;
             Casino.achievements = s.achievements ?? [];
             Casino.vip = s.vip ?? { xp: 0, level: 0 };
-            Casino.inventory = Object.assign({}, DEFAULT_INVENTORY, s.inventory || {});
-            // Ensure 'owned' contains all defaults.
-            DEFAULT_INVENTORY.owned.forEach(id => {
-                if (!Casino.inventory.owned.includes(id)) Casino.inventory.owned.push(id);
-            });
             Casino.recentlyPlayed = s.recentlyPlayed ?? [];
             Casino.playCounts = s.playCounts ?? {};
             Casino.betHistory = s.betHistory ?? [];
@@ -484,7 +433,6 @@ function saveState() {
             lastRescue: Casino.lastRescue,
             achievements: Casino.achievements,
             vip: Casino.vip,
-            inventory: Casino.inventory,
             recentlyPlayed: Casino.recentlyPlayed,
             playCounts: Casino.playCounts,
             betHistory: Casino.betHistory,
@@ -1105,14 +1053,14 @@ function showStats() {
     renderBetHistory();
 
     $('reset-stats-btn').addEventListener('click', () => {
-        if (!confirm('Reset ALL data — balance, stats, history, achievements, VIP, and shop items?')) return;
+        if (!confirm('Reset ALL data — balance, stats, history, achievements, and VIP?')) return;
         Casino.balance = STARTING_BALANCE;
         Casino.stats = Object.assign({}, DEFAULT_STATS);
         Casino.achievements = [];
         Casino.lastDailyBonus = 0;
         Casino.lastRescue = 0;
         Casino.vip = { xp: 0, level: 0 };
-        Casino.inventory = JSON.parse(JSON.stringify(DEFAULT_INVENTORY));
+        Casino.inventory = {};
         Casino.recentlyPlayed = [];
         Casino.playCounts = {};
         Casino.betHistory = [];
@@ -1175,7 +1123,6 @@ function checkAchievements() {
     const playedIds = Object.keys(Casino.playCounts || {});
     const playedSlots = playedIds.filter(id => id.startsWith('slot_') || id === 'slots').length;
     const cardGamesPlayed = ['blackjack', 'baccarat', 'poker'].every(g => Casino.playCounts[g] > 0);
-    const ownedThemes = (Casino.inventory.owned || []).filter(id => id.endsWith('_theme') && id !== 'default_theme').length;
 
     check('first_win',    s.totalWon > 0);
     check('high_roller',  s.totalWagered >= 10000);
@@ -1201,7 +1148,6 @@ function checkAchievements() {
     check('daily_devotee',(s.dailyClaims || 0) >= 7);
     check('pilgrim',      (s.dailyClaims || 0) >= 30);
     check('mission_spec', (s.missionsCompleted || 0) >= 25);
-    check('theme_collector', ownedThemes >= 2);
 }
 window.Casino.checkAchievements = checkAchievements;
 
@@ -1405,25 +1351,7 @@ function toggleTheme() {
 function applyTheme() {
     document.documentElement.setAttribute('data-theme', Casino.theme);
     $('theme-toggle').textContent = Casino.theme === 'dark' ? '🌓' : '☀️';
-    const t = Casino.inventory.theme;
-    const themeColor = THEME_COLORS[t];
-    if (themeColor) document.documentElement.style.setProperty('--bg-primary', themeColor);
-    else document.documentElement.style.removeProperty('--bg-primary');
     document.body.classList.toggle('no-animations', !Casino.animationsEnabled);
-    renderAvatar();
-}
-
-function renderAvatar() {
-    const el = document.getElementById('avatar-badge');
-    if (!el) return;
-    const avatarId = Casino.inventory.avatar;
-    const item = SHOP_ITEMS.find(i => i.id === avatarId);
-    if (item) {
-        el.textContent = item.icon;
-        el.style.display = 'flex';
-    } else {
-        el.style.display = 'none';
-    }
 }
 
 /* ---- Settings modal ---- */
@@ -1633,9 +1561,7 @@ function showWinEffect(amount, options) {
     }
 
     if (!reducedMotion) {
-        // Confetti (default colors or per-player palette).
-        const palId = Casino.inventory.confetti || 'default';
-        const colors = (CONFETTI_PALETTES[palId] || CONFETTI_PALETTES.default);
+        const colors = CONFETTI_COLORS;
         const confettiCount = tier === 'mega' ? 80 : tier === 'big' ? 60 : 40;
         for (let i = 0; i < confettiCount; i++) {
             const c = document.createElement('div');
@@ -1681,94 +1607,6 @@ function animateCount(el, from, to, duration, format) {
 }
 
 window.Casino.showWinEffect = showWinEffect;
-
-/* ---- Shop ---- */
-let shopCategory = 'all';
-
-function openShop() {
-    renderShop();
-    openModal('shop-modal');
-}
-
-function renderShop() {
-    const body = $('shop-body');
-    if (!body) return;
-    const tabs = [
-        { id: 'all',      label: 'All' },
-        { id: 'theme',    label: '🎨 Themes' },
-        { id: 'deck',     label: '🃏 Decks' },
-        { id: 'avatar',   label: '👤 Avatars' },
-        { id: 'confetti', label: '✨ Confetti' }
-    ];
-    const filtered = shopCategory === 'all' ? SHOP_ITEMS : SHOP_ITEMS.filter(i => i.type === shopCategory);
-    body.innerHTML = `
-        <div class="shop-tabs">${tabs.map(t => `<button class="shop-tab${t.id === shopCategory ? ' active' : ''}" type="button" data-cat="${t.id}">${t.label}</button>`).join('')}</div>
-        <div class="shop-grid">${filtered.map(item => {
-            const owned = Casino.inventory.owned.includes(item.id);
-            const equipped = Casino.inventory[item.type] === item.id;
-            const buttonHtml = !owned
-                ? `<button class="shop-btn buy" type="button" data-action="buy" data-id="${esc(item.id)}">Buy</button>`
-                : (equipped
-                    ? `<button class="shop-btn equipped" type="button" disabled>Equipped</button>`
-                    : `<button class="shop-btn equip" type="button" data-action="equip" data-id="${esc(item.id)}">Equip</button>`);
-            return `
-                <div class="shop-item">
-                    <div class="shop-item-icon" aria-hidden="true">${esc(item.icon)}</div>
-                    <div class="shop-item-name">${esc(item.name)}</div>
-                    ${!owned ? `<div class="shop-item-price">$${item.price.toLocaleString()}</div>` : '<div class="shop-item-price-placeholder"></div>'}
-                    ${buttonHtml}
-                </div>`;
-        }).join('')}</div>`;
-
-    // Wire tabs
-    body.querySelectorAll('.shop-tab').forEach(t => {
-        t.addEventListener('click', () => {
-            shopCategory = t.dataset.cat;
-            renderShop();
-            playSound('click');
-        });
-    });
-}
-
-function onShopClick(e) {
-    const btn = e.target.closest('button[data-action]');
-    if (!btn) return;
-    if (btn.dataset.action === 'buy') buyItem(btn.dataset.id);
-    else if (btn.dataset.action === 'equip') equipItem(btn.dataset.id);
-}
-
-function buyItem(id) {
-    const item = SHOP_ITEMS.find(i => i.id === id);
-    if (!item || Casino.inventory.owned.includes(id)) return;
-    if (Casino.balance < item.price) {
-        showToast('Not enough chips for this item.');
-        playSound('lose');
-        return;
-    }
-    Casino.balance -= item.price;
-    updateBalanceUI();
-    flashBalance(false);
-    Casino.inventory.owned.push(id);
-    saveState();
-    equipItem(id);
-    playSound('win');
-    showToast(`Purchased ${item.name}!`);
-}
-
-function equipItem(id) {
-    const item = SHOP_ITEMS.find(i => i.id === id);
-    if (!item || !Casino.inventory.owned.includes(id)) return;
-    Casino.inventory[item.type] = id;
-    saveState();
-    renderShop();
-    playSound('click');
-    showToast(`Equipped ${item.name}!`);
-    if (item.type === 'theme') applyTheme();
-    if (item.type === 'avatar') renderAvatar();
-}
-
-window.Casino.buyItem = buyItem;
-window.Casino.equipItem = equipItem;
 
 /* ---- Live Feed ---- */
 function initLiveFeed() {
@@ -2023,8 +1861,6 @@ function handleSidebarNav(nav, btn) {
     } else if (nav === 'leaderboard') {
         scrollToSelector('.leaderboard');
         markActiveSidebar(btn);
-    } else if (nav === 'shop') {
-        openShop();
     } else if (nav === 'stats') {
         showStats();
     }

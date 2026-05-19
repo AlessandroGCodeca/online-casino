@@ -573,7 +573,299 @@
         };
     }
 
-    /* Lobby card art — themed slot frame with the centerpiece symbol. */
+    /* Hand-crafted lobby card scenes — one unique illustration per theme. */
+    const SCENES = {
+        slot_egypt: `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+            <defs><linearGradient id="se-sand" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fef3c7"/><stop offset="1" stop-color="#92400e"/></linearGradient></defs>
+            <circle cx="60" cy="32" r="16" fill="#fbbf24" opacity=".85"/>
+            <circle cx="60" cy="32" r="10" fill="#fde047"/>
+            <polygon points="14,98 60,26 106,98" fill="url(#se-sand)" stroke="#451a03" stroke-width="1.5"/>
+            <polygon points="60,26 106,98 64,98" fill="#451a03" opacity=".25"/>
+            <ellipse cx="60" cy="64" rx="10" ry="5" fill="#0f172a"/>
+            <circle cx="60" cy="64" r="3.5" fill="#fde68a"/>
+            <circle cx="60" cy="64" r="1.5" fill="#0f172a"/>
+            <path d="M50 70 Q56 76 60 70" stroke="#0f172a" stroke-width="1.5" fill="none"/>
+            <rect x="6" y="98" width="108" height="3" fill="#7c2d12"/>
+        </svg>`,
+        slot_fruit: `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+            <polygon points="28,40 92,40 80,76 40,76" fill="#fef08a" stroke="#0f172a" stroke-width="1.5"/>
+            <polygon points="28,40 92,40 84,52 36,52" fill="#fbbf24" opacity=".5"/>
+            <line x1="60" y1="76" x2="60" y2="100" stroke="#0f172a" stroke-width="2"/>
+            <ellipse cx="60" cy="102" rx="22" ry="4" fill="#0f172a"/>
+            <circle cx="70" cy="36" r="7" fill="#dc2626" stroke="#0f172a" stroke-width="1"/>
+            <circle cx="82" cy="40" r="7" fill="#dc2626" stroke="#0f172a" stroke-width="1"/>
+            <path d="M70 30 Q76 16 90 18" stroke="#15803d" stroke-width="2" fill="none"/>
+            <circle cx="38" cy="34" r="10" fill="#fef08a" stroke="#a16207" stroke-width="1.5"/>
+            <line x1="38" y1="24" x2="38" y2="44" stroke="#a16207"/>
+            <line x1="28" y1="34" x2="48" y2="34" stroke="#a16207"/>
+            <circle cx="52" cy="56" r="3" fill="#a3e635" opacity=".8"/>
+        </svg>`,
+        slot_pirate: `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+            <rect x="18" y="68" width="84" height="36" rx="4" fill="#7c2d12" stroke="#0f172a" stroke-width="1.5"/>
+            <path d="M18 68 Q60 36 102 68" fill="#92400e" stroke="#0f172a" stroke-width="1.5"/>
+            <circle cx="40" cy="82" r="6" fill="#fbbf24" stroke="#7c2d12"/>
+            <circle cx="55" cy="86" r="6" fill="#fde047" stroke="#7c2d12"/>
+            <circle cx="70" cy="82" r="6" fill="#fbbf24" stroke="#7c2d12"/>
+            <circle cx="84" cy="88" r="5" fill="#fbbf24" stroke="#7c2d12"/>
+            <circle cx="60" cy="54" r="11" fill="#fafafa"/>
+            <rect x="55" y="62" width="10" height="5" fill="#fafafa"/>
+            <circle cx="56" cy="52" r="2.2" fill="#0f172a"/>
+            <circle cx="64" cy="52" r="2.2" fill="#0f172a"/>
+            <rect x="58" y="57" width="4" height="3" fill="#0f172a"/>
+            <line x1="40" y1="48" x2="80" y2="64" stroke="#0f172a" stroke-width="2"/>
+            <line x1="80" y1="48" x2="40" y2="64" stroke="#0f172a" stroke-width="2"/>
+            <rect x="55" y="82" width="10" height="10" rx="2" fill="#fbbf24" stroke="#0f172a"/>
+        </svg>`,
+        slot_aztec: `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="60" cy="30" r="11" fill="#fbbf24"/>
+            <g stroke="#fbbf24" stroke-width="2">
+                <line x1="60" y1="14" x2="60" y2="6"/><line x1="60" y1="46" x2="60" y2="54"/>
+                <line x1="44" y1="30" x2="36" y2="30"/><line x1="76" y1="30" x2="84" y2="30"/>
+                <line x1="49" y1="19" x2="44" y2="14"/><line x1="71" y1="19" x2="76" y2="14"/>
+                <line x1="49" y1="41" x2="44" y2="46"/><line x1="71" y1="41" x2="76" y2="46"/>
+            </g>
+            <polygon points="18,98 38,68 58,98" fill="#16a34a" stroke="#15803d" stroke-width="1.5"/>
+            <polygon points="42,98 62,58 82,98" fill="#15803d" stroke="#14532d" stroke-width="1.5"/>
+            <polygon points="62,98 82,68 102,98" fill="#16a34a" stroke="#15803d" stroke-width="1.5"/>
+            <rect x="58" y="80" width="8" height="18" fill="#451a03"/>
+            <polygon points="56,76 66,76 62,68" fill="#fbbf24"/>
+            <rect x="6" y="100" width="108" height="2" fill="#451a03"/>
+        </svg>`,
+        slot_western: `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+            <rect x="0" y="80" width="120" height="40" fill="#ca8a04" opacity=".25"/>
+            <polygon points="0,80 30,72 60,82 90,68 120,80 120,86 0,86" fill="#a16207"/>
+            <ellipse cx="84" cy="48" rx="22" ry="6" fill="#7c2d12"/>
+            <path d="M62 48 Q62 30 84 30 Q106 30 106 48 Z" fill="#92400e"/>
+            <ellipse cx="84" cy="48" rx="14" ry="3" fill="#fde047"/>
+            <polygon points="24,50 27,60 38,60 29,66 33,76 24,70 15,76 19,66 10,60 21,60" fill="#fbbf24" stroke="#451a03"/>
+            <line x1="24" y1="76" x2="24" y2="98" stroke="#92400e" stroke-width="3"/>
+            <rect x="40" y="92" width="40" height="6" rx="3" fill="#92400e"/>
+            <rect x="45" y="90" width="8" height="10" fill="#92400e"/>
+            <rect x="67" y="90" width="8" height="10" fill="#92400e"/>
+        </svg>`,
+        slot_space: `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+            <defs><radialGradient id="sp-planet" cx="0.3" cy="0.3"><stop offset="0" stop-color="#67e8f9"/><stop offset="1" stop-color="#0e7490"/></radialGradient></defs>
+            <g fill="#fff">
+                <circle cx="18" cy="22" r="1.5"/><circle cx="100" cy="18" r="1.5"/>
+                <circle cx="106" cy="46" r="2"/><circle cx="14" cy="58" r="1.5"/>
+                <circle cx="32" cy="92" r="1.5"/><circle cx="104" cy="86" r="1.5"/>
+            </g>
+            <circle cx="60" cy="62" r="28" fill="url(#sp-planet)"/>
+            <ellipse cx="60" cy="62" rx="44" ry="9" fill="none" stroke="#fbbf24" stroke-width="2" transform="rotate(-15 60 62)"/>
+            <ellipse cx="60" cy="62" rx="44" ry="9" fill="none" stroke="#fde047" stroke-width="1" opacity=".5" transform="rotate(-15 60 62)" stroke-dasharray="3 3"/>
+            <ellipse cx="50" cy="55" rx="6" ry="3" fill="#0e7490" opacity=".6"/>
+            <ellipse cx="72" cy="68" rx="4" ry="2" fill="#0e7490" opacity=".6"/>
+            <path d="M88 22 L92 26 L96 22" stroke="#fde047" stroke-width="2" fill="none"/>
+            <circle cx="96" cy="22" r="2" fill="#fde047"/>
+        </svg>`,
+        slot_dragon: `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="32" cy="22" r="8" fill="#dc2626" stroke="#fbbf24" stroke-width="1.5"/>
+            <line x1="32" y1="30" x2="32" y2="98" stroke="#fbbf24" stroke-width="2" stroke-dasharray="3 2"/>
+            <rect x="22" y="38" width="20" height="22" rx="2" fill="#dc2626" stroke="#fbbf24" stroke-width="1.5"/>
+            <line x1="22" y1="42" x2="42" y2="42" stroke="#fbbf24"/>
+            <line x1="22" y1="56" x2="42" y2="56" stroke="#fbbf24"/>
+            <circle cx="32" cy="49" r="3" fill="#fde047"/>
+            <path d="M52 78 Q72 58 96 56 Q98 64 82 72 Q98 76 96 86 Q72 90 52 78 Z" fill="#dc2626" stroke="#fbbf24" stroke-width="1.5"/>
+            <circle cx="90" cy="62" r="2" fill="#fde047"/>
+            <path d="M70 76 L74 70 M78 78 L82 70 M86 80 L90 74" stroke="#fbbf24" stroke-width="1.5" fill="none"/>
+            <path d="M52 78 Q44 86 50 96" stroke="#dc2626" stroke-width="3" fill="none"/>
+            <path d="M96 86 Q104 96 96 104" stroke="#fbbf24" stroke-width="2" fill="none"/>
+        </svg>`,
+        slot_candy: `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+            <defs><linearGradient id="cd-lol" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fef08a"/><stop offset="0.5" stop-color="#ec4899"/><stop offset="1" stop-color="#7e22ce"/></linearGradient></defs>
+            <line x1="60" y1="60" x2="60" y2="106" stroke="#fef08a" stroke-width="3"/>
+            <circle cx="60" cy="48" r="26" fill="url(#cd-lol)" stroke="#fff" stroke-width="2"/>
+            <path d="M60 48 m-22 0 a22 22 0 0 1 22 -22 a22 22 0 0 1 22 22 a22 22 0 0 1 -22 22" fill="none" stroke="#fff" stroke-width="2.5" opacity=".7"/>
+            <path d="M60 48 m-14 0 a14 14 0 0 1 14 -14 a14 14 0 0 1 14 14" fill="none" stroke="#fff" stroke-width="2" opacity=".7"/>
+            <path d="M60 48 m-6 0 a6 6 0 0 1 6 -6" fill="none" stroke="#fff" stroke-width="1.5" opacity=".7"/>
+            <circle cx="22" cy="92" r="6" fill="#ec4899" stroke="#fff"/>
+            <circle cx="36" cy="100" r="5" fill="#fde047" stroke="#fff"/>
+            <circle cx="92" cy="92" r="5" fill="#22d3ee" stroke="#fff"/>
+            <circle cx="100" cy="76" r="4" fill="#a3e635" stroke="#fff"/>
+        </svg>`,
+        slot_halloween: `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="20" cy="20" r="6" fill="#fde047"/>
+            <circle cx="22" cy="22" r="4" fill="#0f172a"/>
+            <ellipse cx="60" cy="72" rx="36" ry="32" fill="#f97316" stroke="#7c2d12" stroke-width="2"/>
+            <path d="M28 70 Q60 60 92 70" stroke="#7c2d12" stroke-width="1" fill="none" opacity=".5"/>
+            <path d="M40 38 L50 44 L40 50" stroke="#15803d" stroke-width="3" fill="#15803d"/>
+            <rect x="42" y="42" width="4" height="6" fill="#15803d"/>
+            <polygon points="40,68 48,60 56,68 50,68 50,80 46,80 46,68" fill="#0f172a"/>
+            <polygon points="64,68 72,60 80,68 74,68 74,80 70,80 70,68" fill="#0f172a"/>
+            <path d="M40 86 L46 92 L52 86 L58 92 L64 86 L70 92 L76 86 L82 92" stroke="#0f172a" stroke-width="3" fill="none"/>
+            <path d="M14 50 Q22 48 18 56 Q26 54 22 62" stroke="#0f172a" stroke-width="2" fill="none"/>
+            <path d="M98 36 Q92 34 96 42 Q88 40 92 48" stroke="#0f172a" stroke-width="2" fill="none"/>
+        </svg>`,
+        slot_norse: `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+            <defs><linearGradient id="nr-bolt" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fde047"/><stop offset="1" stop-color="#f59e0b"/></linearGradient></defs>
+            <polygon points="34,4 24,52 42,52 30,100 70,40 50,40 64,4" fill="url(#nr-bolt)" stroke="#92400e" stroke-width="1.5"/>
+            <rect x="60" y="68" width="38" height="24" fill="#94a3b8" stroke="#0f172a" stroke-width="2"/>
+            <rect x="64" y="72" width="30" height="16" fill="#cbd5e1"/>
+            <line x1="64" y1="80" x2="94" y2="80" stroke="#0f172a"/>
+            <line x1="74" y1="72" x2="74" y2="88" stroke="#0f172a"/>
+            <line x1="84" y1="72" x2="84" y2="88" stroke="#0f172a"/>
+            <rect x="76" y="92" width="6" height="14" fill="#7c2d12"/>
+            <rect x="72" y="106" width="14" height="3" fill="#92400e"/>
+            <circle cx="79" cy="80" r="3" fill="#fde047"/>
+        </svg>`,
+        slot_olympus: `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+            <rect x="14" y="20" width="92" height="6" fill="#fde047" stroke="#0f172a"/>
+            <polygon points="14,26 60,8 106,26" fill="#cbd5e1" stroke="#0f172a"/>
+            <rect x="20" y="30" width="12" height="64" fill="#e2e8f0" stroke="#0f172a" stroke-width="1.5"/>
+            <rect x="48" y="30" width="12" height="64" fill="#e2e8f0" stroke="#0f172a" stroke-width="1.5"/>
+            <rect x="76" y="30" width="12" height="64" fill="#e2e8f0" stroke="#0f172a" stroke-width="1.5"/>
+            <rect x="14" y="92" width="92" height="8" fill="#cbd5e1" stroke="#0f172a"/>
+            <rect x="14" y="100" width="92" height="6" fill="#94a3b8" stroke="#0f172a"/>
+            <line x1="20" y1="30" x2="32" y2="30" stroke="#fde047" stroke-width="2"/>
+            <line x1="48" y1="30" x2="60" y2="30" stroke="#fde047" stroke-width="2"/>
+            <line x1="76" y1="30" x2="88" y2="30" stroke="#fde047" stroke-width="2"/>
+            <polygon points="68,40 60,60 70,60 62,80 80,52 72,52 78,40" fill="#fbbf24" stroke="#92400e"/>
+        </svg>`,
+        slot_atlantis: `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+            <defs><linearGradient id="at-water" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#06b6d4" stop-opacity="0"/><stop offset="1" stop-color="#06b6d4" stop-opacity="0.6"/></linearGradient></defs>
+            <rect x="0" y="0" width="120" height="120" fill="url(#at-water)"/>
+            <circle cx="22" cy="32" r="4" fill="none" stroke="#fff" stroke-width="1.5"/>
+            <circle cx="38" cy="20" r="3" fill="none" stroke="#fff" stroke-width="1.5"/>
+            <circle cx="92" cy="28" r="5" fill="none" stroke="#fff" stroke-width="1.5"/>
+            <circle cx="100" cy="50" r="3" fill="none" stroke="#fff" stroke-width="1.5"/>
+            <line x1="60" y1="20" x2="60" y2="74" stroke="#fde047" stroke-width="3"/>
+            <path d="M48 30 L60 18 L72 30 L66 30 L66 38 L54 38 L54 30 Z" fill="#fbbf24" stroke="#92400e" stroke-width="1.5"/>
+            <line x1="44" y1="30" x2="48" y2="30" stroke="#fbbf24" stroke-width="3"/>
+            <line x1="72" y1="30" x2="76" y2="30" stroke="#fbbf24" stroke-width="3"/>
+            <path d="M30 96 Q60 80 90 96 L90 110 L30 110 Z" fill="#0e7490" stroke="#0f172a" stroke-width="1.5"/>
+            <path d="M40 98 L48 92 M56 98 L64 90 M72 98 L80 92" stroke="#22d3ee" stroke-width="2" fill="none"/>
+        </svg>`,
+        slot_cyber: `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+            <g stroke="#22d3ee" stroke-width="1" opacity=".5">
+                <line x1="0" y1="40" x2="120" y2="40"/><line x1="0" y1="60" x2="120" y2="60"/><line x1="0" y1="80" x2="120" y2="80"/><line x1="0" y1="100" x2="120" y2="100"/>
+                <line x1="40" y1="0" x2="40" y2="120"/><line x1="60" y1="0" x2="60" y2="120"/><line x1="80" y1="0" x2="80" y2="120"/>
+            </g>
+            <rect x="30" y="34" width="60" height="48" rx="4" fill="#0f172a" stroke="#22d3ee" stroke-width="2"/>
+            <rect x="36" y="40" width="48" height="20" fill="#22d3ee" opacity=".25"/>
+            <text x="60" y="55" font-size="14" font-weight="900" fill="#22d3ee" text-anchor="middle" font-family="Arial">10x</text>
+            <circle cx="42" cy="72" r="3" fill="#ec4899"/>
+            <circle cx="60" cy="72" r="3" fill="#fde047"/>
+            <circle cx="78" cy="72" r="3" fill="#a3e635"/>
+            <line x1="60" y1="82" x2="60" y2="92" stroke="#22d3ee" stroke-width="3"/>
+            <rect x="50" y="92" width="20" height="6" fill="#22d3ee"/>
+        </svg>`,
+        slot_dj: `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+            <defs><radialGradient id="dj-vinyl" cx="0.5" cy="0.5"><stop offset="0" stop-color="#ec4899"/><stop offset="0.2" stop-color="#0f172a"/><stop offset="1" stop-color="#0f172a"/></radialGradient></defs>
+            <circle cx="60" cy="60" r="42" fill="url(#dj-vinyl)" stroke="#22d3ee" stroke-width="2"/>
+            <circle cx="60" cy="60" r="32" fill="none" stroke="#1e293b" stroke-width="1"/>
+            <circle cx="60" cy="60" r="22" fill="none" stroke="#1e293b" stroke-width="1"/>
+            <circle cx="60" cy="60" r="12" fill="#ec4899"/>
+            <circle cx="60" cy="60" r="3" fill="#0f172a"/>
+            <path d="M60 60 L94 76" stroke="#cbd5e1" stroke-width="2"/>
+            <circle cx="94" cy="76" r="3" fill="#cbd5e1"/>
+            <path d="M8 80 Q14 70 8 60 M14 84 Q22 70 14 56 M20 88 Q30 70 20 52" stroke="#22d3ee" stroke-width="2" fill="none"/>
+        </svg>`,
+        slot_rome: `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+            <ellipse cx="60" cy="64" rx="30" ry="24" fill="#fbbf24" stroke="#7c2d12" stroke-width="2"/>
+            <path d="M30 64 Q30 38 60 38 Q90 38 90 64" fill="#fde047" stroke="#7c2d12" stroke-width="2"/>
+            <rect x="55" y="22" width="10" height="20" fill="#dc2626" stroke="#7c2d12"/>
+            <path d="M55 22 Q60 8 65 22" fill="#dc2626" stroke="#7c2d12"/>
+            <rect x="36" y="62" width="48" height="6" fill="#fde047" stroke="#7c2d12"/>
+            <ellipse cx="60" cy="86" rx="20" ry="6" fill="#7c2d12"/>
+            <path d="M16 70 Q22 60 30 64 Q26 76 16 70 Z" fill="#16a34a" stroke="#15803d"/>
+            <path d="M22 76 Q28 66 36 70" fill="#16a34a" stroke="#15803d"/>
+            <path d="M104 70 Q98 60 90 64 Q94 76 104 70 Z" fill="#16a34a" stroke="#15803d"/>
+            <path d="M98 76 Q92 66 84 70" fill="#16a34a" stroke="#15803d"/>
+            <circle cx="22" cy="68" r="2" fill="#dc2626"/>
+            <circle cx="98" cy="68" r="2" fill="#dc2626"/>
+        </svg>`,
+        slot_viking: `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+            <ellipse cx="60" cy="68" rx="28" ry="26" fill="#94a3b8" stroke="#0f172a" stroke-width="2"/>
+            <path d="M32 68 Q60 38 88 68" fill="#cbd5e1" stroke="#0f172a" stroke-width="2"/>
+            <rect x="48" y="62" width="24" height="20" rx="2" fill="#fafafa"/>
+            <rect x="50" y="64" width="20" height="6" fill="#0f172a"/>
+            <ellipse cx="56" cy="72" rx="2" ry="3" fill="#0f172a"/>
+            <ellipse cx="64" cy="72" rx="2" ry="3" fill="#0f172a"/>
+            <path d="M16 56 Q4 24 30 32 Q26 50 32 60 Z" fill="#cbd5e1" stroke="#0f172a" stroke-width="2"/>
+            <path d="M104 56 Q116 24 90 32 Q94 50 88 60 Z" fill="#cbd5e1" stroke="#0f172a" stroke-width="2"/>
+            <rect x="56" y="38" width="8" height="14" fill="#fbbf24" stroke="#92400e"/>
+            <circle cx="60" cy="38" r="5" fill="#fbbf24" stroke="#92400e"/>
+        </svg>`,
+        slot_safari: `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+            <defs><linearGradient id="sf-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fbbf24"/><stop offset="1" stop-color="#dc2626"/></linearGradient></defs>
+            <rect x="0" y="0" width="120" height="100" fill="url(#sf-sky)" opacity=".4"/>
+            <circle cx="60" cy="50" r="20" fill="#fde047"/>
+            <rect x="0" y="86" width="120" height="20" fill="#92400e"/>
+            <line x1="68" y1="58" x2="68" y2="98" stroke="#1e293b" stroke-width="2"/>
+            <ellipse cx="68" cy="58" rx="22" ry="8" fill="#365314" stroke="#1e293b" stroke-width="1.5"/>
+            <ellipse cx="60" cy="56" rx="10" ry="6" fill="#15803d"/>
+            <ellipse cx="76" cy="58" rx="12" ry="7" fill="#15803d"/>
+            <ellipse cx="22" cy="92" rx="14" ry="10" fill="#a16207"/>
+            <circle cx="14" cy="86" r="8" fill="#a16207"/>
+            <circle cx="10" cy="84" r="2" fill="#0f172a"/>
+            <path d="M8 88 Q10 92 14 90" stroke="#0f172a" stroke-width="1.5" fill="none"/>
+            <path d="M6 80 Q4 76 8 76 M22 78 Q20 74 24 74" stroke="#92400e" stroke-width="2" fill="none"/>
+        </svg>`,
+        slot_frozen: `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+            <g stroke="#fff" stroke-width="1.5">
+                <circle cx="22" cy="22" r="1" fill="#fff"/><circle cx="38" cy="14" r="1" fill="#fff"/>
+                <circle cx="98" cy="20" r="1" fill="#fff"/><circle cx="110" cy="48" r="1" fill="#fff"/>
+                <circle cx="14" cy="50" r="1" fill="#fff"/>
+            </g>
+            <g transform="translate(60 36)" stroke="#22d3ee" stroke-width="2.5" fill="none">
+                <line x1="0" y1="-16" x2="0" y2="16"/>
+                <line x1="-14" y1="-8" x2="14" y2="8"/>
+                <line x1="-14" y1="8" x2="14" y2="-8"/>
+                <path d="M0 -16 L-3 -12 M0 -16 L3 -12"/>
+                <path d="M0 16 L-3 12 M0 16 L3 12"/>
+                <path d="M-14 -8 L-12 -4 M-14 -8 L-12 -12"/>
+                <path d="M14 8 L12 4 M14 8 L12 12"/>
+            </g>
+            <rect x="34" y="68" width="52" height="36" fill="#dc2626" stroke="#7f1d1d" stroke-width="2"/>
+            <rect x="34" y="68" width="52" height="8" fill="#fde047"/>
+            <rect x="56" y="68" width="8" height="36" fill="#fde047"/>
+            <path d="M48 68 Q44 56 56 60 Q56 50 64 60 Q76 56 72 68 Z" fill="#fde047" stroke="#92400e"/>
+        </svg>`,
+        slot_fairy: `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+            <defs><linearGradient id="fc-castle" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f0abfc"/><stop offset="1" stop-color="#7e22ce"/></linearGradient></defs>
+            <g fill="#fde047">
+                <text x="14" y="28" font-size="14">✨</text>
+                <text x="96" y="22" font-size="12">✨</text>
+                <text x="100" y="58" font-size="14">✨</text>
+                <text x="10" y="62" font-size="12">✨</text>
+            </g>
+            <rect x="22" y="60" width="14" height="40" fill="url(#fc-castle)" stroke="#0f172a"/>
+            <polygon points="22,60 36,60 29,46" fill="#dc2626" stroke="#0f172a"/>
+            <rect x="42" y="46" width="36" height="54" fill="url(#fc-castle)" stroke="#0f172a"/>
+            <polygon points="42,46 78,46 60,24" fill="#dc2626" stroke="#0f172a"/>
+            <circle cx="60" cy="32" r="3" fill="#fde047"/>
+            <rect x="84" y="60" width="14" height="40" fill="url(#fc-castle)" stroke="#0f172a"/>
+            <polygon points="84,60 98,60 91,46" fill="#dc2626" stroke="#0f172a"/>
+            <rect x="56" y="78" width="8" height="22" fill="#451a03"/>
+            <rect x="50" y="60" width="4" height="6" fill="#fde047"/>
+            <rect x="66" y="60" width="4" height="6" fill="#fde047"/>
+            <rect x="48" y="68" width="6" height="4" fill="#fde047"/>
+        </svg>`,
+        slot_mardi: `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+            <g fill="none" stroke="#fbbf24" stroke-width="3">
+                <path d="M88 26 Q98 12 110 24"/><path d="M82 22 Q90 4 102 12"/>
+                <path d="M76 20 Q80 4 96 6"/>
+            </g>
+            <g fill="none" stroke="#22d3ee" stroke-width="3">
+                <path d="M32 26 Q22 12 10 24"/><path d="M38 22 Q30 4 18 12"/>
+                <path d="M44 20 Q40 4 24 6"/>
+            </g>
+            <path d="M20 56 Q40 36 60 50 Q80 36 100 56 Q92 76 78 72 Q72 86 60 80 Q48 86 42 72 Q28 76 20 56 Z" fill="#a855f7" stroke="#0f172a" stroke-width="2"/>
+            <ellipse cx="42" cy="58" rx="10" ry="7" fill="#0f172a"/>
+            <ellipse cx="78" cy="58" rx="10" ry="7" fill="#0f172a"/>
+            <circle cx="42" cy="58" r="3" fill="#fde047"/>
+            <circle cx="78" cy="58" r="3" fill="#fde047"/>
+            <g fill="#22d3ee">
+                <circle cx="28" cy="48" r="2"/><circle cx="92" cy="48" r="2"/>
+            </g>
+            <g fill="#fde047">
+                <circle cx="60" cy="40" r="2"/><circle cx="50" cy="46" r="1.5"/><circle cx="70" cy="46" r="1.5"/>
+            </g>
+            <line x1="60" y1="80" x2="60" y2="100" stroke="#fbbf24" stroke-width="2"/>
+        </svg>`
+    };
+
+    /* Fallback for any theme without a custom scene. */
     function makeArt(centerEmoji, accentEmoji) {
         return `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
             <rect x="14" y="38" width="92" height="58" rx="10" fill="rgba(0,0,0,.45)" stroke="rgba(255,255,255,.4)" stroke-width="2"/>
@@ -854,12 +1146,13 @@
         }
     ];
 
-    // Register each theme.
+    // Register each theme. Custom hand-drawn scenes override the fallback art.
     THEMES.forEach(theme => {
         if (!window.Casino || typeof Casino.registerGame !== 'function') return;
+        const art = SCENES[theme.id] || theme.art;
         Casino.registerGame({
             id: theme.id, name: theme.name, desc: theme.desc, icon: theme.icon,
-            g1: theme.g1, g2: theme.g2, studio: theme.studio, art: theme.art,
+            g1: theme.g1, g2: theme.g2, studio: theme.studio, art,
             category: 'slots'
         }, makeSlotGame(theme));
     });

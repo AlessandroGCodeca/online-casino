@@ -1,4 +1,4 @@
-const CACHE_NAME = 'royal-flush-v10';
+const CACHE_NAME = 'royal-flush-v11';
 const FONT_CACHE = 'royal-flush-fonts-v1';
 const ASSETS = [
     './',

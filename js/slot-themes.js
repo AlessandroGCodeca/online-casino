@@ -93,6 +93,7 @@
             resetReels();
             wireControls();
             updateBonusBtn();
+            if (typeof Casino.startAmbient === 'function') Casino.startAmbient(theme.palette, theme.wave);
         }
 
         function renderUI() {
@@ -536,6 +537,7 @@
                 freeSpinsLeft = 0; freeSpinTotal = 0; freeSpinWinSum = 0;
                 autoSpinsLeft = 0;
                 if (autoTimer) { clearTimeout(autoTimer); autoTimer = null; }
+                if (typeof Casino.stopAmbient === 'function') Casino.stopAmbient();
             }
         };
     }

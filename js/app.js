@@ -8,6 +8,7 @@ window.Casino = {
     animationsEnabled: true,
     hapticsEnabled: true,
     fastSpin: false,
+    ambientEnabled: false,
     theme: 'dark',
     lastDailyBonus: 0,
     lastRescue: 0,
@@ -438,6 +439,8 @@ function loadState() {
             Casino.volume = s.volume ?? 1.0;
             Casino.animationsEnabled = s.animationsEnabled ?? true;
             Casino.hapticsEnabled = s.hapticsEnabled ?? true;
+            Casino.ambientEnabled = s.ambientEnabled ?? false;
+            Casino.fastSpin = s.fastSpin ?? false;
             Casino.lastDailyBonus = s.lastDailyBonus ?? 0;
             Casino.lastRescue = s.lastRescue ?? 0;
             Casino.achievements = s.achievements ?? [];
@@ -471,6 +474,8 @@ function saveState() {
             volume: Casino.volume,
             animationsEnabled: Casino.animationsEnabled,
             hapticsEnabled: Casino.hapticsEnabled,
+            ambientEnabled: Casino.ambientEnabled,
+            fastSpin: Casino.fastSpin,
             theme: Casino.theme,
             lastDailyBonus: Casino.lastDailyBonus,
             lastRescue: Casino.lastRescue,
@@ -714,6 +719,42 @@ function playSound(type) {
 }
 window.Casino.playSound = playSound;
 
+/* Ambient soundtrack — opt-in, low-volume looping chord progression
+   built from a theme's palette. Used by all slot engines on init; lobby
+   stays quiet. Players can toggle on/off in Settings. */
+const DEFAULT_AMBIENT_PALETTE = [196, 246, 293, 349, 440];
+const DEFAULT_AMBIENT_WAVE = 'sine';
+let ambientTimer = null;
+let ambientStep = 0;
+
+window.Casino.startAmbient = function(palette, wave) {
+    stopAmbient();
+    if (!Casino.ambientEnabled || !Casino.soundEnabled) return;
+    const pal = (palette && palette.length) ? palette : DEFAULT_AMBIENT_PALETTE;
+    const w = wave || DEFAULT_AMBIENT_WAVE;
+    ambientStep = 0;
+    const tick = () => {
+        if (!Casino.ambientEnabled || !Casino.soundEnabled) { stopAmbient(); return; }
+        const root = pal[ambientStep % pal.length];
+        if (Casino.playTones) {
+            Casino.playTones([
+                // Bass note + soft chord, both quite low volume.
+                { freq: root / 4, wave: w, dur: 3.8, vol: 0.015 },
+                { freq: root / 2, wave: w, dur: 3.8, vol: 0.012 },
+                { freq: (root / 2) * 1.5, wave: w, dur: 3.8, vol: 0.009 }
+            ]);
+        }
+        ambientStep++;
+    };
+    tick();
+    ambientTimer = setInterval(tick, 3800);
+};
+
+function stopAmbient() {
+    if (ambientTimer) { clearInterval(ambientTimer); ambientTimer = null; }
+}
+window.Casino.stopAmbient = stopAmbient;
+
 /* Play an arbitrary sequence of tones — used by themed games for
    genre-specific sound palettes (Egyptian pentatonic vs. cyberpunk
    square waves, etc.). */
@@ -951,6 +992,10 @@ function openGame(id) {
         document.body.classList.add('in-game');
     }
 
+    // Start default ambient. Slot engines override by calling
+    // Casino.startAmbient(theme.palette, theme.wave) in their own init().
+    if (typeof Casino.startAmbient === 'function') Casino.startAmbient();
+
     lobby.classList.add('fade-out');
     setTimeout(() => {
         lobby.classList.add('hidden');
@@ -1003,6 +1048,9 @@ function showLobby() {
 
     // Clear themed background tint
     document.body.classList.remove('in-game');
+
+    // Stop ambient.
+    if (typeof Casino.stopAmbient === 'function') Casino.stopAmbient();
 }
 
 /* ---- Stats & Achievements ---- */
@@ -1386,7 +1434,11 @@ function showSettings() {
             <span class="settings-label">🔔 Sound effects</span>
             <input type="checkbox" id="settings-sound" ${Casino.soundEnabled ? 'checked' : ''} class="settings-toggle">
         </label>
-        <p class="settings-note">Settings persist across sessions. Disable animations for the lowest-CPU experience.</p>
+        <label class="settings-row">
+            <span class="settings-label">🎵 Ambient music</span>
+            <input type="checkbox" id="settings-ambient" ${Casino.ambientEnabled ? 'checked' : ''} class="settings-toggle">
+        </label>
+        <p class="settings-note">Settings persist across sessions. Disable animations for the lowest-CPU experience. Ambient music is a soft chord loop per game.</p>
         <div class="settings-row" style="border-top: 1px solid var(--glass-border); padding-top: 16px; margin-top: 8px;">
             <span class="settings-label">🔒 Round Audit</span>
             <button class="action-btn secondary" type="button" id="settings-audit-btn">View seeds & history</button>
@@ -1417,6 +1469,14 @@ function showSettings() {
         btn.setAttribute('aria-pressed', String(!Casino.soundEnabled));
         saveState();
         if (e.target.checked) playSound('click');
+        if (!e.target.checked) Casino.stopAmbient();
+    });
+    $('settings-ambient').addEventListener('change', e => {
+        Casino.ambientEnabled = e.target.checked;
+        saveState();
+        // Restart so the toggle takes effect immediately in-game.
+        if (Casino.currentGame) Casino.startAmbient();
+        else Casino.stopAmbient();
     });
     $('settings-audit-btn').addEventListener('click', () => {
         closeModal('settings-modal');

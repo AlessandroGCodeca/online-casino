@@ -1,12 +1,30 @@
 # 🎰 Royal Flush Casino
 
-A polished, fully client-side online casino with **31 games** — built with vanilla HTML, CSS & JavaScript. No frameworks, no build step, no dependencies, no real money.
+A polished, fully client-side online casino with **37 games** — built with vanilla HTML, CSS & JavaScript. No frameworks, no build step, no dependencies, no real money.
 
 **[▶ Play Now](https://AlessandroGCodeca.github.io/online-casino/)**
 
 ## Games
 
-### 🎰 Slots (21)
+### 🎰 Premium Slots — 5-reel × 3-row, 10 paylines (3)
+Five reels with classic line-pay mechanics — 3 / 4 / 5 matching symbols from the left pay 1× / 5× / 25× the symbol base. SVG-animated winning paylines, 3× free-spin multiplier.
+
+| Game | Description |
+|------|-------------|
+| Olympus Premium | Zeus + Hera lightning, 10 paylines |
+| Imperial Dragon Premium | Imperial fortune, 12 free spins at 3× |
+| Aztec Premium | Lost temples, jaguar wilds |
+
+### 🌀 Cascade Slots — 6×5 tumble, pays anywhere (3)
+Pays for 8+ matching symbols anywhere on the grid. Winning cells dissolve, remaining cells drop, new symbols tumble in. Cascade multiplier grows with each chain (1× → 25×).
+
+| Game | Description |
+|------|-------------|
+| Candy Cascade | Sweet Bonanza-style tumble, 12 free spins |
+| Gem Cascade | Cluster gems, 3× free-spin multiplier |
+| Fruit Cluster | Juicy clusters with re-tumble |
+
+### 🎰 Classic Slots — 3-reel single-line (21)
 Every themed slot has its own symbol set, weighted distribution, payout table, wild symbol, scatter symbol that triggers **8 free spins at 2×** multiplier, themed sound palette (mystical Egyptian pentatonic, neon cyberpunk square waves, country triangles for the Wild West, etc.), and a triple-wild mega jackpot at 5× the top payout.
 
 | Game | Description |

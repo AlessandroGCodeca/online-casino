@@ -1153,7 +1153,8 @@
         Casino.registerGame({
             id: theme.id, name: theme.name, desc: theme.desc, icon: theme.icon,
             g1: theme.g1, g2: theme.g2, studio: theme.studio, art,
-            category: 'slots'
+            category: 'slots',
+            particles: theme.symbols
         }, makeSlotGame(theme));
     });
 })();

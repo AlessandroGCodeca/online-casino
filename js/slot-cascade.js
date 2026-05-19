@@ -508,18 +508,99 @@
         };
     }
 
-    function makeArt(top, bottom) {
-        return `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
-            <rect x="14" y="22" width="92" height="78" rx="10" fill="rgba(0,0,0,.45)" stroke="rgba(255,255,255,.4)" stroke-width="2"/>
-            ${[0,1,2,3,4,5].map(c => `
-                <text x="${20 + c*14}" y="38" font-size="12" text-anchor="middle">${top}</text>
-                <text x="${20 + c*14}" y="54" font-size="12" text-anchor="middle">${bottom}</text>
-                <text x="${20 + c*14}" y="70" font-size="12" text-anchor="middle">${top}</text>
-                <text x="${20 + c*14}" y="86" font-size="12" text-anchor="middle">${bottom}</text>
-            `).join('')}
-            <text x="60" y="113" font-size="7" fill="#fbbf24" font-weight="900" text-anchor="middle" letter-spacing="2">TUMBLE</text>
-        </svg>`;
-    }
+    /* Custom cascade lobby scenes — falling clusters tell the tumble story. */
+    const SCENES = {
+        c_candy: `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <radialGradient id="cc-lol" cx="0.4" cy="0.4"><stop offset="0" stop-color="#fef08a"/><stop offset="0.5" stop-color="#ec4899"/><stop offset="1" stop-color="#7e22ce"/></radialGradient>
+                <linearGradient id="cc-stripe" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff"/><stop offset="0.5" stop-color="#dc2626"/><stop offset="1" stop-color="#fff"/></linearGradient>
+            </defs>
+            <g stroke="#fff" stroke-width="1.5" stroke-dasharray="2 3" opacity=".4">
+                <line x1="20" y1="0" x2="20" y2="120"/>
+                <line x1="60" y1="0" x2="60" y2="120"/>
+                <line x1="100" y1="0" x2="100" y2="120"/>
+            </g>
+            <g>
+                <circle cx="22" cy="20" r="9" fill="url(#cc-lol)" stroke="#fff" stroke-width="1.5"/>
+                <line x1="22" y1="29" x2="22" y2="40" stroke="#fef08a" stroke-width="2"/>
+                <ellipse cx="60" cy="22" rx="12" ry="6" fill="url(#cc-stripe)" stroke="#0f172a" stroke-width="1.5" transform="rotate(-25 60 22)"/>
+                <circle cx="96" cy="24" r="8" fill="#22d3ee" stroke="#fff" stroke-width="1.5"/>
+                <circle cx="92" cy="22" r="2" fill="#fff" opacity=".7"/>
+            </g>
+            <g>
+                <circle cx="32" cy="52" r="9" fill="#22d3ee" stroke="#fff" stroke-width="1.5"/>
+                <rect x="60" y="44" width="14" height="14" rx="3" fill="#a3e635" stroke="#fff" stroke-width="1.5" transform="rotate(20 67 51)"/>
+                <ellipse cx="98" cy="56" rx="10" ry="5" fill="#fbbf24" stroke="#0f172a" stroke-width="1.5"/>
+            </g>
+            <g>
+                <circle cx="22" cy="84" r="11" fill="url(#cc-lol)" stroke="#fff" stroke-width="1.5"/>
+                <line x1="22" y1="95" x2="22" y2="108" stroke="#fef08a" stroke-width="2"/>
+                <ellipse cx="62" cy="84" rx="14" ry="7" fill="url(#cc-stripe)" stroke="#0f172a" stroke-width="1.5"/>
+                <circle cx="98" cy="86" r="10" fill="#ec4899" stroke="#fff" stroke-width="1.5"/>
+                <circle cx="93" cy="82" r="2.5" fill="#fff" opacity=".7"/>
+            </g>
+            <g fill="#fff" opacity=".6">
+                <circle cx="44" cy="12" r="1.5"/><circle cx="78" cy="68" r="1.5"/>
+                <circle cx="50" cy="98" r="1.5"/><circle cx="84" cy="104" r="1.5"/>
+            </g>
+            <text x="60" y="118" font-size="6.5" fill="#fde047" font-weight="900" text-anchor="middle" letter-spacing="2">TUMBLE · CLUSTER PAYS</text>
+        </svg>`,
+        c_jewel: `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+            <defs><linearGradient id="cj-bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#22d3ee" stop-opacity="0"/><stop offset="1" stop-color="#22d3ee" stop-opacity="0.15"/></linearGradient></defs>
+            <rect x="0" y="0" width="120" height="120" fill="url(#cj-bg)"/>
+            <g stroke="#fff" stroke-width="1" opacity=".25" stroke-dasharray="2 3">
+                <line x1="0" y1="38" x2="120" y2="38"/>
+                <line x1="0" y1="72" x2="120" y2="72"/>
+            </g>
+            <g stroke="#fff" stroke-width="1.5">
+                <polygon points="22,20 32,14 38,24 30,32" fill="#dc2626"/>
+                <polygon points="56,16 66,10 74,20 64,28" fill="#fbbf24"/>
+                <polygon points="90,22 100,16 108,26 100,32" fill="#22d3ee"/>
+                <polygon points="14,50 24,44 32,54 22,62" fill="#a3e635"/>
+                <polygon points="48,52 58,46 66,56 56,64" fill="#7c3aed"/>
+                <polygon points="82,50 92,44 100,54 92,62" fill="#ec4899"/>
+                <polygon points="22,86 32,80 40,90 30,98" fill="#22d3ee"/>
+                <polygon points="56,84 66,78 76,88 64,96" fill="#fbbf24"/>
+                <polygon points="90,86 100,80 108,90 98,98" fill="#dc2626"/>
+            </g>
+            <g fill="#fff" opacity=".5">
+                <circle cx="28" cy="20" r="1"/><circle cx="62" cy="16" r="1"/>
+                <circle cx="96" cy="22" r="1"/><circle cx="54" cy="52" r="1"/>
+                <circle cx="62" cy="84" r="1"/>
+            </g>
+            <g stroke="#fff" stroke-width="1" opacity=".4" fill="none">
+                <path d="M30 32 L30 44"/><path d="M64 28 L64 44"/><path d="M100 32 L100 44"/>
+                <path d="M22 62 L22 78"/><path d="M56 64 L56 78"/><path d="M92 62 L92 78"/>
+            </g>
+            <text x="60" y="116" font-size="6.5" fill="#22d3ee" font-weight="900" text-anchor="middle" letter-spacing="2">TUMBLE · CLUSTER PAYS</text>
+        </svg>`,
+        c_fruit: `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+            <g stroke="#fff" stroke-width="1" opacity=".22" stroke-dasharray="2 3">
+                <line x1="0" y1="38" x2="120" y2="38"/>
+                <line x1="0" y1="72" x2="120" y2="72"/>
+            </g>
+            <g stroke="#7c2d12" stroke-width="1.5">
+                <circle cx="22" cy="22" r="8" fill="#dc2626"/>
+                <circle cx="20" cy="20" r="2" fill="#fff" opacity=".5"/>
+                <path d="M22 14 Q22 8 28 6" stroke="#15803d" stroke-width="1.5" fill="none"/>
+                <ellipse cx="60" cy="22" rx="9" ry="7" fill="#fde047"/>
+                <ellipse cx="96" cy="22" rx="8" ry="8" fill="#fb923c"/>
+                <ellipse cx="22" cy="56" rx="8" ry="8" fill="#a3e635"/>
+                <ellipse cx="60" cy="54" rx="11" ry="9" fill="#7c3aed"/>
+                <circle cx="56" cy="50" r="2" fill="#fff" opacity=".5"/>
+                <ellipse cx="96" cy="58" rx="9" ry="7" fill="#dc2626"/>
+                <path d="M96 50 Q96 44 102 42" stroke="#15803d" stroke-width="1.5" fill="none"/>
+                <ellipse cx="22" cy="88" rx="9" ry="7" fill="#fde047"/>
+                <ellipse cx="60" cy="88" rx="10" ry="8" fill="#fb923c"/>
+                <ellipse cx="96" cy="90" rx="9" ry="9" fill="#7c3aed"/>
+            </g>
+            <g fill="#fff" opacity=".55">
+                <circle cx="58" cy="20" r="1.5"/><circle cx="94" cy="20" r="1.5"/>
+                <circle cx="58" cy="86" r="1.5"/>
+            </g>
+            <text x="60" y="114" font-size="6.5" fill="#fde047" font-weight="900" text-anchor="middle" letter-spacing="2">TUMBLE · CLUSTER PAYS</text>
+        </svg>`
+    };
 
     const THEMES = [
         {
@@ -527,7 +608,6 @@
             desc: '6×5 grid · cluster pays · tumble mechanic',
             g1: '#ec4899', g2: '#831843', accent: '#fde047',
             studio: 'CANDY KINGDOM · TUMBLE',
-            art: makeArt('🍬', '🍭'),
             tagline: 'Sweet cascades, sweeter wins!',
             symbols: ['🍪', '🍫', '🍩', '🧁', '🍰', '🍬', '🍭', '🌈'],
             weights: [0.20, 0.18, 0.16, 0.14, 0.12, 0.10, 0.05, 0.05],
@@ -541,7 +621,6 @@
             desc: 'Glittering gems · cluster wins · cascades',
             g1: '#7c3aed', g2: '#1e1b4b', accent: '#22d3ee',
             studio: 'CRYSTAL HALL · TUMBLE',
-            art: makeArt('💎', '🔷'),
             tagline: 'Cluster the gems!',
             symbols: ['🟢', '🟡', '🟠', '🔴', '🔵', '🟣', '💎', '✨'],
             weights: [0.20, 0.18, 0.16, 0.14, 0.12, 0.10, 0.05, 0.05],
@@ -555,7 +634,6 @@
             desc: 'Juicy clusters · 8+ to win · tumble & re-tumble',
             g1: '#f97316', g2: '#7c2d12', accent: '#fde047',
             studio: 'ORCHARD ORIGINALS · TUMBLE',
-            art: makeArt('🍇', '🍒'),
             tagline: 'Pick the cluster, win the round!',
             symbols: ['🍒', '🍋', '🍊', '🍇', '🍉', '🍓', '7️⃣', '⭐'],
             weights: [0.20, 0.18, 0.16, 0.14, 0.12, 0.10, 0.05, 0.05],
@@ -570,8 +648,10 @@
         if (!window.Casino || typeof Casino.registerGame !== 'function') return;
         Casino.registerGame({
             id: theme.id, name: theme.name, desc: theme.desc, icon: theme.icon,
-            g1: theme.g1, g2: theme.g2, studio: theme.studio, art: theme.art,
-            category: 'slots'
+            g1: theme.g1, g2: theme.g2, studio: theme.studio,
+            art: SCENES[theme.id],
+            category: 'slots',
+            particles: theme.symbols
         }, makeSlotCascade(theme));
     });
 })();

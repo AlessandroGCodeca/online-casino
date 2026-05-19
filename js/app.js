@@ -954,6 +954,9 @@ function openGame(id) {
         document.body.classList.add('in-game');
     }
 
+    // Spawn themed in-game decorative particles.
+    spawnGameDecor(id);
+
     // Start default ambient. Slot engines override by calling
     // Casino.startAmbient(theme.palette, theme.wave) in their own init().
     if (typeof Casino.startAmbient === 'function') Casino.startAmbient();
@@ -1010,6 +1013,9 @@ function showLobby() {
 
     // Clear themed background tint
     document.body.classList.remove('in-game');
+
+    // Clear in-game decorative particles.
+    clearGameDecor();
 
     // Stop ambient.
     if (typeof Casino.stopAmbient === 'function') Casino.stopAmbient();
@@ -1782,6 +1788,51 @@ function recordAuditRound(gameId, bet) {
     if (Casino.audit.history.length > 30) Casino.audit.history.length = 30;
 }
 
+/* In-game decorative particles per game id. Falls back to a generic set. */
+const GAME_DECOR = {
+    slots:     ['🎰', '7️⃣', '🍒', '💎', '⭐'],
+    blackjack: ['♠', '♥', '♦', '♣', '🃏'],
+    roulette:  ['🎡', '⚪', '♦', '♠'],
+    poker:     ['♠', '♥', '♦', '♣', '🂡'],
+    crash:     ['🚀', '⭐', '💥', '✨'],
+    mines:     ['💎', '💣', '🟢', '⛏'],
+    dice:      ['🎲', '🍀', '🎯'],
+    baccarat:  ['👑', '♠', '♥', '🃏'],
+    wheel:     ['🎡', '⭐', '🍀', '🎉'],
+    keno:      ['🔢', '🎱', '🍀', '🎰'],
+    plinko:    ['🟢', '🟡', '🔴', '⚪']
+};
+const DEFAULT_DECOR = ['✨', '⭐', '💰', '💎'];
+
+function spawnGameDecor(gameId) {
+    const layer = document.getElementById('game-decor');
+    if (!layer) return;
+    layer.innerHTML = '';
+    if (reducedMotion) return;
+    let particles = GAME_DECOR[gameId];
+    if (!particles) {
+        // Slot themes: pull symbols from the registered card data if available.
+        const card = GAME_CARDS.find(c => c.id === gameId);
+        particles = (card && card.particles) || DEFAULT_DECOR;
+    }
+    const count = 14;
+    for (let i = 0; i < count; i++) {
+        const span = document.createElement('span');
+        span.className = 'game-decor-particle';
+        span.textContent = particles[Math.floor(Math.random() * particles.length)];
+        span.style.left = (Math.random() * 100) + '%';
+        span.style.animationDelay = (Math.random() * 18) + 's';
+        span.style.animationDuration = (16 + Math.random() * 14) + 's';
+        span.style.fontSize = (20 + Math.random() * 28) + 'px';
+        span.style.opacity = (0.10 + Math.random() * 0.18).toFixed(2);
+        layer.appendChild(span);
+    }
+}
+function clearGameDecor() {
+    const layer = document.getElementById('game-decor');
+    if (layer) layer.innerHTML = '';
+}
+
 /* ---- External game registration (used by slot-themes.js, etc.) ---- */
 window.Casino.registerGame = function(meta, gameLogic) {
     if (Casino.games[meta.id]) return;  // already registered
@@ -1791,7 +1842,8 @@ window.Casino.registerGame = function(meta, gameLogic) {
         icon: meta.icon || '🎰',
         desc: meta.desc || '',
         accent: meta.g1 || '#d4a843',
-        category: meta.category || 'slots'
+        category: meta.category || 'slots',
+        particles: meta.particles
     });
     GAME_GRADIENTS[meta.id] = { g1: meta.g1, g2: meta.g2 };
     GAME_ART[meta.id] = meta.art || '';

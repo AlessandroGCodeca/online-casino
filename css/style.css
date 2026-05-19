@@ -72,6 +72,30 @@ kbd { background: var(--glass-bg); border: 1px solid var(--glass-border); border
 
 .noscript-warning { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: var(--bg-primary); color: var(--text); padding: 40px; text-align: center; font-size: 18px; z-index: 9999; }
 
+/* In-game themed decorative particles (set when a game is open). */
+#game-decor {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+}
+body.in-game #game-decor { display: block; }
+.game-decor-particle {
+    position: absolute;
+    bottom: -10vh;
+    animation: gameDecorRise linear infinite;
+    will-change: transform;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4));
+    line-height: 1;
+}
+@keyframes gameDecorRise {
+    0%   { transform: translateY(0) rotate(0deg) scale(0.8); opacity: 0; }
+    10%  { opacity: 0.7; }
+    90%  { opacity: 0.7; }
+    100% { transform: translateY(-120vh) rotate(180deg) scale(1); opacity: 0; }
+}
+
 /* In-game themed background tint (set when a game is open) */
 #game-tint {
     position: fixed; inset: 0; pointer-events: none; z-index: 0;
@@ -660,9 +684,78 @@ body.no-animations *, body.no-animations *::before, body.no-animations *::after 
 .header-left, .header-right { flex: 1; }
 .header-right { display: flex; justify-content: flex-end; gap: 8px; }
 .header-center { flex: 1; display: flex; justify-content: center; }
-.logo { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--text); }
-.logo-icon { font-size: 28px; color: var(--gold); }
-.logo-text { font-family: var(--font-display); font-size: 22px; font-weight: 800; background: linear-gradient(135deg, var(--gold-light), var(--gold)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.logo { display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--text); }
+.logo-mark {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    flex-shrink: 0;
+}
+.logo-mark-ring {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: conic-gradient(from 0deg, #fde047, #fbbf24, #fde047, #f59e0b, #fde047);
+    animation: logoRingSpin 8s linear infinite;
+    filter: drop-shadow(0 0 8px rgba(212, 168, 67, 0.5));
+}
+.logo-mark-ring::after {
+    content: '';
+    position: absolute;
+    inset: 2px;
+    background: var(--bg-primary, #0a0e1a);
+    border-radius: 50%;
+}
+.logo-mark-sparkle {
+    position: absolute;
+    inset: -6px;
+    pointer-events: none;
+    background:
+        radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.8) 0, transparent 2px),
+        radial-gradient(circle at 20% 80%, rgba(255, 255, 255, 0.7) 0, transparent 1.5px),
+        radial-gradient(circle at 90% 90%, rgba(255, 255, 255, 0.6) 0, transparent 1.5px);
+    animation: logoSparkle 3s ease-in-out infinite;
+}
+.logo-icon {
+    position: relative;
+    z-index: 2;
+    font-size: 22px;
+    background: linear-gradient(135deg, #fde047 0%, #fbbf24 50%, #f59e0b 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    text-shadow: 0 0 10px rgba(212, 168, 67, 0.6);
+    animation: logoIconPulse 2.5s ease-in-out infinite;
+}
+.logo-text {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: 0.3px;
+    background: linear-gradient(135deg, var(--gold-light) 0%, #fff 25%, var(--gold) 50%, #fff 75%, var(--gold-light) 100%);
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    animation: logoTextShimmer 5s linear infinite;
+}
+.logo:hover .logo-mark-ring { animation-duration: 2s; }
+.logo:hover .logo-icon { transform: scale(1.1) rotate(5deg); transition: transform 0.3s; }
+@keyframes logoRingSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes logoIconPulse {
+    0%, 100% { transform: scale(1); text-shadow: 0 0 10px rgba(212, 168, 67, 0.6); }
+    50%      { transform: scale(1.08); text-shadow: 0 0 18px rgba(251, 191, 36, 0.9); }
+}
+@keyframes logoSparkle {
+    0%, 100% { opacity: 0.6; transform: rotate(0deg); }
+    50%      { opacity: 1; transform: rotate(8deg); }
+}
+@keyframes logoTextShimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
 .balance-display { display: flex; flex-direction: column; align-items: center; background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: var(--radius); padding: 6px 20px; }
 .balance-label { font-size: 9px; letter-spacing: 2px; color: var(--text-muted); font-weight: 600; }
 .balance-amount { font-size: 20px; font-weight: 800; color: var(--gold-light); font-variant-numeric: tabular-nums; }

@@ -554,17 +554,89 @@
         };
     }
 
-    // Lobby card art for premium tier — 5 reels with the centerpiece symbol.
-    function makeArt(center, accent) {
-        return `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
-            <rect x="6" y="36" width="108" height="62" rx="10" fill="rgba(0,0,0,.45)" stroke="rgba(255,255,255,.4)" stroke-width="2"/>
-            ${[0,1,2,3,4].map(i => `<rect x="${10 + i*21}" y="42" width="19" height="50" rx="3" fill="rgba(0,0,0,.4)"/>`).join('')}
-            ${[0,1,2,3,4].map(i => `<text x="${10 + i*21 + 9.5}" y="72" font-size="14" text-anchor="middle">${center}</text>`).join('')}
-            <rect x="8" y="66" width="104" height="2" fill="#fbbf24" opacity=".8"/>
-            <text x="60" y="26" font-size="18" text-anchor="middle">${accent}</text>
-            <text x="60" y="113" font-size="7" fill="#fbbf24" font-weight="900" text-anchor="middle" letter-spacing="2">PREMIUM</text>
-        </svg>`;
-    }
+    /* Custom premium 5-reel lobby scenes. */
+    const SCENES = {
+        p_olympus: `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+            <defs><radialGradient id="po-sky" cx="0.5" cy="0.3"><stop offset="0" stop-color="#fde68a" stop-opacity=".4"/><stop offset="1" stop-color="#0c4a6e" stop-opacity="0"/></radialGradient></defs>
+            <rect x="0" y="0" width="120" height="60" fill="url(#po-sky)"/>
+            <polygon points="60,6 30,30 90,30" fill="#cbd5e1" stroke="#0f172a" stroke-width="1.5"/>
+            <rect x="22" y="30" width="76" height="5" fill="#fde047" stroke="#0f172a"/>
+            <rect x="22" y="35" width="76" height="4" fill="#94a3b8" stroke="#0f172a"/>
+            <g stroke="#0f172a" stroke-width="1.2" fill="#f1f5f9">
+                <rect x="24" y="40" width="11" height="54"/>
+                <rect x="40" y="40" width="11" height="54"/>
+                <rect x="55" y="40" width="11" height="54"/>
+                <rect x="70" y="40" width="11" height="54"/>
+                <rect x="85" y="40" width="11" height="54"/>
+            </g>
+            <g stroke="#fbbf24" stroke-width="1.5" fill="none">
+                <line x1="29.5" y1="40" x2="29.5" y2="94"/>
+                <line x1="45.5" y1="40" x2="45.5" y2="94"/>
+                <line x1="60.5" y1="40" x2="60.5" y2="94"/>
+                <line x1="75.5" y1="40" x2="75.5" y2="94"/>
+                <line x1="90.5" y1="40" x2="90.5" y2="94"/>
+            </g>
+            <rect x="18" y="94" width="84" height="6" fill="#94a3b8" stroke="#0f172a"/>
+            <rect x="14" y="100" width="92" height="6" fill="#64748b" stroke="#0f172a"/>
+            <polygon points="64,52 56,74 64,74 58,90 78,68 68,68 76,52" fill="#fbbf24" stroke="#92400e" stroke-width="1.5"/>
+            <text x="60" y="116" font-size="6.5" fill="#fbbf24" font-weight="900" text-anchor="middle" letter-spacing="2.5">PREMIUM · 5 REELS</text>
+        </svg>`,
+        p_dragon: `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+            <defs><radialGradient id="pd-glow" cx="0.5" cy="0.5"><stop offset="0" stop-color="#fde047" stop-opacity=".5"/><stop offset="1" stop-color="#dc2626" stop-opacity="0"/></radialGradient></defs>
+            <rect x="0" y="0" width="120" height="120" fill="url(#pd-glow)"/>
+            <g stroke="#fbbf24" stroke-width="1.5">
+                <line x1="14" y1="20" x2="14" y2="36"/>
+                <line x1="36" y1="20" x2="36" y2="36"/>
+                <line x1="60" y1="14" x2="60" y2="32"/>
+                <line x1="84" y1="20" x2="84" y2="36"/>
+                <line x1="106" y1="20" x2="106" y2="36"/>
+            </g>
+            <g fill="#dc2626" stroke="#fde047" stroke-width="1.5">
+                <ellipse cx="14" cy="44" rx="8" ry="10"/>
+                <ellipse cx="36" cy="44" rx="8" ry="10"/>
+                <ellipse cx="60" cy="40" rx="9" ry="11"/>
+                <ellipse cx="84" cy="44" rx="8" ry="10"/>
+                <ellipse cx="106" cy="44" rx="8" ry="10"/>
+            </g>
+            <g fill="#fbbf24">
+                <circle cx="14" cy="44" r="2"/><circle cx="36" cy="44" r="2"/>
+                <circle cx="60" cy="40" r="2.5"/><circle cx="84" cy="44" r="2"/><circle cx="106" cy="44" r="2"/>
+            </g>
+            <path d="M10 70 Q30 60 50 70 Q70 80 90 70 Q104 64 110 70 Q102 84 88 80 Q72 92 56 80 Q40 92 24 80 Q14 84 10 70 Z"
+                  fill="#dc2626" stroke="#fde047" stroke-width="2"/>
+            <g fill="#fde047">
+                <path d="M22 72 L28 64 L30 74 Z"/>
+                <path d="M48 76 L54 66 L58 78 Z"/>
+                <path d="M76 76 L82 66 L86 78 Z"/>
+            </g>
+            <circle cx="90" cy="70" r="4" fill="#fde047" stroke="#0f172a"/>
+            <circle cx="90" cy="70" r="1.5" fill="#0f172a"/>
+            <path d="M10 84 Q14 96 22 100 M110 84 Q106 96 98 100" stroke="#fde047" stroke-width="2" fill="none"/>
+            <text x="60" y="116" font-size="6.5" fill="#fde047" font-weight="900" text-anchor="middle" letter-spacing="2.5">PREMIUM · 5 REELS</text>
+        </svg>`,
+        p_aztec: `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="60" cy="22" r="9" fill="#fbbf24"/>
+            <g stroke="#fbbf24" stroke-width="1.8">
+                <line x1="60" y1="8" x2="60" y2="2"/><line x1="60" y1="36" x2="60" y2="42"/>
+                <line x1="46" y1="22" x2="40" y2="22"/><line x1="74" y1="22" x2="80" y2="22"/>
+                <line x1="50" y1="12" x2="46" y2="8"/><line x1="70" y1="12" x2="74" y2="8"/>
+                <line x1="50" y1="32" x2="46" y2="36"/><line x1="70" y1="32" x2="74" y2="36"/>
+            </g>
+            <polygon points="6,100 20,80 34,100" fill="#16a34a" stroke="#15803d" stroke-width="1.5"/>
+            <polygon points="22,100 38,72 54,100" fill="#15803d" stroke="#14532d" stroke-width="1.5"/>
+            <polygon points="42,100 60,58 78,100" fill="#16a34a" stroke="#15803d" stroke-width="1.5"/>
+            <polygon points="66,100 82,72 98,100" fill="#15803d" stroke="#14532d" stroke-width="1.5"/>
+            <polygon points="86,100 100,80 114,100" fill="#16a34a" stroke="#15803d" stroke-width="1.5"/>
+            <rect x="56" y="78" width="8" height="22" fill="#0f172a"/>
+            <polygon points="54,74 66,74 60,66" fill="#fbbf24"/>
+            <g fill="#fbbf24">
+                <circle cx="20" cy="90" r="2"/><circle cx="38" cy="86" r="2"/>
+                <circle cx="82" cy="86" r="2"/><circle cx="100" cy="90" r="2"/>
+            </g>
+            <rect x="6" y="100" width="108" height="3" fill="#451a03"/>
+            <text x="60" y="118" font-size="6.5" fill="#fbbf24" font-weight="900" text-anchor="middle" letter-spacing="2.5">PREMIUM · 5 REELS</text>
+        </svg>`
+    };
 
     const THEMES = [
         {
@@ -572,7 +644,6 @@
             desc: 'Zeus & Hera · 5 reels · 10 paylines',
             g1: '#0891b2', g2: '#1e1b4b', accent: '#fbbf24',
             studio: 'OLYMPUS HALL · PREMIUM',
-            art: makeArt('⚡', '🏛️'),
             tagline: 'Strike the lightning for premium gold!',
             symbols: ['🍇', '🦉', '🌊', '🏛️', '⚔️', '👑', '⚡', '🌟'],
             weights: [0.24, 0.20, 0.16, 0.13, 0.10, 0.07, 0.05, 0.05],
@@ -586,7 +657,6 @@
             desc: 'Imperial fortune · 10 lines · 25× max',
             g1: '#dc2626', g2: '#450a0a', accent: '#fde047',
             studio: 'IMPERIAL ORIENT · PREMIUM',
-            art: makeArt('🐉', '🏮'),
             tagline: 'Awaken the dragon!',
             symbols: ['🎋', '🏮', '☯️', '🐟', '🪙', '💰', '🐉', '🧧'],
             weights: [0.24, 0.20, 0.16, 0.13, 0.10, 0.07, 0.05, 0.05],
@@ -600,7 +670,6 @@
             desc: 'Lost temples · 10 lines · jaguar wilds',
             g1: '#15803d', g2: '#1e1b4b', accent: '#fbbf24',
             studio: 'JUNGLE PRAGMA · PREMIUM',
-            art: makeArt('🗿', '🌞'),
             tagline: 'Awaken ancient riches!',
             symbols: ['🌿', '🐍', '🐆', '🌞', '🗿', '💎', '👑', '🌋'],
             weights: [0.24, 0.20, 0.16, 0.13, 0.10, 0.07, 0.05, 0.05],
@@ -615,8 +684,10 @@
         if (!window.Casino || typeof Casino.registerGame !== 'function') return;
         Casino.registerGame({
             id: theme.id, name: theme.name, desc: theme.desc, icon: theme.icon,
-            g1: theme.g1, g2: theme.g2, studio: theme.studio, art: theme.art,
-            category: 'slots'
+            g1: theme.g1, g2: theme.g2, studio: theme.studio,
+            art: SCENES[theme.id],
+            category: 'slots',
+            particles: theme.symbols
         }, makeSlot5(theme));
     });
 })();

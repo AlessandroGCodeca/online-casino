@@ -20,7 +20,9 @@ window.Casino = {
     playCounts: {},
     betHistory: [],
     missions: { date: '', list: [] },
-    dailyStats: { date: '', rounds: 0, wins: 0, wagered: 0, gamesSet: [], bestMult: 0 }
+    dailyStats: { date: '', rounds: 0, wins: 0, wagered: 0, gamesSet: [], bestMult: 0 },
+    race: { weekStart: '', wagered: 0, won: 0 },
+    notifications: []
 };
 
 const STARTING_BALANCE = 10000;
@@ -411,6 +413,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initSidebar();
     initHelpBubble();
     initAudit();
+    initClickRipple();
 
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
@@ -526,8 +529,19 @@ function generateMissions(date) {
 let pendingBet = 0;
 let pendingGameId = null;
 
+let _balanceShown = null;
 function updateBalanceUI() {
-    $('balance-display').textContent = '$' + Casino.balance.toLocaleString();
+    const el = $('balance-display');
+    if (!el) return;
+    const target = Casino.balance;
+    if (_balanceShown === null || reducedMotion) {
+        el.textContent = '$' + target.toLocaleString();
+        _balanceShown = target;
+        return;
+    }
+    if (_balanceShown === target) return;
+    animateCount(el, _balanceShown, target, 600, v => '$' + v.toLocaleString());
+    _balanceShown = target;
 }
 function flashBalance(positive) {
     const el = $('balance-display');
@@ -1554,31 +1568,118 @@ function showAuditModal() {
 }
 
 /* ---- Win Effects ---- */
-function showWinEffect(amount) {
+const DEFAULT_WIN_PARTICLES = ['💰', '✨', '⭐', '💎'];
+const CONFETTI_COLORS_DEFAULT = ['#d4a843','#f0d060','#22c55e','#ef4444','#3b82f6','#8b5cf6'];
+
+/**
+ * Show a win celebration.
+ * @param {number} amount       The win value displayed.
+ * @param {object} options
+ *   @param {string[]} particles   Emojis to rain in the background.
+ *   @param {string}   accent      Theme accent color (overrides default).
+ *   @param {'normal'|'big'|'mega'} tier  Celebration intensity.
+ *   @param {string}   themeLabel  Optional label shown above the number ("PHARAOH'S RICHES" etc.)
+ */
+function showWinEffect(amount, options) {
+    options = options || {};
+    // Infer celebration tier when the caller didn't specify one.
+    let tier = options.tier;
+    if (!tier) {
+        if (options.bet && options.bet > 0) {
+            const ratio = amount / options.bet;
+            tier = ratio >= 100 ? 'mega' : ratio >= 25 ? 'big' : 'normal';
+        } else {
+            tier = amount >= 5000 ? 'mega' : amount >= 1500 ? 'big' : 'normal';
+        }
+    }
+    const particles = options.particles && options.particles.length ? options.particles : DEFAULT_WIN_PARTICLES;
+    const accent = options.accent || '#fbbf24';
     const overlay = $('win-overlay');
     overlay.classList.remove('hidden');
     overlay.innerHTML = '';
-    const txt = document.createElement('div');
-    txt.className = 'win-text';
-    txt.textContent = `+$${amount.toLocaleString()}!`;
-    overlay.appendChild(txt);
+    overlay.dataset.tier = tier;
+    overlay.style.setProperty('--win-accent', accent);
+
+    if (tier === 'big' || tier === 'mega') {
+        // Pulse the header balance amount in sync with the celebration.
+        const bal = $('balance-display');
+        if (bal) {
+            bal.classList.remove('mega-flash');
+            void bal.offsetWidth;
+            bal.classList.add('mega-flash');
+            setTimeout(() => bal.classList.remove('mega-flash'), 1400);
+        }
+        // Dramatic banner with shimmering text and rolling counter.
+        const banner = document.createElement('div');
+        banner.className = 'big-win-banner ' + tier;
+        const label = tier === 'mega' ? 'MEGA WIN!' : 'BIG WIN!';
+        banner.innerHTML = `
+            <div class="big-win-rays" aria-hidden="true"></div>
+            <div class="big-win-stars" aria-hidden="true">${Array.from({ length: 7 }, (_, i) => `<span style="--i:${i};">⭐</span>`).join('')}</div>
+            <div class="big-win-label">${label}</div>
+            <div class="big-win-amount" data-role="bigwin-count">$0</div>
+            ${options.themeLabel ? `<div class="big-win-sub">${esc(options.themeLabel)}</div>` : ''}
+        `;
+        overlay.appendChild(banner);
+        animateCount(banner.querySelector('[data-role=bigwin-count]'), 0, amount, tier === 'mega' ? 1800 : 1200, v => '$' + v.toLocaleString());
+        haptic(tier === 'mega' ? [40, 60, 40, 60, 40, 60, 80] : [20, 40, 20, 40, 60]);
+    } else {
+        // Standard "+$X" pop.
+        const txt = document.createElement('div');
+        txt.className = 'win-text';
+        txt.textContent = `+$${amount.toLocaleString()}!`;
+        overlay.appendChild(txt);
+        haptic([20, 30, 60, 30, 20]);
+    }
+
     if (!reducedMotion) {
+        // Confetti (default colors or per-player palette).
         const palId = Casino.inventory.confetti || 'default';
-        const colors = CONFETTI_PALETTES[palId] || CONFETTI_PALETTES.default;
-        for (let i = 0; i < 40; i++) {
+        const colors = (CONFETTI_PALETTES[palId] || CONFETTI_PALETTES.default);
+        const confettiCount = tier === 'mega' ? 80 : tier === 'big' ? 60 : 40;
+        for (let i = 0; i < confettiCount; i++) {
             const c = document.createElement('div');
             c.className = 'confetti';
             c.style.left = Math.random() * 100 + '%';
             c.style.top = '-10px';
             c.style.background = colors[Math.floor(Math.random() * colors.length)];
-            c.style.animationDelay = Math.random() * 0.5 + 's';
-            c.style.animationDuration = (1.5 + Math.random()) + 's';
+            c.style.animationDelay = (Math.random() * 0.6) + 's';
+            c.style.animationDuration = (1.4 + Math.random() * 1.5) + 's';
             overlay.appendChild(c);
         }
+        // Themed emoji rain for big/mega wins (and a small dose for normal).
+        const emojiCount = tier === 'mega' ? 50 : tier === 'big' ? 32 : 0;
+        for (let i = 0; i < emojiCount; i++) {
+            const e = document.createElement('div');
+            e.className = 'themed-particle' + (tier === 'mega' ? ' mega' : '');
+            e.textContent = particles[Math.floor(Math.random() * particles.length)];
+            e.style.left = (Math.random() * 100) + '%';
+            e.style.fontSize = (24 + Math.random() * (tier === 'mega' ? 48 : 30)) + 'px';
+            e.style.animationDelay = (Math.random() * 0.7) + 's';
+            e.style.animationDuration = (1.8 + Math.random() * 2.2) + 's';
+            e.style.setProperty('--drift', ((Math.random() - 0.5) * 200) + 'px');
+            overlay.appendChild(e);
+        }
     }
-    haptic([20, 30, 60, 30, 20]);
-    setTimeout(() => { overlay.classList.add('hidden'); overlay.innerHTML = ''; }, 2500);
+
+    const duration = tier === 'mega' ? 4200 : tier === 'big' ? 3200 : 2500;
+    setTimeout(() => { overlay.classList.add('hidden'); overlay.innerHTML = ''; delete overlay.dataset.tier; }, duration);
 }
+
+function animateCount(el, from, to, duration, format) {
+    if (!el) return;
+    if (reducedMotion) { el.textContent = format ? format(to) : to.toLocaleString(); return; }
+    const start = performance.now();
+    function step(now) {
+        const progress = Math.min((now - start) / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3); // ease-out
+        const val = Math.round(from + (to - from) * eased);
+        el.textContent = format ? format(val) : val.toLocaleString();
+        if (progress < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+}
+
 window.Casino.showWinEffect = showWinEffect;
 
 /* ---- Shop ---- */
@@ -1861,6 +1962,29 @@ window.Casino.registerGame = function(meta, gameLogic) {
     // If the lobby has already rendered, refresh it.
     if (document.getElementById('games-grid')?.childElementCount) renderLobby();
 };
+
+/* ---- Click ripple — material-style feedback on action buttons ---- */
+const RIPPLE_SELECTOR = '.action-btn, .bet-btn, .icon-btn, .ts-icon-btn, .ts-auto-count, .ts-auto-stop-btn, .ts-bonus-buy, .ts-spin, .sidebar-btn, .cat-tab, .shop-btn, .shop-tab, .r-action-btn, .r-grid-btn, .r-out-btn, .r-chip-btn, .back-btn, .modal-close, .reset-btn';
+function initClickRipple() {
+    if (reducedMotion) return;
+    document.addEventListener('pointerdown', e => {
+        const btn = e.target.closest(RIPPLE_SELECTOR);
+        if (!btn || btn.disabled) return;
+        const rect = btn.getBoundingClientRect();
+        const size = Math.max(rect.width, rect.height);
+        const ripple = document.createElement('span');
+        ripple.className = 'click-ripple';
+        ripple.style.width = ripple.style.height = size + 'px';
+        ripple.style.left = (e.clientX - rect.left - size / 2) + 'px';
+        ripple.style.top = (e.clientY - rect.top - size / 2) + 'px';
+        // Ensure the button can clip the ripple.
+        const cs = getComputedStyle(btn);
+        if (cs.position === 'static') btn.style.position = 'relative';
+        if (cs.overflow !== 'hidden') btn.style.overflow = 'hidden';
+        btn.appendChild(ripple);
+        setTimeout(() => ripple.remove(), 600);
+    }, { passive: true });
+}
 
 /* ---- Sidebar ---- */
 function initSidebar() {

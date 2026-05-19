@@ -178,7 +178,7 @@
         msg(`You won $${winnings.toLocaleString()}!`, 'win');
         
         Casino.playSound(multiplier >= 5 ? 'jackpot' : 'win');
-        if (winnings >= bet * 5) Casino.showWinEffect(winnings);
+        if (winnings >= bet * 5) Casino.showWinEffect(winnings, { bet, particles: ['🚀','💥','⭐','🔥','💰','✨'], accent: '#f97316', themeLabel: 'Crash' });
         
         resetBtn();
         

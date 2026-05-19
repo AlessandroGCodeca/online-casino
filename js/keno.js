@@ -122,7 +122,7 @@
             msg.textContent = `${hits} hits! Won $${winnings} (${mult}x)!`;
             msg.className = 'game-message win';
             Casino.playSound(mult >= 25 ? 'jackpot' : 'win');
-            if (winnings >= 500) Casino.showWinEffect(winnings);
+            if (winnings >= 500) Casino.showWinEffect(winnings, { bet, particles: ['🔢','🎱','✨','💰','🍀'], accent: '#ef4444', themeLabel: 'Keno' });
         } else {
             msg.textContent = `${hits} hit${hits !== 1 ? 's' : ''} — no win. Try again!`;
             msg.className = 'game-message lose';

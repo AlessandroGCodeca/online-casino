@@ -88,7 +88,7 @@
             msg.className = 'game-message win';
             resEl.style.color = '#22c55e';
             Casino.playSound(mult >= 5 ? 'jackpot' : 'win');
-            if (winnings >= 500) Casino.showWinEffect(winnings);
+            if (winnings >= 500) Casino.showWinEffect(winnings, { bet, particles: ['🎲','💰','✨','🍀','💎'], accent: '#06b6d4', themeLabel: 'Hi-Lo Dice' });
         } else {
             msg.textContent = `Rolled ${result} — not ${prediction} ${target}. You lose!`;
             msg.className = 'game-message lose';

@@ -203,7 +203,7 @@
             Casino.changeBalance(winnings);
             msg(`${result.name}! Won $${winnings}!`, 'win');
             Casino.playSound(pay >= 25 ? 'jackpot' : 'win');
-            if (winnings >= 500) Casino.showWinEffect(winnings);
+            if (winnings >= 500) Casino.showWinEffect(winnings, { bet, particles: ['♠️','♥️','♦️','♣️','💰','✨'], accent: '#3b82f6', themeLabel: 'Video Poker' });
         } else {
             msg('No winning hand — try again!', 'lose');
             Casino.playSound('lose');

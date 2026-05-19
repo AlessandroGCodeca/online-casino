@@ -907,11 +907,183 @@ body.no-animations *, body.no-animations *::before, body.no-animations *::after 
 .reset-btn:hover { background: rgba(239,68,68,0.2); }
 
 /* Win Overlay */
-#win-overlay { position: fixed; inset: 0; z-index: 300; pointer-events: none; display: flex; align-items: center; justify-content: center; }
+#win-overlay { position: fixed; inset: 0; z-index: 300; pointer-events: none; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+#win-overlay[data-tier="big"], #win-overlay[data-tier="mega"] { background: radial-gradient(circle at 50% 50%, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.15) 70%, transparent 100%); }
 #win-overlay .win-text { font-size: 48px; font-weight: 900; color: var(--gold); text-shadow: 0 0 40px rgba(212,168,67,0.5); animation: winPop 1.5s forwards; font-family: var(--font-display); }
 @keyframes winPop { 0% { opacity: 0; transform: scale(0.5); } 20% { opacity: 1; transform: scale(1.2); } 40% { transform: scale(1); } 100% { opacity: 0; transform: scale(1) translateY(-40px); } }
+
+/* Confetti and themed particles. */
 .confetti { position: absolute; width: 10px; height: 10px; border-radius: 2px; animation: confettiFall 2s forwards; }
 @keyframes confettiFall { 0% { opacity: 1; transform: translateY(0) rotate(0deg); } 100% { opacity: 0; transform: translateY(100vh) rotate(720deg); } }
+.themed-particle {
+    position: absolute;
+    top: -10vh;
+    line-height: 1;
+    filter: drop-shadow(0 2px 10px rgba(0,0,0,0.4));
+    animation: themedFall 2.5s forwards cubic-bezier(0.35, 0.0, 0.65, 1);
+    will-change: transform, opacity;
+}
+.themed-particle.mega { filter: drop-shadow(0 0 18px var(--win-accent, gold)) drop-shadow(0 4px 12px rgba(0,0,0,0.5)); }
+@keyframes themedFall {
+    0%   { opacity: 0; transform: translateY(0) translateX(0) rotate(0deg) scale(0.7); }
+    10%  { opacity: 1; transform: translateY(10vh) translateX(calc(var(--drift) * 0.1)) rotate(40deg) scale(1); }
+    100% { opacity: 0; transform: translateY(110vh) translateX(var(--drift, 0)) rotate(720deg) scale(1.1); }
+}
+
+/* BIG WIN / MEGA WIN banner */
+.big-win-banner {
+    position: relative;
+    z-index: 5;
+    text-align: center;
+    padding: 40px 60px;
+    border-radius: 28px;
+    background: radial-gradient(circle at 50% 30%, rgba(255, 255, 255, 0.12), transparent 60%),
+                linear-gradient(135deg, rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.55));
+    border: 2px solid var(--win-accent, var(--gold));
+    box-shadow:
+        0 0 80px var(--win-accent, var(--gold)),
+        0 0 200px rgba(212, 168, 67, 0.45),
+        inset 0 0 80px rgba(255, 255, 255, 0.05);
+    animation: bigWinIn 0.6s cubic-bezier(0.2, 1.6, 0.4, 1) forwards;
+}
+.big-win-banner.mega {
+    padding: 56px 80px;
+    border-width: 3px;
+    box-shadow:
+        0 0 120px var(--win-accent, gold),
+        0 0 280px rgba(251, 191, 36, 0.55),
+        inset 0 0 100px rgba(255, 255, 255, 0.08);
+}
+.big-win-label {
+    font-family: var(--font-display);
+    font-size: clamp(38px, 7vw, 78px);
+    font-weight: 900;
+    letter-spacing: 4px;
+    background: linear-gradient(135deg, #fde047 0%, var(--win-accent, #fbbf24) 30%, #fff 50%, var(--win-accent, #fbbf24) 70%, #fde047 100%);
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    text-shadow: 0 0 30px rgba(251, 191, 36, 0.6);
+    animation: shimmer 2.5s linear infinite;
+    margin-bottom: 12px;
+}
+.big-win-banner.mega .big-win-label { letter-spacing: 8px; animation: shimmer 1.6s linear infinite, megaPulse 1.2s ease-in-out infinite; }
+.big-win-amount {
+    font-family: var(--font-display);
+    font-size: clamp(32px, 5.5vw, 64px);
+    font-weight: 900;
+    color: #fff;
+    text-shadow: 0 0 24px var(--win-accent, var(--gold)), 0 4px 12px rgba(0, 0, 0, 0.6);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 1px;
+}
+.big-win-sub {
+    margin-top: 14px;
+    font-size: 14px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--win-accent, var(--gold));
+    font-weight: 700;
+    opacity: 0.85;
+}
+.big-win-rays {
+    position: absolute;
+    inset: -200px;
+    background: conic-gradient(from 0deg,
+        transparent 0deg, rgba(255, 255, 255, 0.08) 8deg, transparent 16deg,
+        transparent 32deg, rgba(255, 255, 255, 0.08) 40deg, transparent 48deg,
+        transparent 64deg, rgba(255, 255, 255, 0.08) 72deg, transparent 80deg);
+    mix-blend-mode: screen;
+    animation: rayRotate 12s linear infinite;
+    z-index: -1;
+    border-radius: 50%;
+    pointer-events: none;
+}
+.big-win-stars {
+    position: absolute;
+    inset: -30px;
+    pointer-events: none;
+    z-index: -1;
+}
+.big-win-stars span {
+    position: absolute;
+    font-size: 28px;
+    top: 50%; left: 50%;
+    transform-origin: 0 0;
+    animation: starPop 1.6s cubic-bezier(0.2, 1.6, 0.4, 1) forwards;
+    animation-delay: calc(var(--i) * 60ms);
+    --angle: calc(var(--i) * 51.4deg);
+}
+@keyframes starPop {
+    0%   { transform: rotate(var(--angle)) translateX(0) scale(0.5); opacity: 0; }
+    40%  { transform: rotate(var(--angle)) translateX(180px) scale(1.4); opacity: 1; }
+    100% { transform: rotate(var(--angle)) translateX(260px) scale(0.8); opacity: 0; }
+}
+@keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+@keyframes rayRotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes megaPulse { 50% { transform: scale(1.05); } }
+@keyframes bigWinIn {
+    from { opacity: 0; transform: scale(0.4) rotate(-8deg); }
+    to   { opacity: 1; transform: scale(1) rotate(0); }
+}
+
+/* Click ripple */
+.click-ripple {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.4);
+    pointer-events: none;
+    transform: scale(0);
+    animation: rippleExpand 0.6s ease-out forwards;
+    mix-blend-mode: screen;
+}
+@keyframes rippleExpand {
+    to { transform: scale(2.5); opacity: 0; }
+}
+
+/* Reel bounce on stop — applies to .ts-reel, .ts5-reel */
+.ts-reel.reel-bounce, .ts5-reel.reel-bounce { animation: reelBounce 0.32s cubic-bezier(0.4, 1.6, 0.5, 1); }
+@keyframes reelBounce {
+    0%   { transform: scale(1, 1); }
+    40%  { transform: scale(1.08, 0.95); }
+    70%  { transform: scale(0.97, 1.04); }
+    100% { transform: scale(1, 1); }
+}
+
+/* Big-win balance flash */
+@keyframes balanceMegaFlash {
+    0%   { color: var(--gold-light); text-shadow: 0 0 0 transparent; transform: scale(1); }
+    35%  { color: #fde047; text-shadow: 0 0 30px gold, 0 0 60px gold, 0 0 90px rgba(251,191,36,0.6); transform: scale(1.12); }
+    100% { color: var(--gold-light); text-shadow: 0 0 0 transparent; transform: scale(1); }
+}
+.balance-amount.mega-flash { animation: balanceMegaFlash 1.4s ease-out; }
+
+/* Toast spring entrance */
+.toast {
+    transform: translateX(120%);
+    animation: toastSlideIn 0.45s cubic-bezier(0.2, 1.6, 0.4, 1) forwards;
+}
+.toast::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(90deg, transparent, rgba(212,168,67,0.15), transparent);
+    transform: translateX(-100%);
+    animation: toastShimmer 1.8s ease-in-out 0.5s;
+    pointer-events: none;
+}
+@keyframes toastSlideIn {
+    0%   { transform: translateX(120%); opacity: 0; }
+    70%  { transform: translateX(-10%); opacity: 1; }
+    100% { transform: translateX(0); }
+}
+@keyframes toastShimmer {
+    to { transform: translateX(100%); }
+}
+.toast { position: relative; overflow: hidden; }
 
 /* Animations */
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }

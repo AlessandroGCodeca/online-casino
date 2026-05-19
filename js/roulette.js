@@ -472,7 +472,7 @@
                 m.className = 'game-message win';
             }
             Casino.playSound(totalPayout >= totalBet() * 10 ? 'jackpot' : 'win');
-            if (totalPayout >= 500) Casino.showWinEffect(totalPayout);
+            if (totalPayout >= 500) Casino.showWinEffect(totalPayout, { bet: totalBet(), particles: ['🎡','🎰','💰','✨','♠️','♦️'], accent: '#8b5cf6', themeLabel: 'Roulette' });
         } else {
             if (m) {
                 m.innerHTML = `${tag} No winning bets.`;

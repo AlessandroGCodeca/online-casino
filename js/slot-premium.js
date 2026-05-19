@@ -276,6 +276,12 @@
             m.className = 'ts-message game-message ' + (cls || '');
         }
 
+        function themeParticles() {
+            if (theme.winFx && theme.winFx.length) return theme.winFx;
+            const set = new Set([theme.wild, theme.scatter]);
+            return theme.symbols.filter(s => !set.has(s)).slice(0, 6).concat([theme.wild]);
+        }
+
         function clearLines() {
             const svg = area.querySelector('.ts5-lines');
             if (svg) svg.innerHTML = '';
@@ -361,7 +367,15 @@
                     strip.style.transition = `transform ${dur}s cubic-bezier(0.2, 0.85, 0.25, 1)`;
                     strip.style.transform = `translateY(${offset}px)`;
                 });
-                setTimeout(() => playThemeSound(theme, 'reelStop'), dur * 1000);
+                setTimeout(() => {
+                    playThemeSound(theme, 'reelStop');
+                    const reel = strip.parentElement;
+                    if (reel) {
+                        reel.classList.remove('reel-bounce');
+                        void reel.offsetWidth;
+                        reel.classList.add('reel-bounce');
+                    }
+                }, dur * 1000);
             }
 
             setTimeout(() => evaluate(grid, usingFreeSpin), (t.base + (REELS - 1) * t.inc) * 1000 + t.finishPad);
@@ -447,8 +461,22 @@
                 const chainTag = (!wasFreeSpin && winChain > 1) ? `🔥${CHAIN_MULTS[Math.min(winChain - 1, CHAIN_MULTS.length - 1)]}× ` : '';
                 const freeTag = wasFreeSpin ? `[FREE ${freeSpinMult}×] ` : '';
                 showMsg(`${freeTag}${chainTag}${lines} line${lines > 1 ? 's' : ''} — Won $${totalWin.toLocaleString()}!`, 'win');
-                if (totalWin >= bet * 25) { Casino.showWinEffect(totalWin); playThemeSound(theme, 'bigWin'); }
-                else playThemeSound(theme, 'win');
+                const ratio = totalWin / Math.max(1, bet);
+                const tier = ratio >= 100 ? 'mega' : ratio >= 25 ? 'big' : 'normal';
+                if (tier !== 'normal') {
+                    Casino.showWinEffect(totalWin, {
+                        particles: themeParticles(),
+                        accent: theme.accent || theme.g1,
+                        tier,
+                        themeLabel: theme.name
+                    });
+                    playThemeSound(theme, 'bigWin');
+                } else if (ratio >= 5) {
+                    Casino.showWinEffect(totalWin, { particles: themeParticles(), accent: theme.accent || theme.g1, tier: 'normal' });
+                    playThemeSound(theme, 'win');
+                } else {
+                    playThemeSound(theme, 'win');
+                }
                 drawWinningLines(winningLines);
             } else if (scatterCount < 3) {
                 showMsg('No win this spin', 'lose');

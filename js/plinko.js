@@ -222,7 +222,7 @@
                         m.textContent = `🎉 ${mult}x! Won $${winnings.toLocaleString()}!`;
                         m.className = 'game-message win';
                         Casino.playSound('jackpot');
-                        if (winnings >= 500) Casino.showWinEffect(winnings);
+                        if (winnings >= 500) Casino.showWinEffect(winnings, { bet: ball.bet, particles: ['🟢','🟡','🔴','💰','✨','⚪'], accent: '#22c55e', themeLabel: 'Plinko' });
                     } else if (mult >= 1) {
                         m.textContent = `${mult}x — Won $${winnings}`;
                         m.className = 'game-message win';

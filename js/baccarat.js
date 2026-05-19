@@ -114,7 +114,7 @@
             msgEl.textContent = `${msg} — You win $${winnings}!`;
             msgEl.className = 'game-message win';
             Casino.playSound(betType === 'tie' ? 'jackpot' : 'win');
-            if (winnings >= 500) Casino.showWinEffect(winnings);
+            if (winnings >= 500) Casino.showWinEffect(winnings, { bet, particles: ['👑','♠️','♦️','💰','✨','🃏'], accent: '#d4a843', themeLabel: 'Baccarat' });
         } else {
             msgEl.textContent = `${msg} — You lose.`;
             msgEl.className = 'game-message lose';

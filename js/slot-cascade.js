@@ -413,7 +413,19 @@
                 Casino.changeBalance(totalRoundWin);
                 const cascadesText = cascadeDepth > 1 ? ` (${cascadeDepth} cascades)` : '';
                 showMsg(`🎉 Won $${totalRoundWin.toLocaleString()}${cascadesText}!`, 'win');
-                if (totalRoundWin >= bet * 25) { Casino.showWinEffect(totalRoundWin); playThemeSound(theme, 'bigWin'); }
+                const ratio = totalRoundWin / Math.max(1, bet);
+                const tier = ratio >= 100 ? 'mega' : ratio >= 25 ? 'big' : 'normal';
+                if (tier !== 'normal') {
+                    Casino.showWinEffect(totalRoundWin, {
+                        particles: themeParticles(),
+                        accent: theme.accent || theme.g1,
+                        tier,
+                        themeLabel: theme.name
+                    });
+                    playThemeSound(theme, 'bigWin');
+                } else if (ratio >= 5) {
+                    Casino.showWinEffect(totalRoundWin, { particles: themeParticles(), accent: theme.accent || theme.g1, tier: 'normal' });
+                }
             } else if (cascadeDepth === 0 && !wasFreeSpin) {
                 showMsg('No matches this spin', 'lose');
                 playThemeSound(theme, 'lose');
@@ -421,6 +433,12 @@
             cascadeDepth = 0;
             updateMultBar();
             finishSpinAndContinue(wasFreeSpin);
+        }
+
+        function themeParticles() {
+            if (theme.winFx && theme.winFx.length) return theme.winFx;
+            const set = new Set([theme.wild, theme.scatter]);
+            return theme.symbols.filter(s => !set.has(s)).slice(0, 6).concat([theme.wild]);
         }
 
         function buyBonus() {

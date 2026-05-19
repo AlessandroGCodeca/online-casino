@@ -217,7 +217,7 @@
             msgEl.textContent = freeSpins > 0 ? `Free Spin Win: $${totalWin}!` : `Won $${totalWin.toLocaleString()} on ${winningLines.length} line(s)!`;
             msgEl.className = 'game-message win';
             drawLines(winningLines);
-            if (totalWin >= bet * 25) { Casino.showWinEffect(totalWin); Casino.playSound('jackpot'); }
+            if (totalWin >= bet * 25) { Casino.showWinEffect(totalWin, { bet, particles: ['🎰','💎','🍒','7️⃣','💰','✨','🍋','⭐'], accent: '#e74c3c', themeLabel: 'Mega Jackpot' }); Casino.playSound('jackpot'); }
             else Casino.playSound('win');
         } else {
             msgEl.textContent = freeSpins > 0 ? 'No win this spin.' : 'No luck — spin again!';

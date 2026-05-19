@@ -174,7 +174,7 @@
         msg.className = 'game-message win';
         
         Casino.playSound(currentMultiplier >= 5 ? 'jackpot' : 'win');
-        if (winnings >= 500) Casino.showWinEffect(winnings);
+        if (winnings >= 500) Casino.showWinEffect(winnings, { bet, particles: ['💎','💣','✨','💰','🟢'], accent: '#22c55e', themeLabel: 'Mines' });
     }
 
     function destroy() { gameActive = false; }

@@ -230,7 +230,7 @@
                 Casino.changeBalance(win);
                 msg(`BLACKJACK! You win $${win}!`, 'win');
                 Casino.playSound('jackpot');
-                Casino.showWinEffect(win);
+                Casino.showWinEffect(win, { bet: mainBet, particles: ['🃏','♠️','♥️','♦️','♣️','💰','✨'], accent: '#22c55e', themeLabel: 'Blackjack' });
                 resetRound();
             } else {
                 playCurrentHand();
@@ -396,7 +396,7 @@
         if (totalWin > 0) {
             Casino.changeBalance(totalWin);
             msg(msgs.join(' | '), 'win');
-            if (totalWin > mainBet * 2) { Casino.playSound('jackpot'); Casino.showWinEffect(totalWin); }
+            if (totalWin > mainBet * 2) { Casino.playSound('jackpot'); Casino.showWinEffect(totalWin, { bet: mainBet, particles: ['🃏','♠️','♥️','♦️','♣️','💰','✨'], accent: '#22c55e', themeLabel: 'Blackjack' }); }
             else Casino.playSound('win');
         } else {
             msg(msgs.join(' | '), 'lose');

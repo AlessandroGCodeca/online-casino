@@ -1543,6 +1543,13 @@ function showWinEffect(amount, options) {
             bal.classList.add('mega-flash');
             setTimeout(() => bal.classList.remove('mega-flash'), 1400);
         }
+        // After the counter finishes rolling, fly a swarm of chips from the
+        // banner toward the balance display. Pure flourish, no balance effect.
+        const flyDelay = tier === 'mega' ? 1900 : 1300;
+        setTimeout(() => {
+            const banner = overlay.querySelector('.big-win-banner');
+            if (banner) flyChipsToBalance(banner.getBoundingClientRect(), tier === 'mega' ? 24 : 16);
+        }, flyDelay);
         // Dramatic banner with shimmering text and rolling counter.
         const banner = document.createElement('div');
         banner.className = 'big-win-banner ' + tier;
@@ -1596,6 +1603,52 @@ function showWinEffect(amount, options) {
 
     const duration = tier === 'mega' ? 4200 : tier === 'big' ? 3200 : 2500;
     setTimeout(() => { overlay.classList.add('hidden'); overlay.innerHTML = ''; delete overlay.dataset.tier; }, duration);
+}
+
+/* Spawn coin chips at `srcRect` and animate them toward the balance display
+   with a slight upward arc. Each chip clears itself when the animation ends. */
+function flyChipsToBalance(srcRect, count) {
+    if (reducedMotion) return;
+    const balanceEl = $('balance-display');
+    if (!balanceEl) return;
+    const destRect = balanceEl.getBoundingClientRect();
+    const destX = destRect.left + destRect.width / 2;
+    const destY = destRect.top + destRect.height / 2;
+    const srcCX = srcRect.left + srcRect.width / 2;
+    const srcCY = srcRect.top + srcRect.height / 2;
+    const chips = ['🪙','💰','💎','🟡'];
+    for (let i = 0; i < count; i++) {
+        const chip = document.createElement('div');
+        chip.className = 'flying-chip';
+        chip.textContent = chips[Math.floor(Math.random() * chips.length)];
+        const jitterX = (Math.random() - 0.5) * Math.min(srcRect.width * 0.9, 240);
+        const jitterY = (Math.random() - 0.5) * Math.min(srcRect.height * 0.6, 100);
+        const startX = srcCX + jitterX;
+        const startY = srcCY + jitterY;
+        chip.style.left = startX + 'px';
+        chip.style.top = startY + 'px';
+        const dx = destX - startX;
+        const dy = destY - startY;
+        // Mid-arc: lift then dive.
+        const midX = dx * 0.5 + (Math.random() - 0.5) * 60;
+        const midY = dy * 0.5 - 90 - Math.random() * 40;
+        chip.style.setProperty('--dx', dx + 'px');
+        chip.style.setProperty('--dy', dy + 'px');
+        chip.style.setProperty('--mx', midX + 'px');
+        chip.style.setProperty('--my', midY + 'px');
+        chip.style.setProperty('--rot', (Math.random() * 720 - 360) + 'deg');
+        chip.style.animationDelay = (i * 35) + 'ms';
+        chip.style.fontSize = (18 + Math.random() * 14) + 'px';
+        document.body.appendChild(chip);
+        setTimeout(() => chip.remove(), 1400);
+    }
+    // Tiny chime when chips arrive at the balance.
+    if (Casino.playTones) {
+        setTimeout(() => Casino.playTones([
+            { freq: 1320, wave: 'sine', dur: 0.06, vol: 0.04 },
+            { freq: 1760, wave: 'triangle', start: 0.05, dur: 0.08, vol: 0.03 }
+        ]), count * 35 + 800);
+    }
 }
 
 function animateCount(el, from, to, duration, format) {

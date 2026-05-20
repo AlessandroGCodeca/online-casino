@@ -106,8 +106,14 @@
                 ? ` · <span class="ts-sym">${theme.scatter}</span> Scatter (3 = ${freeSpinGrant} free spins, ${freeSpinMult}×)`
                 : '';
 
+            const decor = THEME_DECOR[theme.id];
+            const decorHtml = decor
+                ? `<div class="ts-decor ts-decor-left" aria-hidden="true">${decor.left}</div><div class="ts-decor ts-decor-right" aria-hidden="true">${decor.right}</div>`
+                : '';
+
             area.innerHTML = `
             <div class="themed-slot" style="--ts-g1:${theme.g1};--ts-g2:${theme.g2};--ts-accent:${theme.accent || '#fbbf24'}">
+                ${decorHtml}
                 <div class="ts-frame">
                     <div class="ts-banner">
                         <span class="ts-banner-icon">${theme.icon}</span>
@@ -572,6 +578,176 @@
             }
         };
     }
+
+    /* Decorative ornaments flanking the reels for the most iconic themes.
+       Each entry has SVGs that get rendered as `.ts-decor-left/right`
+       absolute children of the .themed-slot container. */
+    const THEME_DECOR = {
+        slot_egypt: {
+            left: `<svg viewBox="0 0 60 280" xmlns="http://www.w3.org/2000/svg">
+                <defs><linearGradient id="td-e1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fde047"/><stop offset="1" stop-color="#92400e"/></linearGradient></defs>
+                <polygon points="30,4 12,40 48,40" fill="#fbbf24" stroke="#451a03"/>
+                <rect x="14" y="40" width="32" height="200" fill="url(#td-e1)" stroke="#451a03"/>
+                <rect x="14" y="60" width="32" height="6" fill="#451a03"/>
+                <rect x="14" y="120" width="32" height="6" fill="#451a03"/>
+                <rect x="14" y="180" width="32" height="6" fill="#451a03"/>
+                <ellipse cx="30" cy="92" rx="9" ry="5" fill="#0f172a"/><circle cx="30" cy="92" r="3" fill="#fde68a"/>
+                <ellipse cx="30" cy="152" rx="9" ry="5" fill="#0f172a"/><circle cx="30" cy="152" r="3" fill="#fde68a"/>
+                <ellipse cx="30" cy="212" rx="9" ry="5" fill="#0f172a"/><circle cx="30" cy="212" r="3" fill="#fde68a"/>
+                <rect x="10" y="240" width="40" height="34" fill="#7c2d12" stroke="#451a03"/>
+            </svg>`,
+            right: `<svg viewBox="0 0 60 280" xmlns="http://www.w3.org/2000/svg">
+                <defs><linearGradient id="td-e2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fde047"/><stop offset="1" stop-color="#92400e"/></linearGradient></defs>
+                <polygon points="30,4 12,40 48,40" fill="#fbbf24" stroke="#451a03"/>
+                <rect x="14" y="40" width="32" height="200" fill="url(#td-e2)" stroke="#451a03"/>
+                <rect x="14" y="60" width="32" height="6" fill="#451a03"/>
+                <rect x="14" y="120" width="32" height="6" fill="#451a03"/>
+                <rect x="14" y="180" width="32" height="6" fill="#451a03"/>
+                <path d="M22 86 L22 102 M30 84 L30 106 M38 86 L38 102" stroke="#0f172a" stroke-width="2"/>
+                <path d="M22 146 L22 162 M30 144 L30 166 M38 146 L38 162" stroke="#0f172a" stroke-width="2"/>
+                <path d="M22 206 L22 222 M30 204 L30 226 M38 206 L38 222" stroke="#0f172a" stroke-width="2"/>
+                <rect x="10" y="240" width="40" height="34" fill="#7c2d12" stroke="#451a03"/>
+            </svg>`
+        },
+        slot_pirate: {
+            left: `<svg viewBox="0 0 60 280" xmlns="http://www.w3.org/2000/svg">
+                <line x1="30" y1="10" x2="30" y2="240" stroke="#7c2d12" stroke-width="6"/>
+                <path d="M30 30 L52 50 L30 70 Z" fill="#fafafa" stroke="#0f172a" stroke-width="1.5"/>
+                <path d="M30 80 L54 102 L30 124 Z" fill="#fafafa" stroke="#0f172a" stroke-width="1.5"/>
+                <path d="M30 134 L50 156 L30 178 Z" fill="#fafafa" stroke="#0f172a" stroke-width="1.5"/>
+                <line x1="20" y1="20" x2="40" y2="20" stroke="#0f172a" stroke-width="3"/>
+                <line x1="22" y1="76" x2="38" y2="76" stroke="#0f172a" stroke-width="2.5"/>
+                <line x1="22" y1="130" x2="38" y2="130" stroke="#0f172a" stroke-width="2.5"/>
+                <path d="M14 240 L46 240 L42 270 L18 270 Z" fill="#7c2d12" stroke="#0f172a" stroke-width="1.5"/>
+                <line x1="18" y1="250" x2="42" y2="250" stroke="#0f172a"/>
+                <circle cx="30" cy="20" r="3" fill="#fde047"/>
+            </svg>`,
+            right: `<svg viewBox="0 0 60 280" xmlns="http://www.w3.org/2000/svg">
+                <line x1="30" y1="10" x2="30" y2="240" stroke="#7c2d12" stroke-width="6"/>
+                <path d="M30 30 L8 50 L30 70 Z" fill="#fafafa" stroke="#0f172a" stroke-width="1.5"/>
+                <path d="M30 80 L6 102 L30 124 Z" fill="#fafafa" stroke="#0f172a" stroke-width="1.5"/>
+                <path d="M30 134 L10 156 L30 178 Z" fill="#fafafa" stroke="#0f172a" stroke-width="1.5"/>
+                <line x1="20" y1="20" x2="40" y2="20" stroke="#0f172a" stroke-width="3"/>
+                <path d="M14 240 L46 240 L42 270 L18 270 Z" fill="#7c2d12" stroke="#0f172a" stroke-width="1.5"/>
+                <path d="M24 246 Q30 254 36 246" stroke="#fafafa" stroke-width="2" fill="none"/>
+                <circle cx="20" cy="252" r="1.5" fill="#fafafa"/><circle cx="40" cy="252" r="1.5" fill="#fafafa"/>
+                <circle cx="30" cy="20" r="3" fill="#fde047"/>
+            </svg>`
+        },
+        slot_dragon: {
+            left: `<svg viewBox="0 0 60 280" xmlns="http://www.w3.org/2000/svg">
+                <path d="M30 10 Q14 40 30 70 Q46 100 30 130 Q14 160 30 190 Q46 220 30 250 L30 270"
+                      fill="none" stroke="#dc2626" stroke-width="14" stroke-linecap="round"/>
+                <path d="M30 10 Q14 40 30 70 Q46 100 30 130 Q14 160 30 190 Q46 220 30 250 L30 270"
+                      fill="none" stroke="#fde047" stroke-width="6" stroke-linecap="round" stroke-dasharray="4 6"/>
+                <circle cx="30" cy="22" r="9" fill="#dc2626" stroke="#fde047" stroke-width="2"/>
+                <circle cx="30" cy="22" r="3" fill="#fde047"/>
+                <path d="M22 16 L28 18 M38 16 L32 18" stroke="#fde047" stroke-width="2"/>
+                <circle cx="14" cy="50" r="2" fill="#fde047"/>
+                <circle cx="46" cy="100" r="2" fill="#fde047"/>
+                <circle cx="14" cy="160" r="2" fill="#fde047"/>
+                <circle cx="46" cy="210" r="2" fill="#fde047"/>
+            </svg>`,
+            right: `<svg viewBox="0 0 60 280" xmlns="http://www.w3.org/2000/svg">
+                <path d="M30 10 Q46 40 30 70 Q14 100 30 130 Q46 160 30 190 Q14 220 30 250 L30 270"
+                      fill="none" stroke="#dc2626" stroke-width="14" stroke-linecap="round"/>
+                <path d="M30 10 Q46 40 30 70 Q14 100 30 130 Q46 160 30 190 Q14 220 30 250 L30 270"
+                      fill="none" stroke="#fde047" stroke-width="6" stroke-linecap="round" stroke-dasharray="4 6"/>
+                <circle cx="30" cy="22" r="9" fill="#dc2626" stroke="#fde047" stroke-width="2"/>
+                <circle cx="30" cy="22" r="3" fill="#fde047"/>
+                <circle cx="46" cy="50" r="2" fill="#fde047"/>
+                <circle cx="14" cy="100" r="2" fill="#fde047"/>
+                <circle cx="46" cy="160" r="2" fill="#fde047"/>
+                <circle cx="14" cy="210" r="2" fill="#fde047"/>
+            </svg>`
+        },
+        slot_halloween: {
+            left: `<svg viewBox="0 0 60 280" xmlns="http://www.w3.org/2000/svg">
+                <path d="M16 18 L24 18 L24 6 L36 6 L36 18 L44 18 L44 30 L36 30 L36 270 L24 270 L24 30 L16 30 Z" fill="#475569" stroke="#0f172a" stroke-width="1.5"/>
+                <text x="30" y="50" font-size="10" font-weight="900" fill="#0f172a" text-anchor="middle" font-family="Arial">RIP</text>
+                <line x1="22" y1="60" x2="38" y2="60" stroke="#0f172a"/>
+                <line x1="22" y1="100" x2="38" y2="100" stroke="#0f172a"/>
+                <line x1="22" y1="140" x2="38" y2="140" stroke="#0f172a"/>
+                <line x1="22" y1="180" x2="38" y2="180" stroke="#0f172a"/>
+                <path d="M14 220 Q22 218 18 226 Q26 224 22 232" stroke="#0f172a" stroke-width="1.5" fill="none"/>
+                <ellipse cx="46" cy="248" rx="6" ry="4" fill="#0f172a"/>
+                <path d="M40 248 L36 244 M52 248 L56 244" stroke="#0f172a" stroke-width="1.5"/>
+            </svg>`,
+            right: `<svg viewBox="0 0 60 280" xmlns="http://www.w3.org/2000/svg">
+                <path d="M16 18 L24 18 L24 6 L36 6 L36 18 L44 18 L44 30 L36 30 L36 270 L24 270 L24 30 L16 30 Z" fill="#475569" stroke="#0f172a" stroke-width="1.5"/>
+                <text x="30" y="50" font-size="9" font-weight="900" fill="#0f172a" text-anchor="middle" font-family="Arial">BOO</text>
+                <line x1="22" y1="60" x2="38" y2="60" stroke="#0f172a"/>
+                <line x1="22" y1="100" x2="38" y2="100" stroke="#0f172a"/>
+                <line x1="22" y1="140" x2="38" y2="140" stroke="#0f172a"/>
+                <line x1="22" y1="180" x2="38" y2="180" stroke="#0f172a"/>
+                <path d="M46 218 Q38 216 42 224 Q34 222 38 230" stroke="#0f172a" stroke-width="1.5" fill="none"/>
+                <ellipse cx="14" cy="248" rx="6" ry="4" fill="#0f172a"/>
+                <path d="M20 248 L24 244 M8 248 L4 244" stroke="#0f172a" stroke-width="1.5"/>
+            </svg>`
+        },
+        slot_cyber: {
+            left: `<svg viewBox="0 0 60 280" xmlns="http://www.w3.org/2000/svg">
+                <rect x="8" y="10" width="44" height="260" fill="none" stroke="#22d3ee" stroke-width="1.5"/>
+                <g stroke="#22d3ee" stroke-width="1">
+                    <line x1="8" y1="40" x2="52" y2="40"/><line x1="8" y1="80" x2="52" y2="80"/>
+                    <line x1="8" y1="120" x2="52" y2="120"/><line x1="8" y1="160" x2="52" y2="160"/>
+                    <line x1="8" y1="200" x2="52" y2="200"/><line x1="8" y1="240" x2="52" y2="240"/>
+                </g>
+                <g fill="#ec4899">
+                    <rect x="20" y="20" width="20" height="14" rx="2"/>
+                </g>
+                <g fill="#a3e635">
+                    <circle cx="20" cy="60" r="3"/><circle cx="40" cy="60" r="3"/>
+                    <line x1="20" y1="60" x2="40" y2="60" stroke="#a3e635" stroke-width="1.5"/>
+                </g>
+                <text x="30" y="106" font-size="11" font-weight="900" fill="#fde047" text-anchor="middle" font-family="monospace">10x</text>
+                <g fill="#22d3ee"><circle cx="20" cy="140" r="3"/><circle cx="40" cy="140" r="3"/></g>
+                <rect x="20" y="180" width="20" height="14" rx="2" fill="#7c3aed"/>
+                <text x="30" y="226" font-size="11" font-weight="900" fill="#fde047" text-anchor="middle" font-family="monospace">⚡</text>
+                <g fill="#ec4899"><circle cx="20" cy="260" r="2"/><circle cx="40" cy="260" r="2"/></g>
+            </svg>`,
+            right: `<svg viewBox="0 0 60 280" xmlns="http://www.w3.org/2000/svg">
+                <rect x="8" y="10" width="44" height="260" fill="none" stroke="#22d3ee" stroke-width="1.5"/>
+                <g stroke="#22d3ee" stroke-width="1">
+                    <line x1="8" y1="40" x2="52" y2="40"/><line x1="8" y1="80" x2="52" y2="80"/>
+                    <line x1="8" y1="120" x2="52" y2="120"/><line x1="8" y1="160" x2="52" y2="160"/>
+                    <line x1="8" y1="200" x2="52" y2="200"/><line x1="8" y1="240" x2="52" y2="240"/>
+                </g>
+                <text x="30" y="30" font-size="11" font-weight="900" fill="#fde047" text-anchor="middle" font-family="monospace">25x</text>
+                <g fill="#a3e635"><circle cx="20" cy="60" r="3"/><circle cx="40" cy="60" r="3"/></g>
+                <rect x="20" y="92" width="20" height="14" rx="2" fill="#7c3aed"/>
+                <g fill="#ec4899"><rect x="14" y="134" width="32" height="10" rx="2"/></g>
+                <text x="30" y="186" font-size="11" font-weight="900" fill="#fde047" text-anchor="middle" font-family="monospace">100x</text>
+                <g fill="#22d3ee"><circle cx="20" cy="220" r="3"/><circle cx="40" cy="220" r="3"/>
+                    <line x1="20" y1="220" x2="40" y2="220" stroke="#22d3ee" stroke-width="1.5"/></g>
+                <rect x="20" y="252" width="20" height="14" rx="2" fill="#a3e635"/>
+            </svg>`
+        },
+        slot_norse: {
+            left: `<svg viewBox="0 0 60 280" xmlns="http://www.w3.org/2000/svg">
+                <defs><linearGradient id="td-n1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#cbd5e1"/><stop offset="1" stop-color="#64748b"/></linearGradient></defs>
+                <rect x="22" y="20" width="16" height="240" fill="#7c2d12" stroke="#0f172a"/>
+                <rect x="14" y="20" width="32" height="32" rx="2" fill="url(#td-n1)" stroke="#0f172a" stroke-width="1.5"/>
+                <text x="30" y="42" font-size="20" fill="#0f172a" text-anchor="middle" font-weight="900" font-family="serif">ᚱ</text>
+                <text x="30" y="92" font-size="20" fill="#cbd5e1" text-anchor="middle" font-weight="900" font-family="serif">ᚦ</text>
+                <text x="30" y="142" font-size="20" fill="#cbd5e1" text-anchor="middle" font-weight="900" font-family="serif">ᛟ</text>
+                <text x="30" y="192" font-size="20" fill="#cbd5e1" text-anchor="middle" font-weight="900" font-family="serif">ᛏ</text>
+                <text x="30" y="242" font-size="20" fill="#cbd5e1" text-anchor="middle" font-weight="900" font-family="serif">ᚹ</text>
+                <polygon points="30,260 38,272 22,272" fill="#7c2d12" stroke="#0f172a"/>
+            </svg>`,
+            right: `<svg viewBox="0 0 60 280" xmlns="http://www.w3.org/2000/svg">
+                <defs><linearGradient id="td-n2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#cbd5e1"/><stop offset="1" stop-color="#64748b"/></linearGradient></defs>
+                <rect x="22" y="20" width="16" height="240" fill="#7c2d12" stroke="#0f172a"/>
+                <rect x="14" y="20" width="32" height="32" rx="2" fill="url(#td-n2)" stroke="#0f172a" stroke-width="1.5"/>
+                <text x="30" y="42" font-size="20" fill="#0f172a" text-anchor="middle" font-weight="900" font-family="serif">ᛜ</text>
+                <text x="30" y="92" font-size="20" fill="#cbd5e1" text-anchor="middle" font-weight="900" font-family="serif">ᛗ</text>
+                <text x="30" y="142" font-size="20" fill="#cbd5e1" text-anchor="middle" font-weight="900" font-family="serif">ᛝ</text>
+                <text x="30" y="192" font-size="20" fill="#cbd5e1" text-anchor="middle" font-weight="900" font-family="serif">ᛒ</text>
+                <text x="30" y="242" font-size="20" fill="#cbd5e1" text-anchor="middle" font-weight="900" font-family="serif">ᚷ</text>
+                <polygon points="30,260 38,272 22,272" fill="#7c2d12" stroke="#0f172a"/>
+            </svg>`
+        }
+    };
 
     /* Hand-crafted lobby card scenes — one unique illustration per theme. */
     const SCENES = {

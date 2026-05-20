@@ -1,7 +1,26 @@
-/* Blackjack Game — Upgraded with Split, Insurance, Multi-hand, and slide animations */
+/* Blackjack Game — Upgraded with Split, Insurance, Multi-hand, 3D flip animations */
 (function() {
     let deck, hands = [], currentHandIdx = 0, dealerHand = [], mainBet = 100, gameOver = true, area, insuranceBet = 0;
     const DEFAULT_BET = 100;
+
+    // Build a 3D flippable card. Starts face-down (rotated 180°). Add the
+    // .flipped class to reveal the front.
+    function makeFlipCard(card) {
+        const box = document.createElement('div');
+        box.className = 'flip-card';
+        const inner = document.createElement('div');
+        inner.className = 'flip-card-inner';
+        const back = document.createElement('div');
+        back.className = 'flip-card-face flip-card-back';
+        const isRed = card.suit === '♥' || card.suit === '♦';
+        const front = document.createElement('div');
+        front.className = 'flip-card-face flip-card-front ' + (isRed ? 'red' : 'black');
+        front.innerHTML = `<span class="card-value">${card.display}</span><span class="card-suit">${card.suit}</span>`;
+        inner.appendChild(back);
+        inner.appendChild(front);
+        box.appendChild(inner);
+        return box;
+    }
 
     function init(gameArea) {
         area = gameArea;
@@ -112,7 +131,11 @@
             pArea.appendChild(div);
             // Re-render existing cards (so we don't lose them when re-rendering the area).
             const handDiv = div.querySelector('.card-hand');
-            h.cards.forEach(c => handDiv.appendChild(Casino.createCardElement(c, false)));
+            h.cards.forEach(c => {
+                const el = makeFlipCard(c);
+                el.classList.add('flipped'); // already revealed
+                handDiv.appendChild(el);
+            });
         });
     }
 
@@ -120,30 +143,55 @@
         return new Promise(resolve => {
             const card = deck.pop();
             handArr.push(card);
-            
+
             const container = document.getElementById(containerId);
-            const el = Casino.createCardElement(card, faceDown);
-            
-            // Slide animation setup
-            el.style.transform = 'translate(200px, -200px) rotate(45deg)';
+            const el = makeFlipCard(card);
+            if (faceDown) el.dataset.facedown = 'true';
+
+            // Slide animation setup — card flies in from the deck position
+            // (top-right) and lands; once it lands, it flips face-up (unless
+            // it's the dealer's hole card).
+            el.style.transform = 'translate(180px, -200px) rotate(35deg)';
             el.style.opacity = '0';
-            el.style.position = 'relative'; // force layout
             container.appendChild(el);
-            
+
             Casino.playSound('click'); // card flick sound
-            
-            // Trigger animation
+
             requestAnimationFrame(() => {
-                el.style.transition = 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+                el.style.transition = 'transform 0.42s cubic-bezier(0.34, 1.4, 0.5, 1), opacity 0.42s';
                 el.style.transform = 'translate(0, 0) rotate(0)';
                 el.style.opacity = '1';
-                setTimeout(resolve, 400); // Wait for animation
+                setTimeout(() => {
+                    if (!faceDown) {
+                        el.classList.add('flipped');
+                        // Tiny flip whoosh.
+                        if (Casino.playTones) Casino.playTones([
+                            { freq: 600, wave: 'triangle', dur: 0.08, vol: 0.03 },
+                            { freq: 900, wave: 'sine', start: 0.05, dur: 0.06, vol: 0.025 }
+                        ]);
+                    }
+                    setTimeout(resolve, faceDown ? 0 : 350);
+                }, 400);
             });
         });
     }
 
     async function dealCardToDealer(faceDown) {
         return dealCardToHand(dealerHand, faceDown, 'bj-dealer');
+    }
+
+    function flipDealerHoleCard() {
+        const dContainer = document.getElementById('bj-dealer');
+        if (!dContainer) return;
+        const hole = dContainer.querySelector('.flip-card[data-facedown="true"]');
+        if (hole) {
+            hole.classList.add('flipped');
+            delete hole.dataset.facedown;
+            if (Casino.playTones) Casino.playTones([
+                { freq: 500, wave: 'triangle', dur: 0.1, vol: 0.04 },
+                { freq: 700, wave: 'sine', start: 0.06, dur: 0.08, vol: 0.03 }
+            ]);
+        }
     }
 
     function updateScores() {
@@ -202,10 +250,8 @@
         const pBJ = hands[0].cards.length === 2 && pVal === 21;
 
         if (dBJ) {
-            // Flip dealer card
-            const dContainer = document.getElementById('bj-dealer');
-            dContainer.innerHTML = '';
-            dealerHand.forEach(c => dContainer.appendChild(Casino.createCardElement(c, false)));
+            // Flip the dealer's hole card in place.
+            flipDealerHoleCard();
             gameOver = true;
             updateScores();
             
@@ -346,11 +392,10 @@
 
     async function dealerTurn() {
         gameOver = true;
-        
-        // Flip hole card
-        const dContainer = document.getElementById('bj-dealer');
-        dContainer.innerHTML = '';
-        dealerHand.forEach(c => dContainer.appendChild(Casino.createCardElement(c, false)));
+
+        // Reveal the dealer's hole card with a 3D flip.
+        flipDealerHoleCard();
+        await new Promise(r => setTimeout(r, 500));
         updateScores();
 
         // Check if all hands busted

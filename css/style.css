@@ -218,6 +218,29 @@ body.in-game #game-tint { opacity: 0.22; }
     .help-panel { width: calc(100vw - 32px); right: 16px; bottom: 76px; }
 }
 
+/* Themed game-area frame ornaments flanking the reels. */
+.ts-decor {
+    position: absolute;
+    top: 70px;
+    width: 56px;
+    height: 280px;
+    pointer-events: none;
+    z-index: 2;
+    opacity: 0.9;
+    filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.45));
+    animation: tsDecorSway 6s ease-in-out infinite;
+}
+.ts-decor svg { width: 100%; height: 100%; }
+.ts-decor-left { left: -64px; transform-origin: bottom center; }
+.ts-decor-right { right: -64px; transform-origin: bottom center; animation-delay: -3s; }
+@keyframes tsDecorSway {
+    0%, 100% { transform: rotate(-1deg) translateY(0); }
+    50%      { transform: rotate(1deg) translateY(-4px); }
+}
+@media (max-width: 1080px) {
+    .ts-decor { display: none; }
+}
+
 /* ---- Themed slot games (shared engine) ---- */
 .themed-slot {
     background: linear-gradient(165deg, var(--ts-g1), var(--ts-g2));
@@ -225,11 +248,11 @@ body.in-game #game-tint { opacity: 0.22; }
     padding: 24px;
     box-shadow: 0 20px 60px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.15);
     position: relative;
-    overflow: hidden;
 }
 .themed-slot::before {
     content: '';
     position: absolute; inset: 0;
+    border-radius: 20px;
     background: radial-gradient(circle at 30% 0%, rgba(255,255,255,0.18), transparent 55%),
                 radial-gradient(circle at 80% 100%, rgba(0,0,0,0.35), transparent 60%);
     pointer-events: none;
@@ -756,9 +779,52 @@ body.no-animations *, body.no-animations *::before, body.no-animations *::after 
     50%      { opacity: 1; transform: rotate(8deg); }
 }
 @keyframes logoTextShimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
-.balance-display { display: flex; flex-direction: column; align-items: center; background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: var(--radius); padding: 6px 20px; }
-.balance-label { font-size: 9px; letter-spacing: 2px; color: var(--text-muted); font-weight: 600; }
-.balance-amount { font-size: 20px; font-weight: 800; color: var(--gold-light); font-variant-numeric: tabular-nums; }
+.balance-display {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background:
+        linear-gradient(rgba(10, 14, 26, 0.95), rgba(10, 14, 26, 0.95)) padding-box,
+        linear-gradient(135deg, var(--gold-dark) 0%, var(--gold-light) 30%, var(--gold) 50%, var(--gold-light) 70%, var(--gold-dark) 100%) border-box;
+    border: 2px solid transparent;
+    border-radius: var(--radius);
+    padding: 6px 22px;
+    box-shadow:
+        0 4px 16px rgba(0, 0, 0, 0.4),
+        0 0 30px rgba(212, 168, 67, 0.18),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    overflow: hidden;
+}
+.balance-display::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent 0%, transparent 35%, rgba(255, 255, 255, 0.12) 50%, transparent 65%, transparent 100%);
+    transform: translateX(-100%);
+    animation: balanceShimmer 6s ease-in-out infinite;
+    pointer-events: none;
+}
+@keyframes balanceShimmer { 50% { transform: translateX(100%); } 100% { transform: translateX(100%); } }
+.balance-label {
+    font-size: 9px;
+    letter-spacing: 2.5px;
+    color: var(--gold-light);
+    font-weight: 700;
+    text-shadow: 0 0 8px rgba(212, 168, 67, 0.3);
+    position: relative;
+    z-index: 1;
+}
+.balance-amount {
+    font-size: 21px;
+    font-weight: 900;
+    color: var(--gold-light);
+    font-variant-numeric: tabular-nums;
+    text-shadow: 0 0 14px rgba(251, 191, 36, 0.4);
+    position: relative;
+    z-index: 1;
+    letter-spacing: 0.3px;
+}
 .balance-amount.flash-green { animation: flashGreen 0.5s; }
 .balance-amount.flash-red { animation: flashRed 0.5s; }
 @keyframes flashGreen { 0%,100% { color: var(--gold-light); } 50% { color: var(--green); text-shadow: 0 0 20px var(--green); } }
@@ -957,7 +1023,74 @@ body.no-animations *, body.no-animations *::before, body.no-animations *::after 
 .game-message.lose { color: var(--red); }
 .game-message.push { color: var(--orange); }
 
-/* Playing Cards */
+/* Blackjack 3D flip cards */
+.flip-card {
+    width: 72px;
+    height: 100px;
+    perspective: 800px;
+    flex-shrink: 0;
+    display: inline-block;
+    position: relative;
+}
+.flip-card-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transform-style: preserve-3d;
+    transform: rotateY(180deg);
+    transition: transform 0.65s cubic-bezier(0.34, 1.4, 0.5, 1);
+}
+.flip-card.flipped .flip-card-inner { transform: rotateY(0deg); }
+.flip-card-face {
+    position: absolute;
+    inset: 0;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+    overflow: hidden;
+}
+.flip-card-back {
+    background:
+        radial-gradient(circle at 30% 30%, rgba(255,255,255,0.18), transparent 60%),
+        linear-gradient(135deg, #1e40af, #3b82f6 60%, #1d4ed8);
+    border: 2px solid #fbbf24;
+    transform: rotateY(180deg);
+}
+.flip-card-back::after {
+    content: '♠';
+    font-size: 32px;
+    color: rgba(255, 255, 255, 0.25);
+    text-shadow: 0 0 12px rgba(255, 255, 255, 0.3);
+}
+.flip-card-back::before {
+    content: '';
+    position: absolute;
+    inset: 6px;
+    border: 1px dashed rgba(255, 255, 255, 0.3);
+    border-radius: 5px;
+}
+.flip-card-front {
+    background: linear-gradient(145deg, #fff, #e2e8f0);
+}
+.flip-card-front.red { color: #dc2626; }
+.flip-card-front.black { color: #1a1a2e; }
+.flip-card-front .card-value { font-size: 22px; }
+.flip-card-front .card-suit { font-size: 28px; margin-top: -2px; }
+.flip-card-front::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, transparent 40%, rgba(255, 255, 255, 0.25) 50%, transparent 60%);
+    pointer-events: none;
+}
+
+/* Legacy playing-card class kept for non-blackjack games (poker, baccarat). */
 .playing-card { width: 72px; height: 100px; background: linear-gradient(145deg, #fff, #e8e8e8); border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.3); display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 800; position: relative; transition: all 0.3s; flex-shrink: 0; }
 .playing-card.red { color: #dc2626; }
 .playing-card.black { color: #1a1a2e; }
@@ -1179,6 +1312,25 @@ body.no-animations *, body.no-animations *::before, body.no-animations *::after 
     to   { opacity: 1; transform: scale(1) rotate(0); }
 }
 
+/* Flying chips on BIG/MEGA WIN — travel from win banner up-and-over to
+   the balance display in the header. */
+.flying-chip {
+    position: fixed;
+    z-index: 400;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+    filter: drop-shadow(0 6px 12px rgba(212, 168, 67, 0.5));
+    animation: chipFly 0.85s cubic-bezier(0.34, 0.5, 0.6, 1) forwards;
+    will-change: transform, opacity;
+}
+@keyframes chipFly {
+    0%   { transform: translate(-50%, -50%) scale(0.6) rotate(0); opacity: 0; }
+    15%  { transform: translate(-50%, -50%) scale(1.15) rotate(0); opacity: 1; }
+    50%  { transform: translate(calc(-50% + var(--mx)), calc(-50% + var(--my))) scale(1) rotate(calc(var(--rot) * 0.5)); opacity: 1; }
+    85%  { transform: translate(calc(-50% + var(--dx) * 0.92), calc(-50% + var(--dy) * 0.92)) scale(0.6) rotate(var(--rot)); opacity: 0.9; }
+    100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0.2) rotate(var(--rot)); opacity: 0; }
+}
+
 /* Click ripple */
 .click-ripple {
     position: absolute;
@@ -1282,12 +1434,71 @@ body.no-animations *, body.no-animations *::before, body.no-animations *::after 
 .audit-row-seed code { color: var(--gold-light); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
 .audit-empty { padding: 20px; text-align: center; color: var(--text-muted); font-size: 13px; }
 
-/* VIP System */
-.vip-badge { display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.4); padding: 4px 12px; border-radius: 20px; border: 1px solid var(--glass-border); position: relative; overflow: hidden; cursor: default; }
-#vip-icon { font-size: 18px; filter: drop-shadow(0 0 5px rgba(212,168,67,0.5)); }
-#vip-level-text { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--gold-light); }
-.vip-xp-bar { position: absolute; bottom: 0; left: 0; height: 2px; width: 100%; background: rgba(255,255,255,0.1); }
-.vip-xp-fill { height: 100%; background: var(--gold); transition: width 0.5s ease-out; box-shadow: 0 0 10px var(--gold); }
+/* VIP badge — animated tier icon with rotating glow ring + shimmer fill bar */
+.vip-badge {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background:
+        linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.45)) padding-box,
+        linear-gradient(135deg, rgba(212,168,67,0.5), rgba(212,168,67,0.15), rgba(212,168,67,0.5)) border-box;
+    padding: 5px 14px 7px;
+    border-radius: 24px;
+    border: 1.5px solid transparent;
+    position: relative;
+    overflow: hidden;
+    cursor: default;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+#vip-icon {
+    position: relative;
+    font-size: 20px;
+    filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.7));
+    animation: vipIconPulse 2.8s ease-in-out infinite;
+    display: inline-block;
+}
+#vip-icon::before {
+    content: '';
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+    background: conic-gradient(from 0deg, transparent, rgba(251, 191, 36, 0.5), transparent, rgba(251, 191, 36, 0.5), transparent);
+    animation: vipRingSpin 5s linear infinite;
+    z-index: -1;
+    opacity: 0.7;
+}
+@keyframes vipIconPulse {
+    0%, 100% { transform: scale(1); filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.7)); }
+    50%      { transform: scale(1.12); filter: drop-shadow(0 0 16px rgba(251, 191, 36, 1)); }
+}
+@keyframes vipRingSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+#vip-level-text {
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--gold-light);
+    text-shadow: 0 0 8px rgba(212, 168, 67, 0.4);
+}
+.vip-xp-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.08);
+    overflow: hidden;
+}
+.vip-xp-fill {
+    position: relative;
+    height: 100%;
+    background: linear-gradient(90deg, var(--gold-dark), var(--gold-light), var(--gold));
+    background-size: 200% 100%;
+    transition: width 0.5s ease-out;
+    box-shadow: 0 0 12px var(--gold), 0 0 6px rgba(251, 191, 36, 0.8);
+    animation: vipFillFlow 3s linear infinite;
+}
+@keyframes vipFillFlow { from { background-position: 200% 0; } to { background-position: -200% 0; } }
 
 /* Live Feed */
 .live-feed { position: fixed; left: 24px; top: 100px; width: 260px; background: rgba(10,14,26,0.6); backdrop-filter: blur(10px); border: 1px solid var(--glass-border); border-radius: var(--radius); padding: 16px; z-index: 50; display: flex; flex-direction: column; gap: 12px; box-shadow: var(--shadow); max-height: 300px; overflow: hidden; }

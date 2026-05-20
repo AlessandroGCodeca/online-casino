@@ -1,7 +1,10 @@
-/* Blackjack Game — Upgraded with Split, Insurance, Multi-hand, and slide animations */
+/* Blackjack Game — Upgraded with Split, Insurance, Multi-hand, 3D flip animations */
 (function() {
     let deck, hands = [], currentHandIdx = 0, dealerHand = [], mainBet = 100, gameOver = true, area, insuranceBet = 0;
     const DEFAULT_BET = 100;
+
+    // Shared 3D flippable card (defined in app.js).
+    const makeFlipCard = (card) => Casino.createFlipCard(card);
 
     function init(gameArea) {
         area = gameArea;
@@ -15,8 +18,8 @@
                 <!-- Deck visual for animations -->
                 <div id="bj-deck-pos" style="position:absolute; top:-50px; right:-50px; width:72px; height:100px;"></div>
                 
-                <div class="bj-section">
-                    <div class="bj-label">Dealer</div>
+                <div class="bj-section" id="bj-dealer-section">
+                    <div class="bj-label">Dealer<span class="bj-drawing-dot" id="bj-drawing-dot"></span></div>
                     <div class="card-hand" id="bj-dealer" style="min-height:100px;"></div>
                     <div class="bj-score" id="bj-dealer-score" style="min-height:24px;"></div>
                 </div>
@@ -71,7 +74,15 @@
         hands = [{ cards: [], bet: mainBet, status: 'playing', score: 0 }];
         currentHandIdx = 0;
         dealerHand = [];
-        
+
+        // Clear the dealer area from the previous round.
+        const dContainer = document.getElementById('bj-dealer');
+        if (dContainer) dContainer.innerHTML = '';
+        const dScore = document.getElementById('bj-dealer-score');
+        if (dScore) dScore.textContent = '';
+        const dSection = document.getElementById('bj-dealer-section');
+        if (dSection) dSection.classList.remove('dealer-drawing');
+
         setupPlayerArea();
         document.getElementById('bj-actions').innerHTML = ''; // Hide buttons during deal
         msg('Dealing...', '');
@@ -96,11 +107,11 @@
     function setupPlayerArea() {
         const pArea = document.getElementById('bj-player-area');
         pArea.innerHTML = '';
-        
+
         hands.forEach((h, idx) => {
             const div = document.createElement('div');
-            div.className = `player-hand-container ${idx === currentHandIdx ? 'active-hand' : ''}`;
-            div.style.cssText = `display:inline-block; margin:0 10px; padding:10px; border-radius:12px; transition:all 0.3s; border:2px solid ${idx === currentHandIdx ? 'var(--gold)' : 'transparent'}; background:${idx === currentHandIdx ? 'rgba(212,168,67,0.1)' : 'transparent'}`;
+            div.className = `player-hand-container ${idx === currentHandIdx && !gameOver ? 'active-hand' : ''}`;
+            div.style.cssText = `display:inline-block; margin:0 10px; padding:10px; border-radius:12px; transition:all 0.3s; border:2px solid ${idx === currentHandIdx && !gameOver ? 'var(--gold)' : 'transparent'}; background:${idx === currentHandIdx && !gameOver ? 'rgba(212,168,67,0.1)' : 'transparent'}`;
             div.innerHTML = `
                 <div class="bj-label" style="display:flex; justify-content:center; gap:8px;">
                     <span>Hand ${idx + 1}</span>
@@ -110,6 +121,13 @@
                 <div class="bj-score" id="score-${idx}" style="min-height:24px;"></div>
             `;
             pArea.appendChild(div);
+            // Re-render existing cards (so we don't lose them when re-rendering the area).
+            const handDiv = div.querySelector('.card-hand');
+            h.cards.forEach(c => {
+                const el = makeFlipCard(c);
+                el.classList.add('flipped'); // already revealed
+                handDiv.appendChild(el);
+            });
         });
     }
 
@@ -117,30 +135,55 @@
         return new Promise(resolve => {
             const card = deck.pop();
             handArr.push(card);
-            
+
             const container = document.getElementById(containerId);
-            const el = Casino.createCardElement(card, faceDown);
-            
-            // Slide animation setup
-            el.style.transform = 'translate(200px, -200px) rotate(45deg)';
+            const el = makeFlipCard(card);
+            if (faceDown) el.dataset.facedown = 'true';
+
+            // Slide animation setup — card flies in from the deck position
+            // (top-right) and lands; once it lands, it flips face-up (unless
+            // it's the dealer's hole card).
+            el.style.transform = 'translate(180px, -200px) rotate(35deg)';
             el.style.opacity = '0';
-            el.style.position = 'relative'; // force layout
             container.appendChild(el);
-            
+
             Casino.playSound('click'); // card flick sound
-            
-            // Trigger animation
+
             requestAnimationFrame(() => {
-                el.style.transition = 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+                el.style.transition = 'transform 0.42s cubic-bezier(0.34, 1.4, 0.5, 1), opacity 0.42s';
                 el.style.transform = 'translate(0, 0) rotate(0)';
                 el.style.opacity = '1';
-                setTimeout(resolve, 400); // Wait for animation
+                setTimeout(() => {
+                    if (!faceDown) {
+                        el.classList.add('flipped');
+                        // Tiny flip whoosh.
+                        if (Casino.playTones) Casino.playTones([
+                            { freq: 600, wave: 'triangle', dur: 0.08, vol: 0.03 },
+                            { freq: 900, wave: 'sine', start: 0.05, dur: 0.06, vol: 0.025 }
+                        ]);
+                    }
+                    setTimeout(resolve, faceDown ? 0 : 350);
+                }, 400);
             });
         });
     }
 
     async function dealCardToDealer(faceDown) {
         return dealCardToHand(dealerHand, faceDown, 'bj-dealer');
+    }
+
+    function flipDealerHoleCard() {
+        const dContainer = document.getElementById('bj-dealer');
+        if (!dContainer) return;
+        const hole = dContainer.querySelector('.flip-card[data-facedown="true"]');
+        if (hole) {
+            hole.classList.add('flipped');
+            delete hole.dataset.facedown;
+            if (Casino.playTones) Casino.playTones([
+                { freq: 500, wave: 'triangle', dur: 0.1, vol: 0.04 },
+                { freq: 700, wave: 'sine', start: 0.06, dur: 0.08, vol: 0.03 }
+            ]);
+        }
     }
 
     function updateScores() {
@@ -199,10 +242,8 @@
         const pBJ = hands[0].cards.length === 2 && pVal === 21;
 
         if (dBJ) {
-            // Flip dealer card
-            const dContainer = document.getElementById('bj-dealer');
-            dContainer.innerHTML = '';
-            dealerHand.forEach(c => dContainer.appendChild(Casino.createCardElement(c, false)));
+            // Flip the dealer's hole card in place.
+            flipDealerHoleCard();
             gameOver = true;
             updateScores();
             
@@ -227,7 +268,7 @@
                 Casino.changeBalance(win);
                 msg(`BLACKJACK! You win $${win}!`, 'win');
                 Casino.playSound('jackpot');
-                Casino.showWinEffect(win);
+                Casino.showWinEffect(win, { bet: mainBet, particles: ['🃏','♠️','♥️','♦️','♣️','💰','✨'], accent: '#22c55e', themeLabel: 'Blackjack' });
                 resetRound();
             } else {
                 playCurrentHand();
@@ -343,16 +384,18 @@
 
     async function dealerTurn() {
         gameOver = true;
-        
-        // Flip hole card
-        const dContainer = document.getElementById('bj-dealer');
-        dContainer.innerHTML = '';
-        dealerHand.forEach(c => dContainer.appendChild(Casino.createCardElement(c, false)));
+
+        const dealerSection = document.getElementById('bj-dealer-section');
+        if (dealerSection) dealerSection.classList.add('dealer-drawing');
+
+        // Reveal the dealer's hole card with a 3D flip.
+        flipDealerHoleCard();
+        await new Promise(r => setTimeout(r, 500));
         updateScores();
 
         // Check if all hands busted
         const allBusted = hands.every(h => h.status === 'bust');
-        
+
         if (!allBusted) {
             // Dealer draws to 17
             while (handValue(dealerHand) < 17) {
@@ -361,6 +404,8 @@
                 updateScores();
             }
         }
+
+        if (dealerSection) dealerSection.classList.remove('dealer-drawing');
 
         finalizeRound();
     }
@@ -393,7 +438,7 @@
         if (totalWin > 0) {
             Casino.changeBalance(totalWin);
             msg(msgs.join(' | '), 'win');
-            if (totalWin > mainBet * 2) { Casino.playSound('jackpot'); Casino.showWinEffect(totalWin); }
+            if (totalWin > mainBet * 2) { Casino.playSound('jackpot'); Casino.showWinEffect(totalWin, { bet: mainBet, particles: ['🃏','♠️','♥️','♦️','♣️','💰','✨'], accent: '#22c55e', themeLabel: 'Blackjack' }); }
             else Casino.playSound('win');
         } else {
             msg(msgs.join(' | '), 'lose');

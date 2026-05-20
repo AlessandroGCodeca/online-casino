@@ -16,55 +16,117 @@
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <div id="ambient-bg"></div>
+    <a href="#games-grid" class="skip-link">Skip to games</a>
+    <div id="ambient-bg" aria-hidden="true"></div>
+    <div id="game-tint" aria-hidden="true"></div>
+    <div id="game-decor" aria-hidden="true"></div>
+
+    <!-- Left navigation rail -->
+    <aside class="sidebar" aria-label="Quick navigation">
+        <button class="sidebar-brand" type="button" data-nav="home" aria-label="Home">
+            <span class="sidebar-brand-icon" aria-hidden="true">♠</span>
+        </button>
+        <nav class="sidebar-nav">
+            <button class="sidebar-btn" type="button" data-nav="trending" aria-label="Trending games"><span aria-hidden="true">🔥</span><span class="sidebar-tip">Trending</span></button>
+            <button class="sidebar-btn" type="button" data-nav="cat" data-cat="slots" aria-label="Slots"><span aria-hidden="true">🎰</span><span class="sidebar-tip">Slots</span></button>
+            <button class="sidebar-btn" type="button" data-nav="cat" data-cat="cards" aria-label="Card games"><span aria-hidden="true">🃏</span><span class="sidebar-tip">Cards</span></button>
+            <button class="sidebar-btn" type="button" data-nav="cat" data-cat="spin" aria-label="Spin games"><span aria-hidden="true">🎡</span><span class="sidebar-tip">Spin</span></button>
+            <button class="sidebar-btn" type="button" data-nav="cat" data-cat="instant" aria-label="Instant games"><span aria-hidden="true">⚡</span><span class="sidebar-tip">Instant</span></button>
+            <div class="sidebar-divider" aria-hidden="true"></div>
+            <button class="sidebar-btn" type="button" data-nav="missions" aria-label="Daily missions"><span aria-hidden="true">🎯</span><span class="sidebar-tip">Missions</span></button>
+            <button class="sidebar-btn" type="button" data-nav="leaderboard" aria-label="Top winners"><span aria-hidden="true">🏆</span><span class="sidebar-tip">Top Winners</span></button>
+            <div class="sidebar-divider" aria-hidden="true"></div>
+            <button class="sidebar-btn" type="button" data-nav="stats" aria-label="Statistics"><span aria-hidden="true">📊</span><span class="sidebar-tip">Stats</span></button>
+        </nav>
+    </aside>
+
     <header id="top-bar">
         <div class="header-left">
-            <a href="#" class="logo" id="logo-link"><span class="logo-icon">♠</span><span class="logo-text">Royal Flush</span></a>
+            <a href="#" class="logo" id="logo-link" aria-label="Royal Flush Casino home">
+                <span class="logo-mark" aria-hidden="true">
+                    <span class="logo-mark-ring"></span>
+                    <span class="logo-mark-sparkle"></span>
+                    <span class="logo-icon">♠</span>
+                </span>
+                <span class="logo-text">Royal Flush</span>
+            </a>
         </div>
         <div class="header-center">
-            <div class="balance-display">
+            <div class="balance-display" aria-live="polite">
                 <span class="balance-label">BALANCE</span>
                 <span class="balance-amount" id="balance-display">$10,000</span>
             </div>
-            <div id="vip-badge" class="vip-badge" title="VIP Level">
-                <span id="vip-icon">🥉</span>
+            <button id="rescue-btn" class="rescue-btn hidden" type="button" title="Claim free rescue chips">🆘 Free Chips</button>
+            <div id="vip-badge" class="vip-badge" title="VIP Level" role="status" aria-label="VIP level">
+                <span id="vip-icon" aria-hidden="true">🥉</span>
                 <span id="vip-level-text">Bronze</span>
-                <div class="vip-xp-bar"><div class="vip-xp-fill" id="vip-xp-fill" style="width:0%"></div></div>
+                <div class="vip-xp-bar" aria-hidden="true"><div class="vip-xp-fill" id="vip-xp-fill" style="width:0%"></div></div>
             </div>
         </div>
         <div class="header-right">
-            <button id="shop-btn" class="icon-btn" title="Reward Shop">🛍️</button>
-            <button id="theme-toggle" class="icon-btn" title="Toggle Theme">🌓</button>
-            <button id="sound-toggle" class="icon-btn" title="Toggle Sound">🔊</button>
-            <button id="stats-btn" class="icon-btn" title="Stats">📊</button>
+            <button id="fullscreen-btn" class="icon-btn" type="button" aria-label="Toggle fullscreen" title="Fullscreen">⛶</button>
+            <button id="theme-toggle" class="icon-btn" type="button" aria-label="Toggle theme" title="Toggle Theme">🌓</button>
+            <button id="sound-toggle" class="icon-btn" type="button" aria-label="Toggle sound" aria-pressed="false" title="Toggle Sound">🔊</button>
+            <button id="stats-btn" class="icon-btn" type="button" aria-label="Statistics and achievements" title="Stats">📊</button>
+            <button id="settings-btn" class="icon-btn" type="button" aria-label="Settings" title="Settings">⚙️</button>
         </div>
     </header>
     <main id="lobby">
         <section class="hero slide-up" style="animation-delay: 0.1s;">
             <h1 class="hero-title">Welcome to <span class="gold-text">Royal Flush</span></h1>
             <p class="hero-subtitle">Your premium casino experience — play with <strong>$10,000</strong> in free chips</p>
-            <button id="daily-bonus-btn" class="action-btn primary hidden" style="margin-top: 16px;">🎁 Claim Daily Bonus!</button>
+            <div id="promo-text" class="promo-text" aria-live="polite"></div>
+            <button id="daily-bonus-btn" class="action-btn primary hidden" type="button" style="margin-top: 16px;">🎁 Claim Daily Bonus!</button>
         </section>
 
         <!-- Live Feed -->
-        <div id="live-feed" class="live-feed slide-up" style="animation-delay: 0.15s;">
-            <div class="live-feed-header"><span class="live-dot"></span> LIVE ACTIVITY</div>
+        <aside id="live-feed" class="live-feed slide-up" style="animation-delay: 0.15s;" aria-label="Live activity feed">
+            <div class="live-feed-header"><span class="live-dot" aria-hidden="true"></span> LIVE ACTIVITY</div>
             <div id="live-feed-list" class="live-feed-list"></div>
-        </div>
+        </aside>
 
-        <section class="games-grid" id="games-grid"></section>
-        
-        <section class="leaderboard slide-up" style="animation-delay: 0.6s; max-width: 800px; margin: 0 auto; padding: 0 24px 40px; text-align: center;">
-            <h2 style="font-family: var(--font-display); color: var(--gold); margin-bottom: 20px;">🏆 Top Winners</h2>
-            <div id="leaderboard-list" style="background: var(--bg-card); border: 1px solid var(--glass-border); border-radius: var(--radius-lg); padding: 20px; text-align: left;">
+        <!-- Daily Missions -->
+        <section class="missions-section slide-up" style="animation-delay: 0.2s;" aria-labelledby="missions-heading">
+            <div class="section-header">
+                <h2 id="missions-heading">🎯 Daily Missions</h2>
+                <span class="section-sub">Resets in <span id="mission-timer">--:--:--</span></span>
+            </div>
+            <div id="missions-list" class="missions-list"></div>
+        </section>
+
+        <!-- Recently Played -->
+        <section id="recent-section" class="recent-section slide-up hidden" style="animation-delay: 0.25s;" aria-labelledby="recent-heading">
+            <h2 id="recent-heading">⏱ Recently Played</h2>
+            <div id="recent-row" class="recent-row"></div>
+        </section>
+
+        <!-- Search + categories -->
+        <section class="lobby-toolbar slide-up" style="animation-delay: 0.3s;">
+            <label class="search-label" for="game-search">
+                <input id="game-search" type="search" placeholder="Search games… ( / )" class="game-search" aria-label="Search games">
+            </label>
+            <div class="category-tabs" role="tablist" aria-label="Game categories">
+                <button class="cat-tab active" type="button" data-cat="all" role="tab" aria-selected="true">All</button>
+                <button class="cat-tab" type="button" data-cat="slots" role="tab">Slots</button>
+                <button class="cat-tab" type="button" data-cat="cards" role="tab">Cards</button>
+                <button class="cat-tab" type="button" data-cat="spin" role="tab">Spin</button>
+                <button class="cat-tab" type="button" data-cat="instant" role="tab">Instant</button>
+            </div>
+        </section>
+
+        <section class="games-grid" id="games-grid" aria-label="Casino games"></section>
+
+        <section class="leaderboard slide-up" style="animation-delay: 0.6s;" aria-labelledby="leaderboard-heading">
+            <h2 id="leaderboard-heading">🏆 Top Winners</h2>
+            <div id="leaderboard-list" class="leaderboard-list">
                 <!-- Leaderboard entries injected by JS -->
             </div>
         </section>
-        <section class="lobby-footer"><p>🎲 Free entertainment with virtual currency only.</p></section>
+        <section class="lobby-footer"><p>🎲 Free entertainment with virtual currency only. <kbd>Esc</kbd> back · <kbd>Space</kbd> primary · <kbd>/</kbd> search</p></section>
     </main>
-    <section id="game-container" class="hidden">
+    <section id="game-container" class="hidden" aria-label="Active game">
         <div class="game-header">
-            <button id="back-to-lobby" class="back-btn">← Lobby</button>
+            <button id="back-to-lobby" class="back-btn" type="button" aria-label="Back to lobby">← Lobby</button>
             <h2 id="game-title"></h2>
             <div class="game-header-spacer"></div>
         </div>
@@ -72,43 +134,84 @@
     </section>
 
     <!-- Stats Modal -->
-    <div id="stats-modal" class="modal-overlay hidden">
-        <div class="modal-content">
-            <div class="modal-header"><h3>📊 Statistics & Achievements</h3><button id="close-stats" class="modal-close">✕</button></div>
-            <div id="stats-body" class="modal-body" style="padding-bottom: 0;"></div>
-            <div id="achievements-body" class="modal-body" style="border-top: 1px solid var(--glass-border); padding-top: 16px;">
-                <h4 style="margin-bottom: 12px; color: var(--gold-light);">🏅 Achievements</h4>
-                <div id="achievements-list" style="display: grid; gap: 8px;"></div>
+    <div id="stats-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="stats-modal-title" aria-hidden="true">
+        <div class="modal-content stats-modal-content">
+            <div class="modal-header"><h3 id="stats-modal-title">📊 Statistics & Achievements</h3><button id="close-stats" class="modal-close" type="button" aria-label="Close">✕</button></div>
+            <div id="stats-body" class="modal-body"></div>
+            <div id="achievements-body" class="modal-body achievements-section">
+                <h4>🏅 Achievements</h4>
+                <div id="achievements-list" class="achievements-list"></div>
+            </div>
+            <div class="modal-body history-section">
+                <h4>🧾 Recent Bets</h4>
+                <div id="bet-history-list" class="bet-history-list"></div>
             </div>
         </div>
     </div>
-    
+
     <!-- Daily Bonus Modal -->
-    <div id="daily-modal" class="modal-overlay hidden">
-        <div class="modal-content" style="text-align: center;">
-            <div class="modal-header"><h3>🎁 Daily Bonus</h3><button id="close-daily" class="modal-close">✕</button></div>
-            <div class="modal-body">
-                <div style="font-size: 64px; margin-bottom: 16px;">💎</div>
-                <h2 id="daily-bonus-amount" style="color: var(--gold); margin-bottom: 8px;">Claim $1,000!</h2>
-                <p style="color: var(--text-secondary); margin-bottom: 24px;">Come back tomorrow for more free chips.</p>
-                <button id="claim-daily-btn" class="action-btn primary" style="width: 100%;">Claim!</button>
+    <div id="daily-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="daily-modal-title" aria-hidden="true">
+        <div class="modal-content daily-modal-content">
+            <div class="modal-header"><h3 id="daily-modal-title">🎁 Daily Bonus</h3><button id="close-daily" class="modal-close" type="button" aria-label="Close">✕</button></div>
+            <div class="modal-body daily-modal-body">
+                <div class="daily-icon" aria-hidden="true">💎</div>
+                <h2 id="daily-bonus-amount" class="daily-amount">Claim $1,000!</h2>
+                <p class="daily-note">Come back tomorrow for more free chips.</p>
+                <button id="claim-daily-btn" class="action-btn primary daily-claim-btn" type="button">Claim!</button>
             </div>
         </div>
     </div>
 
-    <!-- Shop Modal -->
-    <div id="shop-modal" class="modal-overlay hidden">
-        <div class="modal-content" style="max-width:520px;">
-            <div class="modal-header"><h3>🛍️ Reward Shop</h3><button id="close-shop" class="modal-close">✕</button></div>
-            <div id="shop-body" class="modal-body" style="max-height:60vh;overflow-y:auto;"></div>
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="settings-modal-title" aria-hidden="true">
+        <div class="modal-content">
+            <div class="modal-header"><h3 id="settings-modal-title">⚙️ Settings</h3><button id="close-settings" class="modal-close" type="button" aria-label="Close">✕</button></div>
+            <div id="settings-body" class="modal-body"></div>
         </div>
     </div>
 
-    <div id="toast-container" style="position: fixed; bottom: 24px; right: 24px; z-index: 1000; display: flex; flex-direction: column; gap: 12px; pointer-events: none;"></div>
+    <!-- Round Audit Modal -->
+    <div id="audit-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="audit-modal-title" aria-hidden="true">
+        <div class="modal-content audit-modal-content">
+            <div class="modal-header"><h3 id="audit-modal-title">🔒 Round Audit</h3><button id="close-audit" class="modal-close" type="button" aria-label="Close">✕</button></div>
+            <div id="audit-body" class="modal-body audit-modal-body"></div>
+        </div>
+    </div>
 
-    <div id="win-overlay" class="hidden"></div>
+    <div id="toast-container" class="toast-container" aria-live="polite" aria-atomic="false"></div>
+
+    <div id="win-overlay" class="hidden" aria-hidden="true"></div>
+
+    <!-- Floating help bubble -->
+    <button id="help-bubble" class="help-bubble" type="button" aria-label="Help and keyboard shortcuts" title="Help">
+        <span aria-hidden="true">💬</span>
+    </button>
+    <div id="help-panel" class="help-panel hidden" role="dialog" aria-labelledby="help-panel-title" aria-hidden="true">
+        <div class="help-panel-header">
+            <h4 id="help-panel-title">Quick Help</h4>
+            <button id="close-help" class="modal-close" type="button" aria-label="Close help">✕</button>
+        </div>
+        <div class="help-panel-body">
+            <p>Royal Flush is a free, virtual-currency casino — no real money, ever.</p>
+            <div class="help-shortcuts">
+                <div><kbd>Esc</kbd> Back to lobby / close modal</div>
+                <div><kbd>Space</kbd> Trigger primary action</div>
+                <div><kbd>/</kbd> Focus search</div>
+                <div><kbd>Tab</kbd> Navigate buttons</div>
+            </div>
+            <p class="help-foot">Out of chips? Wait for the rescue button or claim your daily bonus.</p>
+        </div>
+    </div>
+
+    <noscript>
+        <div class="noscript-warning">Royal Flush Casino requires JavaScript to run. Please enable it and reload the page.</div>
+    </noscript>
+
     <script src="js/app.js" defer></script>
     <script src="js/slots.js" defer></script>
+    <script src="js/slot-themes.js" defer></script>
+    <script src="js/slot-premium.js" defer></script>
+    <script src="js/slot-cascade.js" defer></script>
     <script src="js/blackjack.js" defer></script>
     <script src="js/roulette.js" defer></script>
     <script src="js/poker.js" defer></script>

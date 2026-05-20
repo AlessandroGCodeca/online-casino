@@ -1,204 +1,500 @@
-/* Roulette Game — Upgraded with Canvas Wheel, Ball, Number Grid, and History */
+/* Roulette — European wheel with chip-stack multi-betting.
+   Players place chips of a chosen denomination on any number of inside
+   or outside bets simultaneously, then spin once to evaluate all of them. */
 (function() {
     const NUMBERS = [0,32,15,19,4,21,2,25,17,34,6,27,13,36,11,30,8,23,10,5,24,16,33,1,20,14,31,9,22,18,29,7,28,12,35,3,26];
     const RED_NUMS = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36];
-    
-    let bet = 100, selectedBet = null, spinning = false, area;
+
+    const CHIPS = [
+        { value: 5,    color: '#dc2626', label: '$5'   },
+        { value: 25,   color: '#3b82f6', label: '$25'  },
+        { value: 100,  color: '#22c55e', label: '$100' },
+        { value: 500,  color: '#a855f7', label: '$500' },
+        { value: 1000, color: '#fbbf24', label: '$1K'  }
+    ];
+
+    let chipValue = 25;
+    let activeBets = {};      // { betKey: chipAmount }
+    let lastBets = {};        // for "Repeat"
+    let placeOrder = [];      // [{ key, value }] for "Undo"
+    let spinning = false;
+    let area;
     let history = [];
-    
+
     // Animation state
     let wheelAngle = 0;
     let ballAngle = 0;
-    let ballRadius = 0; // Distance from center
+    let ballRadius = 0;
     let animFrame = null;
     let spinResult = -1;
 
     function isRed(n) { return RED_NUMS.includes(n); }
     function getColor(n) { return n === 0 ? '#22c55e' : (isRed(n) ? '#ef4444' : '#1e293b'); }
+    function totalBet() { return Object.values(activeBets).reduce((s, v) => s + v, 0); }
+    function getChip(v) { return CHIPS.find(c => c.value === v) || CHIPS[0]; }
 
     function init(gameArea) {
         area = gameArea;
+        activeBets = {};
+        placeOrder = [];
         renderUI();
         drawStaticWheel();
+        refreshBetUI();
+        updateSpinBtn();
     }
 
     function renderUI() {
         area.innerHTML = `
-            <div class="roulette-game" style="display:flex; flex-direction:column; align-items:center;">
-                
-                <div style="display:flex; gap:24px; flex-wrap:wrap; justify-content:center; width:100%; margin-bottom:20px;">
-                    <!-- Wheel Canvas -->
-                    <div style="position:relative; width:300px; height:300px;">
-                        <canvas id="r-canvas" width="300" height="300" style="width:100%; height:100%; drop-shadow(0 0 20px rgba(212,168,67,0.2));"></canvas>
-                        <div class="roulette-pointer" style="top:-10px;">▼</div>
+            <div class="roulette-game">
+                <div class="r-top-row">
+                    <div class="r-wheel-wrap">
+                        <canvas id="r-canvas" width="300" height="300"></canvas>
+                        <div class="roulette-pointer">▼</div>
                     </div>
-                    
-                    <!-- Bet History -->
-                    <div style="background:var(--bg-card); border:1px solid var(--glass-border); border-radius:12px; padding:16px; min-width:140px; display:flex; flex-direction:column;">
-                        <h4 style="color:var(--text-secondary); margin-bottom:12px; font-size:12px; text-transform:uppercase; letter-spacing:1px; text-align:center;">History</h4>
-                        <div id="r-history" style="display:flex; flex-direction:column; gap:6px; flex:1; justify-content:flex-start; align-items:center;">
-                            ${renderHistory()}
-                        </div>
+                    <div class="r-history-box">
+                        <h4>History</h4>
+                        <div id="r-history" class="r-history-list">${renderHistory()}</div>
                     </div>
                 </div>
 
-                <div class="game-message" id="r-msg" style="min-height:28px; margin-bottom:16px;">Pick a number or outside bet!</div>
-                
-                <!-- Betting Controls -->
-                <div class="game-controls" style="width:100%; max-width:600px; padding:12px; margin-bottom:16px;">
-                    <div class="bet-group" style="justify-content:center;">
-                        <span class="bet-label">Bet</span>
-                        <button class="bet-btn" onclick="Casino.games.roulette._setBet(50)">$50</button>
-                        <button class="bet-btn" onclick="Casino.games.roulette._setBet(100)">$100</button>
-                        <button class="bet-btn" onclick="Casino.games.roulette._setBet(250)">$250</button>
-                        <button class="bet-btn" onclick="Casino.games.roulette._setBet(500)">$500</button>
-                    </div>
-                    <button class="action-btn primary" id="r-spin-btn" onclick="Casino.games.roulette._spin()" style="margin-left:auto;">SPIN — $${bet}</button>
-                </div>
+                <div class="game-message" id="r-msg">Pick a chip and click bets to place stacks!</div>
 
-                <!-- Number Grid (Inside Bets) -->
-                <div style="display:flex; margin-bottom:8px; width:100%; max-width:600px;">
-                    <!-- Zero -->
-                    <button class="r-grid-btn" data-bet="0" style="width:60px; border-radius:8px 0 0 8px; border-color:#22c55e; color:#22c55e;">0</button>
-                    
-                    <!-- 1-36 Grid -->
-                    <div style="display:grid; grid-template-columns:repeat(12, 1fr); grid-template-rows:repeat(3, 1fr); flex:1; gap:2px; margin-left:2px;">
-                        ${[3,6,9,12,15,18,21,24,27,30,33,36].map(n => `<button class="r-grid-btn" data-bet="${n}" style="border-color:${getColor(n)}; color:${getColor(n)}">${n}</button>`).join('')}
-                        ${[2,5,8,11,14,17,20,23,26,29,32,35].map(n => `<button class="r-grid-btn" data-bet="${n}" style="border-color:${getColor(n)}; color:${getColor(n)}">${n}</button>`).join('')}
-                        ${[1,4,7,10,13,16,19,22,25,28,31,34].map(n => `<button class="r-grid-btn" data-bet="${n}" style="border-color:${getColor(n)}; color:${getColor(n)}">${n}</button>`).join('')}
+                <div class="r-chips-row">
+                    <span class="bet-label">Chip:</span>
+                    ${CHIPS.map(c => `
+                        <button class="r-chip-btn${c.value === chipValue ? ' active' : ''}" type="button"
+                                data-chip="${c.value}" style="--chip-color:${c.color}">${c.label}</button>
+                    `).join('')}
+                    <div class="r-actions">
+                        <button class="r-action-btn" type="button" data-action="undo" title="Remove last chip">↶ Undo</button>
+                        <button class="r-action-btn" type="button" data-action="clear" title="Clear all bets">Clear</button>
+                        <button class="r-action-btn" type="button" data-action="repeat" title="Place same bets as last spin">Repeat</button>
                     </div>
                 </div>
 
-                <!-- Outside Bets -->
-                <div style="display:flex; flex-direction:column; gap:4px; width:100%; max-width:600px; padding-left:62px;">
-                    <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:4px;">
-                        <button class="r-out-btn" data-bet="1st12">1st 12</button>
-                        <button class="r-out-btn" data-bet="2nd12">2nd 12</button>
-                        <button class="r-out-btn" data-bet="3rd12">3rd 12</button>
+                <div class="game-controls r-spin-row">
+                    <div class="r-total">Total bet: <b id="r-total">$0</b></div>
+                    <button class="action-btn primary" type="button" id="r-spin-btn">SELECT A BET</button>
+                </div>
+
+                <div class="r-table">
+                    <div class="r-table-zero">
+                        <button class="r-grid-btn" type="button" data-bet="0" style="height:100%; border-color:#22c55e; color:#22c55e;">0</button>
                     </div>
-                    <div style="display:grid; grid-template-columns:repeat(6, 1fr); gap:4px;">
-                        <button class="r-out-btn" data-bet="low">1-18</button>
-                        <button class="r-out-btn" data-bet="even">Even</button>
-                        <button class="r-out-btn" data-bet="red" style="color:#ef4444; font-size:18px;">♦</button>
-                        <button class="r-out-btn" data-bet="black" style="color:#94a3b8; font-size:18px;">♠</button>
-                        <button class="r-out-btn" data-bet="odd">Odd</button>
-                        <button class="r-out-btn" data-bet="high">19-36</button>
+                    <div class="r-table-grid">
+                        ${[3,6,9,12,15,18,21,24,27,30,33,36].map(n => `<button class="r-grid-btn" type="button" data-bet="${n}" style="border-color:${getColor(n)}; color:${getColor(n)}">${n}</button>`).join('')}
+                        ${[2,5,8,11,14,17,20,23,26,29,32,35].map(n => `<button class="r-grid-btn" type="button" data-bet="${n}" style="border-color:${getColor(n)}; color:${getColor(n)}">${n}</button>`).join('')}
+                        ${[1,4,7,10,13,16,19,22,25,28,31,34].map(n => `<button class="r-grid-btn" type="button" data-bet="${n}" style="border-color:${getColor(n)}; color:${getColor(n)}">${n}</button>`).join('')}
                     </div>
                 </div>
+
+                <div class="r-outside">
+                    <div class="r-outside-row3">
+                        <button class="r-out-btn" type="button" data-bet="1st12">1st 12</button>
+                        <button class="r-out-btn" type="button" data-bet="2nd12">2nd 12</button>
+                        <button class="r-out-btn" type="button" data-bet="3rd12">3rd 12</button>
+                    </div>
+                    <div class="r-outside-row6">
+                        <button class="r-out-btn" type="button" data-bet="low">1–18</button>
+                        <button class="r-out-btn" type="button" data-bet="even">Even</button>
+                        <button class="r-out-btn red" type="button" data-bet="red">♦ RED</button>
+                        <button class="r-out-btn black" type="button" data-bet="black">♠ BLACK</button>
+                        <button class="r-out-btn" type="button" data-bet="odd">Odd</button>
+                        <button class="r-out-btn" type="button" data-bet="high">19–36</button>
+                    </div>
+                </div>
+
+                <div class="r-hint">💡 Click bets to place chips · right-click to remove · place multiple bets on different spots</div>
             </div>`;
-            
-        // Inject styles for grid
-        if (!document.getElementById('roulette-styles')) {
-            const style = document.createElement('style');
-            style.id = 'roulette-styles';
-            style.textContent = `
-                .r-grid-btn { background:var(--glass-bg); border:1px solid; border-radius:4px; font-weight:700; font-size:14px; cursor:pointer; transition:all 0.2s; }
-                .r-grid-btn:hover { background:var(--bg-card-hover); filter:brightness(1.5); }
-                .r-grid-btn.active { background:var(--gold); color:#000 !important; border-color:var(--gold) !important; transform:scale(1.05); z-index:10; box-shadow:0 0 10px var(--gold); }
-                .r-out-btn { background:var(--glass-bg); border:1px solid var(--glass-border); border-radius:6px; padding:10px 0; font-weight:600; color:var(--text); cursor:pointer; transition:all 0.2s; font-size:13px;}
-                .r-out-btn:hover { border-color:var(--gold); }
-                .r-out-btn.active { background:rgba(212,168,67,0.2); border-color:var(--gold); color:var(--gold); box-shadow:inset 0 0 10px rgba(212,168,67,0.2); }
-            `;
-            document.head.appendChild(style);
-        }
 
-        // Attach listeners
-        document.querySelectorAll('.r-grid-btn, .r-out-btn').forEach(btn => {
+        injectStyles();
+        wireListeners();
+    }
+
+    function wireListeners() {
+        area.querySelectorAll('.r-chip-btn').forEach(btn => {
             btn.addEventListener('click', () => {
-                if (spinning) return;
-                document.querySelectorAll('.r-grid-btn, .r-out-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                selectedBet = btn.dataset.bet;
+                chipValue = parseInt(btn.dataset.chip, 10);
+                area.querySelectorAll('.r-chip-btn').forEach(b => b.classList.toggle('active', parseInt(b.dataset.chip, 10) === chipValue));
                 Casino.playSound('click');
             });
         });
+
+        area.querySelectorAll('.r-grid-btn, .r-out-btn').forEach(btn => {
+            btn.addEventListener('click', () => placeChip(btn.dataset.bet));
+            btn.addEventListener('contextmenu', e => {
+                e.preventDefault();
+                removeChip(btn.dataset.bet);
+            });
+        });
+
+        area.querySelectorAll('.r-action-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (btn.dataset.action === 'undo') undoLast();
+                else if (btn.dataset.action === 'clear') clearAllBets();
+                else if (btn.dataset.action === 'repeat') repeatLast();
+            });
+        });
+
+        document.getElementById('r-spin-btn').addEventListener('click', spin);
+    }
+
+    function injectStyles() {
+        if (document.getElementById('roulette-styles')) return;
+        const style = document.createElement('style');
+        style.id = 'roulette-styles';
+        style.textContent = `
+            .roulette-game { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+            .r-top-row { display: flex; gap: 24px; flex-wrap: wrap; justify-content: center; width: 100%; }
+            .r-wheel-wrap { position: relative; width: 300px; height: 300px; }
+            #r-canvas { width: 100%; height: 100%; filter: drop-shadow(0 0 20px rgba(212,168,67,0.2)); }
+            .roulette-pointer { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); font-size: 28px; color: var(--gold-light); z-index: 5; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
+            .r-history-box { background: var(--bg-card); border: 1px solid var(--glass-border); border-radius: 12px; padding: 16px; min-width: 140px; display: flex; flex-direction: column; }
+            .r-history-box h4 { color: var(--text-secondary); margin-bottom: 12px; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; text-align: center; }
+            .r-history-list { display: flex; flex-direction: column; gap: 6px; align-items: center; }
+            .r-history-empty { color: var(--text-muted); font-size: 12px; text-align: center; padding: 10px; }
+            .r-history-chip { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; color: #fff; border: 2px solid rgba(255,255,255,0.1); box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
+
+            .r-chips-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 12px 16px; background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 14px; width: 100%; max-width: 700px; }
+            .r-chip-btn { width: 54px; height: 54px; border-radius: 50%; border: 3px dashed rgba(255,255,255,0.55); background: var(--chip-color); color: #fff; font-weight: 900; font-size: 13px; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 10px rgba(0,0,0,0.35); position: relative; flex-shrink: 0; }
+            .r-chip-btn:hover { transform: translateY(-2px); }
+            .r-chip-btn.active { box-shadow: 0 0 0 3px var(--gold), 0 4px 10px rgba(0,0,0,0.4); transform: translateY(-3px); }
+
+            .r-actions { display: flex; gap: 6px; margin-left: auto; }
+            .r-action-btn { padding: 8px 12px; border-radius: 8px; border: 1px solid var(--glass-border); background: var(--glass-bg); color: var(--text); cursor: pointer; font-weight: 700; font-size: 12px; transition: all 0.2s; }
+            .r-action-btn:hover { background: var(--bg-card-hover); border-color: var(--gold); }
+
+            .r-spin-row { width: 100%; max-width: 700px; justify-content: space-between; }
+            .r-total { font-weight: 700; color: var(--text-secondary); font-size: 14px; }
+            .r-total b { color: var(--gold-light); font-size: 16px; font-variant-numeric: tabular-nums; }
+
+            .r-table { display: flex; width: 100%; max-width: 700px; gap: 2px; }
+            .r-table-zero { width: 50px; }
+            .r-table-grid { flex: 1; display: grid; grid-template-columns: repeat(12, 1fr); grid-template-rows: repeat(3, 1fr); gap: 2px; }
+            .r-grid-btn { background: var(--glass-bg); border: 1px solid; border-radius: 4px; font-weight: 800; font-size: 14px; cursor: pointer; transition: all 0.2s; min-height: 38px; position: relative; padding: 0; }
+            .r-grid-btn:hover { background: var(--bg-card-hover); filter: brightness(1.5); }
+
+            .r-outside { display: flex; flex-direction: column; gap: 4px; width: 100%; max-width: 700px; padding-left: 52px; }
+            .r-outside-row3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+            .r-outside-row6 { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; }
+            .r-out-btn { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 6px; padding: 12px 0; font-weight: 700; color: var(--text); cursor: pointer; transition: all 0.2s; font-size: 13px; position: relative; }
+            .r-out-btn:hover { border-color: var(--gold); }
+            .r-out-btn.red { color: #ef4444; }
+            .r-out-btn.black { color: #94a3b8; }
+
+            /* Chip stacks placed on bets */
+            .r-bet-chip {
+                position: absolute;
+                top: 50%; left: 50%;
+                transform: translate(-50%, -50%);
+                min-width: 32px; height: 32px; padding: 0 6px;
+                border-radius: 16px;
+                background: var(--chip-color, var(--gold));
+                color: #fff;
+                font-weight: 900;
+                font-size: 11px;
+                display: flex; align-items: center; justify-content: center;
+                border: 2px solid rgba(255,255,255,0.55);
+                box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+                pointer-events: none;
+                z-index: 5;
+                animation: chipPop 0.25s cubic-bezier(0.2, 1.4, 0.4, 1);
+            }
+            @keyframes chipPop { from { transform: translate(-50%, -50%) scale(0); } to { transform: translate(-50%, -50%) scale(1); } }
+
+            .r-result-tag { display: inline-block; padding: 4px 12px; border-radius: 50px; font-weight: 900; font-size: 16px; color: #fff; margin-right: 6px; }
+
+            .r-hint { font-size: 12px; color: var(--text-muted); text-align: center; padding: 4px 0; }
+
+            @media (max-width: 700px) {
+                .r-chips-row { padding: 8px; gap: 6px; }
+                .r-chip-btn { width: 44px; height: 44px; font-size: 11px; border-width: 2px; }
+                .r-actions { width: 100%; margin-left: 0; justify-content: center; }
+                .r-grid-btn { font-size: 11px; min-height: 32px; }
+                .r-bet-chip { min-width: 24px; height: 24px; font-size: 10px; }
+                .r-out-btn { font-size: 11px; padding: 9px 0; }
+                .r-outside { padding-left: 42px; }
+                .r-table-zero { width: 40px; }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    function placeChip(betKey) {
+        if (spinning) return;
+        const newTotal = totalBet() + chipValue;
+        if (Casino.balance < newTotal) {
+            msg('Not enough chips for this bet.', 'lose');
+            return;
+        }
+        activeBets[betKey] = (activeBets[betKey] || 0) + chipValue;
+        placeOrder.push({ key: betKey, value: chipValue });
+        refreshBetUI();
+        updateSpinBtn();
+        Casino.playSound('click');
+    }
+
+    function removeChip(betKey) {
+        if (spinning || !activeBets[betKey]) return;
+        for (let i = placeOrder.length - 1; i >= 0; i--) {
+            if (placeOrder[i].key === betKey) {
+                activeBets[betKey] -= placeOrder[i].value;
+                if (activeBets[betKey] <= 0) delete activeBets[betKey];
+                placeOrder.splice(i, 1);
+                break;
+            }
+        }
+        refreshBetUI();
+        updateSpinBtn();
+        Casino.playSound('click');
+    }
+
+    function undoLast() {
+        if (spinning || placeOrder.length === 0) return;
+        const last = placeOrder.pop();
+        activeBets[last.key] -= last.value;
+        if (activeBets[last.key] <= 0) delete activeBets[last.key];
+        refreshBetUI();
+        updateSpinBtn();
+        Casino.playSound('click');
+    }
+
+    function clearAllBets() {
+        if (spinning) return;
+        activeBets = {};
+        placeOrder = [];
+        refreshBetUI();
+        updateSpinBtn();
+        Casino.playSound('click');
+    }
+
+    function repeatLast() {
+        if (spinning || !Object.keys(lastBets).length) return;
+        const total = Object.values(lastBets).reduce((s, v) => s + v, 0);
+        if (Casino.balance < total) {
+            msg('Not enough chips to repeat last bets.', 'lose');
+            return;
+        }
+        activeBets = Object.assign({}, lastBets);
+        placeOrder = Object.entries(lastBets).map(([key, value]) => ({ key, value }));
+        refreshBetUI();
+        updateSpinBtn();
+        Casino.playSound('click');
+    }
+
+    function refreshBetUI() {
+        const total = totalBet();
+        const totalEl = document.getElementById('r-total');
+        if (totalEl) totalEl.textContent = '$' + total.toLocaleString();
+
+        area.querySelectorAll('.r-grid-btn, .r-out-btn').forEach(btn => {
+            const key = btn.dataset.bet;
+            const oldChip = btn.querySelector('.r-bet-chip');
+            if (oldChip) oldChip.remove();
+            if (activeBets[key]) {
+                const chip = document.createElement('span');
+                chip.className = 'r-bet-chip';
+                const denominations = placeOrder.filter(p => p.key === key).map(p => p.value);
+                const top = denominations.length ? Math.max(...denominations) : chipValue;
+                chip.style.setProperty('--chip-color', getChip(top).color);
+                chip.textContent = '$' + activeBets[key];
+                btn.appendChild(chip);
+            }
+        });
+    }
+
+    function updateSpinBtn() {
+        const total = totalBet();
+        const btn = document.getElementById('r-spin-btn');
+        if (!btn) return;
+        btn.disabled = spinning || total === 0;
+        btn.textContent = total > 0 ? `SPIN — $${total.toLocaleString()}` : 'SELECT A BET';
     }
 
     function drawStaticWheel() {
         const canvas = document.getElementById('r-canvas');
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
-        const cx = 150, cy = 150, r = 140;
-        
-        ctx.clearRect(0,0,300,300);
-        
+        const cx = 150, cy = 150, R = 142;
+
+        ctx.clearRect(0, 0, 300, 300);
+
+        // --- Outer wood bowl with a beveled gold rim (3D depth) ---
+        const bowl = ctx.createRadialGradient(cx - 40, cy - 50, 30, cx, cy, R);
+        bowl.addColorStop(0, '#3a2410');
+        bowl.addColorStop(0.7, '#1a1006');
+        bowl.addColorStop(1, '#0a0703');
+        ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2);
+        ctx.fillStyle = bowl; ctx.fill();
+        // Gold rim with light bevel
+        const rim = ctx.createLinearGradient(cx - R, cy - R, cx + R, cy + R);
+        rim.addColorStop(0, '#fde68a');
+        rim.addColorStop(0.5, '#a07830');
+        rim.addColorStop(1, '#fde68a');
+        ctx.lineWidth = 9;
+        ctx.strokeStyle = rim;
+        ctx.beginPath(); ctx.arc(cx, cy, R - 4, 0, Math.PI * 2); ctx.stroke();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+        ctx.beginPath(); ctx.arc(cx, cy, R - 8, 0, Math.PI * 2); ctx.stroke();
+
         ctx.save();
         ctx.translate(cx, cy);
         ctx.rotate(wheelAngle);
-        
-        // Draw segments
+
         const segAngle = (Math.PI * 2) / 37;
+        const baseOffset = -Math.PI / 2;
+        const rPocket = R - 14;   // outer edge of pockets
+        const rInner = 58;        // inner edge of pockets
+
+        // --- Pockets with radial shading ---
         for (let i = 0; i < 37; i++) {
             const num = NUMBERS[i];
+            const a0 = baseOffset + i * segAngle - segAngle / 2;
+            const a1 = baseOffset + (i + 1) * segAngle - segAngle / 2;
             ctx.beginPath();
-            ctx.moveTo(0, 0);
-            ctx.arc(0, 0, r, i * segAngle - segAngle/2, (i+1) * segAngle - segAngle/2);
-            ctx.fillStyle = getColor(num);
+            ctx.arc(0, 0, rPocket, a0, a1);
+            ctx.arc(0, 0, rInner, a1, a0, true);
+            ctx.closePath();
+            const base = getColor(num);
+            const pg = ctx.createRadialGradient(0, 0, rInner, 0, 0, rPocket);
+            pg.addColorStop(0, shade(base, 1.35));
+            pg.addColorStop(0.6, base);
+            pg.addColorStop(1, shade(base, 0.6));
+            ctx.fillStyle = pg;
             ctx.fill();
+        }
+
+        // --- Metal frets (raised dividers between pockets) ---
+        for (let i = 0; i < 37; i++) {
+            const a = baseOffset + i * segAngle - segAngle / 2;
+            const sx = Math.cos(a), sy = Math.sin(a);
+            ctx.beginPath();
+            ctx.moveTo(sx * rInner, sy * rInner);
+            ctx.lineTo(sx * rPocket, sy * rPocket);
+            ctx.lineWidth = 2.5;
+            ctx.strokeStyle = 'rgba(20,12,4,0.8)';
             ctx.stroke();
-            
-            // Draw numbers
+            ctx.lineWidth = 1;
+            ctx.strokeStyle = 'rgba(253,230,138,0.55)';
+            ctx.stroke();
+            // Fret stud
+            const mr = (rPocket + rInner) / 2;
+            ctx.beginPath();
+            ctx.arc(sx * rPocket - sx * 4, sy * rPocket - sy * 4, 1.8, 0, Math.PI * 2);
+            ctx.fillStyle = '#fde68a';
+            ctx.fill();
+        }
+
+        // --- Numbers ---
+        for (let i = 0; i < 37; i++) {
+            const num = NUMBERS[i];
             ctx.save();
-            ctx.rotate(i * segAngle);
-            ctx.translate(0, -r + 20);
+            ctx.rotate(baseOffset + i * segAngle);
+            ctx.translate(0, -(rPocket - 12));
             ctx.fillStyle = '#fff';
-            ctx.font = 'bold 12px Inter';
+            ctx.font = 'bold 11px Inter';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
+            ctx.shadowColor = 'rgba(0,0,0,0.6)';
+            ctx.shadowBlur = 2;
             ctx.fillText(num.toString(), 0, 0);
+            ctx.shadowBlur = 0;
             ctx.restore();
         }
-        
-        // Center hub
-        ctx.beginPath();
-        ctx.arc(0, 0, 40, 0, Math.PI*2);
-        ctx.fillStyle = '#1e293b';
-        ctx.fill();
-        ctx.lineWidth = 4;
-        ctx.strokeStyle = '#d4a843'; // gold
-        ctx.stroke();
-        
-        // Inner detail
-        ctx.beginPath();
-        ctx.arc(0, 0, 30, 0, Math.PI*2);
-        ctx.fillStyle = '#0f172a';
-        ctx.fill();
-        
-        // Gold rim
-        ctx.restore();
-        ctx.beginPath();
-        ctx.arc(cx, cy, r, 0, Math.PI*2);
-        ctx.lineWidth = 8;
-        ctx.strokeStyle = '#d4a843';
-        ctx.stroke();
+
+        // --- Inner track ring (where the ball rolls) ---
+        const track = ctx.createRadialGradient(0, 0, rInner - 8, 0, 0, rInner);
+        track.addColorStop(0, '#2a1a0a');
+        track.addColorStop(1, '#120c05');
+        ctx.beginPath(); ctx.arc(0, 0, rInner, 0, Math.PI * 2);
+        ctx.fillStyle = track; ctx.fill();
         ctx.lineWidth = 2;
-        ctx.strokeStyle = '#a07830';
-        ctx.stroke();
-        
-        // Draw Ball
-        if (ballRadius > 0) {
+        ctx.strokeStyle = 'rgba(253,230,138,0.4)';
+        ctx.beginPath(); ctx.arc(0, 0, rInner, 0, Math.PI * 2); ctx.stroke();
+
+        // --- 3D center turret (cone) ---
+        const cone = ctx.createRadialGradient(-12, -14, 4, 0, 0, 42);
+        cone.addColorStop(0, '#fde68a');
+        cone.addColorStop(0.45, '#c8962f');
+        cone.addColorStop(1, '#5a3d12');
+        ctx.beginPath(); ctx.arc(0, 0, 42, 0, Math.PI * 2);
+        ctx.fillStyle = cone; ctx.fill();
+        // Decorative spokes
+        ctx.strokeStyle = 'rgba(90,61,18,0.6)';
+        ctx.lineWidth = 3;
+        for (let i = 0; i < 8; i++) {
+            const a = i * Math.PI / 4;
             ctx.beginPath();
+            ctx.moveTo(Math.cos(a) * 12, Math.sin(a) * 12);
+            ctx.lineTo(Math.cos(a) * 40, Math.sin(a) * 40);
+            ctx.stroke();
+        }
+        // Turret tip
+        const tip = ctx.createRadialGradient(-4, -5, 1, 0, 0, 14);
+        tip.addColorStop(0, '#fff');
+        tip.addColorStop(0.5, '#fde047');
+        tip.addColorStop(1, '#a07830');
+        ctx.beginPath(); ctx.arc(0, 0, 14, 0, Math.PI * 2);
+        ctx.fillStyle = tip; ctx.fill();
+
+        ctx.restore();
+
+        // --- Inner shadow for bowl depth (drawn unrotated, on top) ---
+        const depth = ctx.createRadialGradient(cx, cy - 30, rInner, cx, cy, R);
+        depth.addColorStop(0, 'rgba(0,0,0,0)');
+        depth.addColorStop(0.82, 'rgba(0,0,0,0)');
+        depth.addColorStop(1, 'rgba(0,0,0,0.55)');
+        ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2);
+        ctx.fillStyle = depth; ctx.fill();
+        // Top highlight glint
+        ctx.beginPath();
+        ctx.ellipse(cx, cy - R * 0.55, R * 0.55, R * 0.22, 0, 0, Math.PI * 2);
+        const glint = ctx.createLinearGradient(cx, cy - R, cx, cy);
+        glint.addColorStop(0, 'rgba(255,255,255,0.14)');
+        glint.addColorStop(1, 'rgba(255,255,255,0)');
+        ctx.fillStyle = glint; ctx.fill();
+
+        // --- Ball with shadow + highlight ---
+        if (ballRadius > 0) {
             const bx = cx + Math.cos(ballAngle) * ballRadius;
             const by = cy + Math.sin(ballAngle) * ballRadius;
-            ctx.arc(bx, by, 6, 0, Math.PI*2);
-            ctx.fillStyle = '#f8fafc'; // white ball
+            // Drop shadow
+            ctx.beginPath();
+            ctx.ellipse(bx + 2, by + 3, 6, 4, 0, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(0,0,0,0.5)';
             ctx.fill();
-            ctx.shadowColor = 'rgba(0,0,0,0.5)';
-            ctx.shadowBlur = 4;
-            ctx.stroke();
-            ctx.shadowColor = 'transparent'; // reset
+            // Ball body
+            const bg = ctx.createRadialGradient(bx - 2.5, by - 3, 1, bx, by, 7);
+            bg.addColorStop(0, '#ffffff');
+            bg.addColorStop(0.6, '#e2e8f0');
+            bg.addColorStop(1, '#94a3b8');
+            ctx.beginPath();
+            ctx.arc(bx, by, 6.5, 0, Math.PI * 2);
+            ctx.fillStyle = bg;
+            ctx.fill();
+            // Specular highlight
+            ctx.beginPath();
+            ctx.arc(bx - 2, by - 2.5, 2, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(255,255,255,0.9)';
+            ctx.fill();
         }
+    }
+
+    /* Lighten (>1) or darken (<1) a hex colour. */
+    function shade(hex, factor) {
+        const n = parseInt(hex.slice(1), 16);
+        let r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+        r = Math.min(255, Math.round(r * factor));
+        g = Math.min(255, Math.round(g * factor));
+        b = Math.min(255, Math.round(b * factor));
+        return `rgb(${r},${g},${b})`;
     }
 
     function renderHistory() {
-        if (history.length === 0) return '<div style="color:var(--text-muted);font-size:12px;text-align:center;padding:10px;">No spins yet</div>';
-        return history.map(n => `
-            <div style="width:32px; height:32px; border-radius:50%; background:${getColor(n)}; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:14px; border:2px solid rgba(255,255,255,0.1); box-shadow:0 2px 5px rgba(0,0,0,0.3);">
-                ${n}
-            </div>
-        `).join('');
+        if (history.length === 0) return '<div class="r-history-empty">No spins yet</div>';
+        return history.map(n => `<div class="r-history-chip" style="background:${getColor(n)}">${n}</div>`).join('');
     }
-
     function updateHistory(n) {
         history.unshift(n);
         if (history.length > 5) history.pop();
@@ -206,137 +502,146 @@
         if (el) el.innerHTML = renderHistory();
     }
 
-    function setBet(b) { 
-        if (spinning) return;
-        bet = b; 
-        document.getElementById('r-spin-btn').textContent = `SPIN — $${b}`; 
-        Casino.playSound('click'); 
-    }
-
     function spin() {
         if (spinning) return;
-        if (!selectedBet) { msg('Select a number or outside bet first!', ''); return; }
-        if (!Casino.placeBet(bet)) { msg('Not enough chips!', 'lose'); return; }
-        
+        const total = totalBet();
+        if (total === 0) { msg('Place at least one chip!', ''); return; }
+        if (!Casino.placeBet(total)) { msg('Not enough chips!', 'lose'); return; }
+
+        lastBets = Object.assign({}, activeBets);
         spinning = true;
-        document.getElementById('r-spin-btn').disabled = true;
+        updateSpinBtn();
         msg('Spinning...', '');
-        Casino.playSound('click'); // spin sound trigger
+        if (Casino.playTones) Casino.playTones([{ freq: 600, wave: 'sine', dur: 0.1, vol: 0.04 }]);
 
         spinResult = Math.floor(Math.random() * 37);
-        
-        // Animation config
-        const duration = 5000; // 5 seconds
+        const duration = 5000;
         const startTime = performance.now();
-        
-        // Target angle logic
         const index = NUMBERS.indexOf(spinResult);
         const segAngle = (Math.PI * 2) / 37;
-        const targetWheelAngle = -(index * segAngle); // Where the wheel should stop
-        
-        // Starting states
+        const targetWheelAngle = -(index * segAngle);
         const startWheelAngle = wheelAngle;
-        const startBallAngle = 0;
-        
-        // Ticks for sound
+        const startBallAngle = -Math.PI / 2;
         let lastTick = 0;
+
+        const TRACK_R = 128;   // outer track the ball rolls on
+        const POCKET_R = 100;  // radius the ball rests at inside a pocket
+        let bounceTick = 0;
 
         function animate(now) {
             const elapsed = now - startTime;
             const progress = Math.min(elapsed / duration, 1);
-            
-            // Ease out cubic
             const easeOut = 1 - Math.pow(1 - progress, 3);
-            
-            // Wheel spins clockwise 3 times
+
             wheelAngle = startWheelAngle + (Math.PI * 2 * 3 * easeOut) + (targetWheelAngle - startWheelAngle) * progress;
-            
-            // Ball spins counter-clockwise fast, slows down, moves inward
-            // 8 full rotations
             ballAngle = startBallAngle - (Math.PI * 2 * 8 * easeOut);
-            
-            // Ball radius moves from outer rim (130) to inner slots (100)
-            if (progress < 0.7) {
-                ballRadius = 130; // Outer rim
+
+            const finalBallAngle = -Math.PI / 2;
+            if (progress < 0.62) {
+                // Ball rolls smoothly on the outer track.
+                ballRadius = TRACK_R;
             } else {
-                // Drop in
-                const dropProgress = (progress - 0.7) / 0.3;
-                ballRadius = 130 - (30 * dropProgress); // Move to 100
-                
-                // Match ball angle to wheel slot angle at the end
-                const finalBallAngle = targetWheelAngle - Math.PI/2; // -90deg to align with top pointer
-                ballAngle = ballAngle * (1-dropProgress) + finalBallAngle * dropProgress;
+                // Drop-and-bounce: ball falls toward the pocket, hopping off
+                // the frets with a damped oscillation before settling.
+                const dp = (progress - 0.62) / 0.38;            // 0..1
+                const smooth = dp * dp * (3 - 2 * dp);          // smoothstep
+                const baseR = TRACK_R - (TRACK_R - POCKET_R) * smooth;
+                const bounce = Math.abs(Math.sin(dp * Math.PI * 4.5)) * (1 - dp) * (1 - dp) * 20;
+                ballRadius = baseR + bounce;
+                // Settle the angle to the winning pocket with a fading wobble.
+                const wobble = Math.sin(dp * Math.PI * 8) * (1 - dp) * (1 - dp) * 0.22;
+                ballAngle = ballAngle * (1 - smooth) + (finalBallAngle + wobble) * smooth;
+                // Thud on each bounce apex.
+                const apex = Math.floor(dp * 4.5);
+                if (apex !== bounceTick && dp < 0.92) {
+                    bounceTick = apex;
+                    if (Casino.playTones) Casino.playTones([{ freq: 280 + Math.random() * 120, wave: 'sine', dur: 0.05, vol: 0.04 }]);
+                }
             }
 
             drawStaticWheel();
-            
-            // Ticking sound
-            if (progress < 0.8 && elapsed - lastTick > 150 + (progress * 200)) {
-                Casino.playSound('click');
+
+            // Rolling clicks during the fast phase.
+            if (progress < 0.62 && elapsed - lastTick > 110 + (progress * 320)) {
+                if (Casino.playTones) Casino.playTones([{ freq: 1200, wave: 'sine', dur: 0.03, vol: 0.022 }]);
                 lastTick = elapsed;
             }
 
-            if (progress < 1) {
-                animFrame = requestAnimationFrame(animate);
-            } else {
-                finalizeSpin();
-            }
+            if (progress < 1) animFrame = requestAnimationFrame(animate);
+            else finalizeSpin();
         }
-        
         animFrame = requestAnimationFrame(animate);
     }
 
     function finalizeSpin() {
         updateHistory(spinResult);
-        
-        let won = checkWin(spinResult);
-        if (won > 0) {
-            Casino.changeBalance(won); // `won` includes bet if they win
-            msg(`Result: ${spinResult} — You win $${won.toLocaleString()}!`, 'win');
-            Casino.playSound(won >= bet * 10 ? 'jackpot' : 'win');
-            if (won >= 500) Casino.showWinEffect(won);
+
+        let totalPayout = 0;
+        const winners = [];
+        Object.entries(activeBets).forEach(([key, amt]) => {
+            const payout = checkBet(key, amt, spinResult);
+            if (payout > 0) {
+                totalPayout += payout;
+                winners.push({ key, payout });
+            }
+        });
+
+        const c = getColor(spinResult);
+        const tag = `<span class="r-result-tag" style="background:${c}">${spinResult}</span>`;
+        const m = document.getElementById('r-msg');
+        if (totalPayout > 0) {
+            Casino.changeBalance(totalPayout);
+            const wins = winners.length;
+            if (m) {
+                m.innerHTML = `${tag} ${wins} winning bet${wins > 1 ? 's' : ''} — Won $${totalPayout.toLocaleString()}!`;
+                m.className = 'game-message win';
+            }
+            Casino.playSound(totalPayout >= totalBet() * 10 ? 'jackpot' : 'win');
+            if (totalPayout >= 500) Casino.showWinEffect(totalPayout, { bet: totalBet(), particles: ['🎡','🎰','💰','✨','♠️','♦️'], accent: '#8b5cf6', themeLabel: 'Roulette' });
         } else {
-            msg(`Result: ${spinResult} — No win.`, 'lose');
+            if (m) {
+                m.innerHTML = `${tag} No winning bets.`;
+                m.className = 'game-message lose';
+            }
             Casino.playSound('lose');
         }
-        
+
+        activeBets = {};
+        placeOrder = [];
+        refreshBetUI();
         spinning = false;
-        document.getElementById('r-spin-btn').disabled = false;
+        updateSpinBtn();
     }
 
-    function checkWin(n) {
-        // Returns total payout INCLUDING original bet
-        // e.g. Straight up pays 35:1, returns bet * 36
-        const isStr = selectedBet.toString();
-        
-        if (isStr === n.toString()) return bet * 36; // Straight up (0-36)
-        
-        switch(selectedBet) {
-            case 'red': return n > 0 && isRed(n) ? bet * 2 : 0;
-            case 'black': return n > 0 && !isRed(n) ? bet * 2 : 0;
-            case 'odd': return n > 0 && n % 2 === 1 ? bet * 2 : 0;
-            case 'even': return n > 0 && n % 2 === 0 ? bet * 2 : 0;
-            case 'low': return n >= 1 && n <= 18 ? bet * 2 : 0;
-            case 'high': return n >= 19 && n <= 36 ? bet * 2 : 0;
-            case '1st12': return n >= 1 && n <= 12 ? bet * 3 : 0;
-            case '2nd12': return n >= 13 && n <= 24 ? bet * 3 : 0;
-            case '3rd12': return n >= 25 && n <= 36 ? bet * 3 : 0;
+    function checkBet(key, amt, n) {
+        const numericKey = parseInt(key, 10);
+        if (!isNaN(numericKey) && key === numericKey.toString() && numericKey === n) return amt * 36;
+        switch (key) {
+            case 'red':   return n > 0 && isRed(n) ? amt * 2 : 0;
+            case 'black': return n > 0 && !isRed(n) ? amt * 2 : 0;
+            case 'odd':   return n > 0 && n % 2 === 1 ? amt * 2 : 0;
+            case 'even':  return n > 0 && n % 2 === 0 ? amt * 2 : 0;
+            case 'low':   return n >= 1 && n <= 18 ? amt * 2 : 0;
+            case 'high':  return n >= 19 && n <= 36 ? amt * 2 : 0;
+            case '1st12': return n >= 1 && n <= 12 ? amt * 3 : 0;
+            case '2nd12': return n >= 13 && n <= 24 ? amt * 3 : 0;
+            case '3rd12': return n >= 25 && n <= 36 ? amt * 3 : 0;
             default: return 0;
         }
     }
 
     function msg(text, type) {
         const el = document.getElementById('r-msg');
-        if(el) {
+        if (el) {
             el.textContent = text;
             el.className = 'game-message ' + (type || '');
         }
     }
 
-    function destroy() { 
-        spinning = false; 
+    function destroy() {
+        spinning = false;
         if (animFrame) cancelAnimationFrame(animFrame);
     }
 
-    Casino.games.roulette = { init, destroy, _spin: spin, _setBet: setBet };
+    Casino.games.roulette = { init, destroy };
 })();

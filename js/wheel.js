@@ -139,7 +139,7 @@
             msg.textContent = `${seg.label}! You win $${winnings}!`;
             msg.className = 'game-message win';
             Casino.playSound(seg.mult >= 10 ? 'jackpot' : 'win');
-            if (winnings >= 500) Casino.showWinEffect(winnings);
+            if (winnings >= 500) Casino.showWinEffect(winnings, { bet, particles: ['🎡','💰','✨','⭐','🎉'], accent: '#8b5cf6', themeLabel: 'Wheel of Fortune' });
         } else {
             msg.textContent = 'Landed on 0x — no win!';
             msg.className = 'game-message lose';

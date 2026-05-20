@@ -1,19 +1,38 @@
 /* Plinko — Canvas-based ball drop with risk levels */
 (function() {
     let bet = 100, rows = 12, risk = 'medium', area, canvas, ctx, animId;
-    let balls = [], pegs = [], slots = [];
+    let balls = [], pegs = [], slots = [], sparks = [];
     let dropping = false;
 
+    /* Spawn a burst of spark particles for peg hits / slot landings. */
+    function spawnSparks(x, y, count, color, upward) {
+        for (let i = 0; i < count; i++) {
+            const angle = upward
+                ? -Math.PI / 2 + (Math.random() - 0.5) * Math.PI
+                : Math.random() * Math.PI * 2;
+            const speed = 1 + Math.random() * (upward ? 5.5 : 3);
+            sparks.push({
+                x: x, y: y,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed - (upward ? 1.5 : 0),
+                life: 1,
+                color: color,
+                size: 1.5 + Math.random() * 3
+            });
+        }
+        if (sparks.length > 260) sparks.splice(0, sparks.length - 260);
+    }
+
     const RISKS = {
-        low:    { 8: [1.5,1.2,1.1,1,0.5,1,1.1,1.2,1.5],
-                 12: [3,2,1.5,1.2,1.1,1,0.5,1,1.1,1.2,1.5,2,3],
-                 16: [5,3,2,1.5,1.2,1.1,1,0.5,0.3,0.5,1,1.1,1.2,1.5,2,3,5] },
-        medium: { 8: [5,2,1.5,1,0.5,1,1.5,2,5],
-                 12: [10,5,3,2,1.5,1,0.5,1,1.5,2,3,5,10],
-                 16: [25,10,5,3,2,1.5,1,0.5,0.3,0.5,1,1.5,2,3,5,10,25] },
-        high:   { 8: [15,5,2,1,0.3,1,2,5,15],
-                 12: [50,15,5,3,1.5,1,0.3,1,1.5,3,5,15,50],
-                 16: [100,50,15,5,3,2,1,0.5,0.2,0.5,1,2,3,5,15,50,100] }
+        low:    { 8: [3, 2, 1.2, 0.9, 0.4, 0.9, 1.2, 2, 3],
+                 12: [5, 2.5, 1.5, 1.1, 0.7, 0.5, 0.3, 0.5, 0.7, 1.1, 1.5, 2.5, 5],
+                 16: [10, 5, 2.5, 1.5, 1.1, 0.9, 0.6, 0.4, 0.2, 0.4, 0.6, 0.9, 1.1, 1.5, 2.5, 5, 10] },
+        medium: { 8: [15, 3, 1.2, 0.7, 0.3, 0.7, 1.2, 3, 15],
+                 12: [29, 10, 4, 1.5, 0.9, 0.5, 0.3, 0.5, 0.9, 1.5, 4, 10, 29],
+                 16: [110, 35, 12, 4, 1.5, 0.9, 0.5, 0.3, 0.2, 0.3, 0.5, 0.9, 1.5, 4, 12, 35, 110] },
+        high:   { 8: [25, 5, 1, 0.3, 0.1, 0.3, 1, 5, 25],
+                 12: [120, 25, 5, 1.5, 0.6, 0.3, 0.1, 0.3, 0.6, 1.5, 5, 25, 120],
+                 16: [500, 100, 25, 5, 1, 0.5, 0.3, 0.1, 0.05, 0.1, 0.3, 0.5, 1, 5, 25, 100, 500] }
     };
 
     const PEG_R = 4, BALL_R = 7;
@@ -176,20 +195,19 @@
                     // Add randomness on each bounce
                     ball.vx += (Math.random() - 0.5) * 1.5;
 
-                    // Tick sound
-                    try {
-                        if (Casino.soundEnabled) {
-                            const ac = new (window.AudioContext || window.webkitAudioContext)();
-                            const osc = ac.createOscillator();
-                            const g = ac.createGain();
-                            osc.type = 'sine';
-                            osc.frequency.value = 800 + Math.random() * 400;
-                            g.gain.setValueAtTime(0.02, ac.currentTime);
-                            g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.03);
-                            osc.connect(g); g.connect(ac.destination);
-                            osc.start(); osc.stop(ac.currentTime + 0.03);
-                        }
-                    } catch(e) {}
+                    // Light the peg up briefly + spark particles.
+                    peg.litUntil = Date.now() + 220;
+                    spawnSparks(peg.x, peg.y, 4, '#fde047');
+
+                    // Tick sound (single shared AudioContext via Casino.playTones).
+                    if (Casino.playTones) {
+                        Casino.playTones([{
+                            freq: 800 + Math.random() * 400,
+                            wave: 'sine',
+                            dur: 0.03,
+                            vol: 0.02
+                        }]);
+                    }
                 }
             });
 
@@ -202,6 +220,7 @@
                 ball.active = false;
                 ball.vy = 0;
                 ball.vx = 0;
+                ball.landedTime = Date.now();
 
                 // Find which slot
                 let slotIdx = 0;
@@ -216,6 +235,13 @@
 
                 ball.landedSlot = slotIdx;
 
+                // Landing burst — color + intensity scale with the multiplier.
+                const slot = slots[slotIdx];
+                const burstColor = mult >= 10 ? '#ef4444' : mult >= 3 ? '#f59e0b' : mult >= 1 ? '#22c55e' : '#6b7280';
+                const burstCount = mult >= 10 ? 26 : mult >= 3 ? 18 : mult >= 1 ? 12 : 6;
+                spawnSparks(slot.x + slot.w / 2, slot.y, burstCount, burstColor, true);
+                slot.litUntil = Date.now() + 500;
+
                 if (winnings > 0) {
                     Casino.changeBalance(winnings);
                 }
@@ -226,7 +252,7 @@
                         m.textContent = `🎉 ${mult}x! Won $${winnings.toLocaleString()}!`;
                         m.className = 'game-message win';
                         Casino.playSound('jackpot');
-                        if (winnings >= 500) Casino.showWinEffect(winnings);
+                        if (winnings >= 500) Casino.showWinEffect(winnings, { bet: ball.bet, particles: ['🟢','🟡','🔴','💰','✨','⚪'], accent: '#22c55e', themeLabel: 'Plinko' });
                     } else if (mult >= 1) {
                         m.textContent = `${mult}x — Won $${winnings}`;
                         m.className = 'game-message win';
@@ -240,12 +266,22 @@
             }
         });
 
+        // Update spark particles.
+        sparks.forEach(s => {
+            s.vy += 0.16;
+            s.x += s.vx;
+            s.y += s.vy;
+            s.life -= 0.035;
+        });
+        sparks = sparks.filter(s => s.life > 0);
+
+        // Remove balls that have been landed for > 700ms (clear visual clutter).
+        const now = Date.now();
+        balls = balls.filter(b => b.active || (b.landedTime && now - b.landedTime < 700));
+
         drawFrame();
 
-        // Clean up old inactive balls
-        if (balls.length > 10) balls = balls.filter(b => b.active || Date.now() - (b.landedTime || Date.now()) < 2000);
-
-        if (anyActive) {
+        if (anyActive || balls.length > 0 || sparks.length > 0) {
             animId = requestAnimationFrame(animate);
         } else {
             dropping = false;
@@ -257,14 +293,15 @@
         const w = 600, h = 500;
         ctx.clearRect(0, 0, w, h);
 
-        // Draw pegs
+        // Draw pegs — recently-hit pegs flash white and glow.
+        const nowT = Date.now();
         pegs.forEach(peg => {
+            const lit = peg.litUntil && nowT < peg.litUntil;
             ctx.beginPath();
-            ctx.arc(peg.x, peg.y, PEG_R, 0, Math.PI * 2);
-            ctx.fillStyle = '#d4a843';
-            ctx.fill();
-            ctx.shadowColor = 'rgba(212,168,67,0.3)';
-            ctx.shadowBlur = 6;
+            ctx.arc(peg.x, peg.y, lit ? PEG_R + 2 : PEG_R, 0, Math.PI * 2);
+            ctx.fillStyle = lit ? '#fff' : '#d4a843';
+            ctx.shadowColor = lit ? 'rgba(253,224,71,0.95)' : 'rgba(212,168,67,0.3)';
+            ctx.shadowBlur = lit ? 16 : 6;
             ctx.fill();
             ctx.shadowBlur = 0;
         });
@@ -279,14 +316,18 @@
             else if (mult >= 1) color = '#22c55e';
             else color = '#6b7280';
 
-            // Slot background
-            ctx.fillStyle = color + '22';
+            const lit = slot.litUntil && nowT < slot.litUntil;
+
+            // Slot background — brightens briefly after a landing.
+            ctx.fillStyle = color + (lit ? 'aa' : '22');
             ctx.fillRect(slot.x + 1, slot.y, slot.w - 2, 35);
 
             // Slot border
-            ctx.strokeStyle = color + '66';
-            ctx.lineWidth = 1;
+            ctx.strokeStyle = lit ? color : color + '66';
+            ctx.lineWidth = lit ? 2 : 1;
+            if (lit) { ctx.shadowColor = color; ctx.shadowBlur = 14; }
             ctx.strokeRect(slot.x + 1, slot.y, slot.w - 2, 35);
+            ctx.shadowBlur = 0;
 
             // Multiplier text
             ctx.fillStyle = color;
@@ -297,7 +338,17 @@
         });
 
         // Draw balls
+        const now = Date.now();
         balls.forEach(ball => {
+            // Fade out landed balls in the last 300ms before they're removed (700ms total lifetime).
+            let alpha = 1;
+            if (!ball.active && ball.landedTime) {
+                const sinceLanded = now - ball.landedTime;
+                if (sinceLanded > 400) alpha = Math.max(0, 1 - (sinceLanded - 400) / 300);
+            }
+            if (alpha <= 0) return;
+            ctx.globalAlpha = alpha;
+
             // Trail
             if (ball.trail && ball.trail.length > 1) {
                 ctx.beginPath();
@@ -326,11 +377,26 @@
             ctx.fill();
             ctx.shadowBlur = 0;
         });
+        ctx.globalAlpha = 1;
+
+        // Draw spark particles.
+        sparks.forEach(s => {
+            ctx.globalAlpha = Math.max(0, s.life);
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, s.size * Math.max(0.3, s.life), 0, Math.PI * 2);
+            ctx.fillStyle = s.color;
+            ctx.shadowColor = s.color;
+            ctx.shadowBlur = 8;
+            ctx.fill();
+            ctx.shadowBlur = 0;
+        });
+        ctx.globalAlpha = 1;
     }
 
     function destroy() {
         dropping = false;
         balls = [];
+        sparks = [];
         cancelAnimationFrame(animId);
     }
 

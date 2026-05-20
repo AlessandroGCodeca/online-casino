@@ -121,7 +121,8 @@
             const w = document.createElement('div');
             w.className = 'poker-card-wrapper';
             const card = document.createElement('div');
-            card.className = 'playing-card face-down';
+            card.className = 'flip-card';
+            card.innerHTML = '<div class="flip-card-inner"><div class="flip-card-face flip-card-back"></div></div>';
             const label = document.createElement('div');
             label.className = 'hold-label';
             w.appendChild(card);
@@ -143,50 +144,65 @@
         hand = [deck.pop(), deck.pop(), deck.pop(), deck.pop(), deck.pop()];
         held = [false, false, false, false, false];
         phase = 'draw';
-        renderHand();
+        renderHand(new Set([0, 1, 2, 3, 4]));
         msg('Click cards to hold, then draw', '');
         document.getElementById('pk-btn').textContent = 'DRAW';
         Casino.playSound('click');
-
-        // Auto-hold logic could go here
     }
 
     function drawCards() {
         Casino.playSound('click');
+        const toAnimate = new Set();
         for (let i = 0; i < 5; i++) {
-            if (!held[i]) hand[i] = deck.pop();
+            if (!held[i]) { hand[i] = deck.pop(); toAnimate.add(i); }
         }
         phase = 'bet';
-        renderHand();
-        evaluate();
+        renderHand(toAnimate);
+        // Wait for the swapped cards to finish flipping before scoring.
+        const delay = toAnimate.size ? 120 + (4 * 120) + 650 : 0;
+        setTimeout(evaluate, delay);
         document.getElementById('pk-btn').textContent = `DEAL — $${bet}`;
     }
 
-    function renderHand() {
+    // animateSet: Set of indices to flip in with a stagger; others render
+    // already face-up. Omit to render the whole hand instantly face-up.
+    function renderHand(animateSet) {
         const c = document.getElementById('pk-cards');
         c.innerHTML = '';
         hand.forEach((card, i) => {
             const w = document.createElement('div');
             w.className = 'poker-card-wrapper';
-            
-            // Visual indicator for wild deuces
+
             const isWild = currentVariant === 'DW' && card.display === '2';
-            
-            const el = Casino.createCardElement(card, false);
+            const el = Casino.createFlipCard(card);
             if (held[i]) el.classList.add('held');
-            if (isWild) el.style.boxShadow = 'inset 0 0 15px rgba(212,168,67,0.5)';
+            if (isWild) el.classList.add('wild-card');
+
+            const animate = animateSet && animateSet.has(i);
+            if (animate) {
+                el.style.transform = 'translateY(-24px)';
+                el.style.opacity = '0';
+                setTimeout(() => {
+                    el.style.transition = 'transform 0.35s cubic-bezier(0.34,1.4,0.5,1), opacity 0.35s';
+                    el.style.transform = 'translateY(0)';
+                    el.style.opacity = '1';
+                    el.classList.add('flipped');
+                }, 120 + i * 120);
+            } else {
+                el.classList.add('flipped');
+            }
 
             el.addEventListener('click', () => {
                 if (phase !== 'draw') return;
                 held[i] = !held[i];
                 Casino.playSound('click');
-                renderHand(); // re-render to update classes
+                renderHand(); // re-render instantly to update hold state
             });
             const label = document.createElement('div');
             label.className = 'hold-label';
             label.textContent = held[i] ? 'HELD' : (isWild ? 'WILD' : '');
             if (isWild && !held[i]) label.style.color = '#fff';
-            
+
             w.appendChild(el);
             w.appendChild(label);
             c.appendChild(w);

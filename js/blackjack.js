@@ -3,24 +3,8 @@
     let deck, hands = [], currentHandIdx = 0, dealerHand = [], mainBet = 100, gameOver = true, area, insuranceBet = 0;
     const DEFAULT_BET = 100;
 
-    // Build a 3D flippable card. Starts face-down (rotated 180°). Add the
-    // .flipped class to reveal the front.
-    function makeFlipCard(card) {
-        const box = document.createElement('div');
-        box.className = 'flip-card';
-        const inner = document.createElement('div');
-        inner.className = 'flip-card-inner';
-        const back = document.createElement('div');
-        back.className = 'flip-card-face flip-card-back';
-        const isRed = card.suit === '♥' || card.suit === '♦';
-        const front = document.createElement('div');
-        front.className = 'flip-card-face flip-card-front ' + (isRed ? 'red' : 'black');
-        front.innerHTML = `<span class="card-value">${card.display}</span><span class="card-suit">${card.suit}</span>`;
-        inner.appendChild(back);
-        inner.appendChild(front);
-        box.appendChild(inner);
-        return box;
-    }
+    // Shared 3D flippable card (defined in app.js).
+    const makeFlipCard = (card) => Casino.createFlipCard(card);
 
     function init(gameArea) {
         area = gameArea;

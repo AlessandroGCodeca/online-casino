@@ -336,6 +336,25 @@ body.in-game #game-tint { opacity: 0.22; }
     z-index: 2;
     pointer-events: none;
 }
+.ts-payline.win-trace { animation: tsPaylineWin 0.38s ease-in-out 3; }
+@keyframes tsPaylineWin {
+    0%, 100% { height: 3px; box-shadow: 0 0 12px var(--ts-accent, #fbbf24); filter: brightness(1); }
+    50%      { height: 7px; box-shadow: 0 0 26px var(--ts-accent, #fbbf24), 0 0 48px var(--ts-accent, #fbbf24); filter: brightness(1.6); }
+}
+.ts-winsweep {
+    position: absolute;
+    top: 6px; bottom: 6px;
+    left: -50px;
+    width: 50px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+    pointer-events: none;
+    z-index: 3;
+    animation: tsWinSweep 0.7s ease-in-out forwards;
+}
+@keyframes tsWinSweep {
+    from { left: -50px; }
+    to   { left: 100%; }
+}
 .ts-message { margin-top: 16px; color: #fff; text-shadow: 0 2px 6px rgba(0,0,0,0.5); }
 .ts-message.win { color: #4ade80; }
 .ts-message.lose { color: #fca5a5; }
@@ -413,6 +432,14 @@ body.in-game #game-tint { opacity: 0.22; }
 @keyframes tsLineFlash {
     from { opacity: 0.4; }
     to   { opacity: 1; }
+}
+.ts5-cell-win {
+    animation: ts5CellWin 0.5s ease-in-out 3;
+    border-radius: 8px;
+}
+@keyframes ts5CellWin {
+    0%, 100% { transform: scale(1); filter: brightness(1); }
+    50%      { transform: scale(1.16); filter: brightness(1.5) drop-shadow(0 0 10px var(--ts-accent, gold)); }
 }
 .ts5-paytable-grid {
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -1159,6 +1186,10 @@ body.no-animations *, body.no-animations *::before, body.no-animations *::after 
 .poker-card-wrapper { display: flex; flex-direction: column; align-items: center; gap: 6px; }
 .poker-card-wrapper .playing-card { cursor: pointer; }
 .poker-card-wrapper .playing-card.held { box-shadow: 0 0 0 3px var(--gold), 0 0 20px rgba(212,168,67,0.3); transform: translateY(-8px); }
+.poker-card-wrapper .flip-card { cursor: pointer; transition: transform 0.2s ease; }
+.poker-card-wrapper .flip-card.held { transform: translateY(-10px); }
+.poker-card-wrapper .flip-card.held .flip-card-face { box-shadow: 0 0 0 3px var(--gold), 0 0 22px rgba(212,168,67,0.5); }
+.poker-card-wrapper .flip-card.wild-card .flip-card-front { box-shadow: inset 0 0 16px rgba(212,168,67,0.6); }
 .hold-label { font-size: 11px; font-weight: 700; color: var(--gold); text-transform: uppercase; letter-spacing: 1px; height: 16px; }
 
 /* Crash */

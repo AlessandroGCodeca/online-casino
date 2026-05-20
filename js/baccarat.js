@@ -89,14 +89,33 @@
         pScore = baccaratValue(player);
         bScore = baccaratValue(banker);
 
-        // Render cards
+        // Render cards as 3D flip cards, dealt one at a time (P, B, P, B, …).
         const pe = document.getElementById('bac-player');
         const be = document.getElementById('bac-banker');
         pe.innerHTML = ''; be.innerHTML = '';
-        player.forEach(c => pe.appendChild(Casino.createCardElement(c, false)));
-        banker.forEach(c => be.appendChild(Casino.createCardElement(c, false)));
-        document.getElementById('bac-player-score').textContent = pScore;
-        document.getElementById('bac-banker-score').textContent = bScore;
+        const pScoreEl = document.getElementById('bac-player-score');
+        const bScoreEl = document.getElementById('bac-banker-score');
+        pScoreEl.textContent = ''; bScoreEl.textContent = '';
+
+        const dealQueue = [];
+        const maxLen = Math.max(player.length, banker.length);
+        for (let i = 0; i < maxLen; i++) {
+            if (player[i]) dealQueue.push({ card: player[i], target: pe });
+            if (banker[i]) dealQueue.push({ card: banker[i], target: be });
+        }
+        dealQueue.forEach((d, idx) => {
+            const el = Casino.createFlipCard(d.card);
+            d.target.appendChild(el);
+            setTimeout(() => {
+                el.classList.add('flipped');
+                Casino.playSound('click');
+            }, 200 + idx * 320);
+        });
+        const totalDealMs = 200 + dealQueue.length * 320 + 400;
+        setTimeout(() => {
+            pScoreEl.textContent = pScore;
+            bScoreEl.textContent = bScore;
+        }, totalDealMs - 250);
 
         // Determine winner
         let winner, msg;
@@ -105,21 +124,27 @@
         else { winner = 'tie'; msg = `Tie! Both ${pScore}`; }
 
         const msgEl = document.getElementById('bac-msg');
-        if (betType === winner) {
-            let winnings;
-            if (betType === 'player') winnings = bet * 2;
-            else if (betType === 'banker') winnings = Math.floor(bet * 1.95);
-            else winnings = bet * 9;
-            Casino.changeBalance(winnings);
-            msgEl.textContent = `${msg} — You win $${winnings}!`;
-            msgEl.className = 'game-message win';
-            Casino.playSound(betType === 'tie' ? 'jackpot' : 'win');
-            if (winnings >= 500) Casino.showWinEffect(winnings, { bet, particles: ['👑','♠️','♦️','💰','✨','🃏'], accent: '#d4a843', themeLabel: 'Baccarat' });
-        } else {
-            msgEl.textContent = `${msg} — You lose.`;
-            msgEl.className = 'game-message lose';
-            Casino.playSound('lose');
-        }
+        msgEl.textContent = 'Dealing…';
+        msgEl.className = 'game-message';
+
+        // Resolve the round only once the cards have finished flipping.
+        setTimeout(() => {
+            if (betType === winner) {
+                let winnings;
+                if (betType === 'player') winnings = bet * 2;
+                else if (betType === 'banker') winnings = Math.floor(bet * 1.95);
+                else winnings = bet * 9;
+                Casino.changeBalance(winnings);
+                msgEl.textContent = `${msg} — You win $${winnings}!`;
+                msgEl.className = 'game-message win';
+                Casino.playSound(betType === 'tie' ? 'jackpot' : 'win');
+                if (winnings >= 500) Casino.showWinEffect(winnings, { bet, particles: ['👑','♠️','♦️','💰','✨','🃏'], accent: '#d4a843', themeLabel: 'Baccarat' });
+            } else {
+                msgEl.textContent = `${msg} — You lose.`;
+                msgEl.className = 'game-message lose';
+                Casino.playSound('lose');
+            }
+        }, totalDealMs);
     }
 
     function makeBacDeck() {

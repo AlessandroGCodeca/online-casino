@@ -300,18 +300,40 @@
                     return `${x},${y}`;
                 }).join(' ');
                 setTimeout(() => {
+                    const color = colors[wl.idx % colors.length];
                     const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
                     poly.setAttribute('points', points);
                     poly.setAttribute('fill', 'none');
-                    poly.setAttribute('stroke', colors[wl.idx % colors.length]);
+                    poly.setAttribute('stroke', color);
                     poly.setAttribute('stroke-width', '4');
                     poly.setAttribute('stroke-linecap', 'round');
                     poly.setAttribute('stroke-linejoin', 'round');
-                    poly.setAttribute('opacity', '0.85');
-                    poly.style.filter = `drop-shadow(0 0 6px ${colors[wl.idx % colors.length]})`;
-                    poly.style.animation = 'tsLineFlash 0.7s ease-in-out infinite alternate';
+                    poly.setAttribute('opacity', '0.9');
+                    poly.style.filter = `drop-shadow(0 0 6px ${color})`;
                     svg.appendChild(poly);
-                }, idx * 200);
+                    // Animate the line "drawing" across the reels, then flash.
+                    let len = 400;
+                    try { len = poly.getTotalLength(); } catch (e) {}
+                    poly.style.strokeDasharray = len;
+                    poly.style.strokeDashoffset = len;
+                    poly.style.transition = 'stroke-dashoffset 0.45s ease-out';
+                    requestAnimationFrame(() => { poly.style.strokeDashoffset = '0'; });
+                    setTimeout(() => {
+                        poly.style.animation = 'tsLineFlash 0.7s ease-in-out infinite alternate';
+                    }, 460);
+                    // Pop the winning symbol cells on this line.
+                    line.slice(0, wl.count).forEach((row, col) => {
+                        const reel = area.querySelector(`[data-reel="${col}"]`);
+                        if (!reel) return;
+                        const cells = reel.querySelectorAll('.ts5-cell');
+                        const cell = cells[cells.length - ROWS + row];
+                        if (cell) {
+                            cell.classList.remove('ts5-cell-win');
+                            void cell.offsetWidth;
+                            cell.classList.add('ts5-cell-win');
+                        }
+                    });
+                }, idx * 220);
             });
         }
 

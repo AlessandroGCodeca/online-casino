@@ -351,6 +351,23 @@
             return theme.symbols.filter(s => !set.has(s)).slice(0, 6).concat([theme.wild]);
         }
 
+        /* Flash the centre payline and sweep a highlight across the reels. */
+        function traceWin() {
+            const payline = area.querySelector('.ts-payline');
+            const row = area.querySelector('.ts-reels-row');
+            if (payline) {
+                payline.classList.remove('win-trace');
+                void payline.offsetWidth;
+                payline.classList.add('win-trace');
+            }
+            if (row) {
+                const sweep = document.createElement('div');
+                sweep.className = 'ts-winsweep';
+                row.appendChild(sweep);
+                setTimeout(() => sweep.remove(), 750);
+            }
+        }
+
         function spin() {
             if (spinning) return;
             const usingFreeSpin = freeSpinsLeft > 0;
@@ -491,6 +508,7 @@
             if (win > 0) {
                 Casino.changeBalance(win);
                 showMsg(label, 'win');
+                traceWin();
                 const ratio = win / Math.max(1, bet);
                 const tier = ratio >= 100 ? 'mega' : ratio >= 25 ? 'big' : 'normal';
                 const fxParticles = themeParticles();
@@ -745,6 +763,215 @@
                 <text x="30" y="192" font-size="20" fill="#cbd5e1" text-anchor="middle" font-weight="900" font-family="serif">ᛒ</text>
                 <text x="30" y="242" font-size="20" fill="#cbd5e1" text-anchor="middle" font-weight="900" font-family="serif">ᚷ</text>
                 <polygon points="30,260 38,272 22,272" fill="#7c2d12" stroke="#0f172a"/>
+            </svg>`
+        },
+        slot_aztec: {
+            left: `<svg viewBox="0 0 60 280" xmlns="http://www.w3.org/2000/svg">
+                <polygon points="8,18 30,2 52,18" fill="#fbbf24" stroke="#92400e"/>
+                <rect x="12" y="18" width="36" height="252" rx="3" fill="#16a34a" stroke="#14532d" stroke-width="2"/>
+                <rect x="12" y="18" width="36" height="62" fill="#15803d"/>
+                <circle cx="24" cy="42" r="5" fill="#fde047"/><circle cx="36" cy="42" r="5" fill="#fde047"/>
+                <circle cx="24" cy="42" r="2" fill="#0f172a"/><circle cx="36" cy="42" r="2" fill="#0f172a"/>
+                <path d="M22 62 Q30 70 38 62" stroke="#0f172a" stroke-width="2.5" fill="none"/>
+                <rect x="12" y="84" width="36" height="60" fill="#16a34a"/>
+                <polygon points="20,108 30,100 28,116" fill="#dc2626"/><polygon points="40,108 30,100 32,116" fill="#dc2626"/>
+                <rect x="22" y="124" width="16" height="6" fill="#0f172a"/>
+                <rect x="12" y="148" width="36" height="60" fill="#15803d"/>
+                <circle cx="24" cy="172" r="5" fill="#22d3ee"/><circle cx="36" cy="172" r="5" fill="#22d3ee"/>
+                <path d="M22 190 L38 190" stroke="#0f172a" stroke-width="3"/>
+                <rect x="12" y="212" width="36" height="56" fill="#16a34a"/>
+                <circle cx="30" cy="236" r="7" fill="#fbbf24"/>
+                <path d="M22 254 Q30 248 38 254" stroke="#0f172a" stroke-width="2.5" fill="none"/>
+            </svg>`,
+            right: `<svg viewBox="0 0 60 280" xmlns="http://www.w3.org/2000/svg">
+                <polygon points="8,18 30,2 52,18" fill="#fbbf24" stroke="#92400e"/>
+                <rect x="12" y="18" width="36" height="252" rx="3" fill="#16a34a" stroke="#14532d" stroke-width="2"/>
+                <rect x="12" y="18" width="36" height="62" fill="#16a34a"/>
+                <circle cx="30" cy="44" r="8" fill="#fbbf24"/>
+                <path d="M22 64 Q30 56 38 64" stroke="#0f172a" stroke-width="2.5" fill="none"/>
+                <rect x="12" y="84" width="36" height="60" fill="#15803d"/>
+                <circle cx="24" cy="108" r="5" fill="#fde047"/><circle cx="36" cy="108" r="5" fill="#fde047"/>
+                <circle cx="24" cy="108" r="2" fill="#0f172a"/><circle cx="36" cy="108" r="2" fill="#0f172a"/>
+                <rect x="24" y="124" width="12" height="8" fill="#0f172a"/>
+                <rect x="12" y="148" width="36" height="60" fill="#16a34a"/>
+                <polygon points="20,172 30,164 28,180" fill="#dc2626"/><polygon points="40,172 30,164 32,180" fill="#dc2626"/>
+                <path d="M22 192 Q30 200 38 192" stroke="#0f172a" stroke-width="2.5" fill="none"/>
+                <rect x="12" y="212" width="36" height="56" fill="#15803d"/>
+                <circle cx="24" cy="236" r="5" fill="#22d3ee"/><circle cx="36" cy="236" r="5" fill="#22d3ee"/>
+                <path d="M22 254 L38 254" stroke="#0f172a" stroke-width="3"/>
+            </svg>`
+        },
+        slot_western: {
+            left: `<svg viewBox="0 0 60 280" xmlns="http://www.w3.org/2000/svg">
+                <rect x="22" y="40" width="16" height="230" fill="#92400e" stroke="#451a03" stroke-width="1.5"/>
+                <rect x="22" y="70" width="16" height="4" fill="#451a03"/>
+                <rect x="22" y="150" width="16" height="4" fill="#451a03"/>
+                <rect x="22" y="230" width="16" height="4" fill="#451a03"/>
+                <ellipse cx="30" cy="34" rx="20" ry="6" fill="#7c2d12"/>
+                <path d="M16 34 Q16 16 30 16 Q44 16 44 34 Z" fill="#92400e"/>
+                <ellipse cx="30" cy="34" rx="13" ry="3" fill="#fde047"/>
+                <ellipse cx="30" cy="100" rx="13" ry="13" fill="none" stroke="#cbd5e1" stroke-width="3"/>
+                <ellipse cx="30" cy="100" rx="13" ry="13" fill="none" stroke="#cbd5e1" stroke-width="3" stroke-dasharray="2 4"/>
+                <polygon points="30,170 33,178 42,178 35,184 38,193 30,187 22,193 25,184 18,178 27,178" fill="#fbbf24" stroke="#451a03"/>
+                <path d="M14 230 Q12 220 14 214 M46 230 Q48 220 46 214" stroke="#15803d" stroke-width="4" fill="none"/>
+            </svg>`,
+            right: `<svg viewBox="0 0 60 280" xmlns="http://www.w3.org/2000/svg">
+                <rect x="22" y="40" width="16" height="230" fill="#92400e" stroke="#451a03" stroke-width="1.5"/>
+                <rect x="22" y="70" width="16" height="4" fill="#451a03"/>
+                <rect x="22" y="150" width="16" height="4" fill="#451a03"/>
+                <rect x="22" y="230" width="16" height="4" fill="#451a03"/>
+                <ellipse cx="30" cy="34" rx="20" ry="6" fill="#7c2d12"/>
+                <path d="M16 34 Q16 16 30 16 Q44 16 44 34 Z" fill="#92400e"/>
+                <ellipse cx="30" cy="34" rx="13" ry="3" fill="#fde047"/>
+                <rect x="20" y="88" width="20" height="26" rx="3" fill="#7c2d12" stroke="#451a03"/>
+                <circle cx="30" cy="101" r="6" fill="#fbbf24"/>
+                <polygon points="30,166 33,174 42,174 35,180 38,189 30,183 22,189 25,180 18,174 27,174" fill="#fbbf24" stroke="#451a03"/>
+                <path d="M30 210 Q22 220 30 230 Q38 240 30 250" stroke="#451a03" stroke-width="2" fill="none"/>
+            </svg>`
+        },
+        slot_space: {
+            left: `<svg viewBox="0 0 60 280" xmlns="http://www.w3.org/2000/svg">
+                <g fill="#fff"><circle cx="12" cy="30" r="1.5"/><circle cx="48" cy="60" r="1.5"/><circle cx="14" cy="120" r="1.5"/><circle cx="46" cy="180" r="1.5"/><circle cx="12" cy="240" r="1.5"/></g>
+                <path d="M30 16 Q42 40 42 90 L42 200 Q42 220 30 230 Q18 220 18 200 L18 90 Q18 40 30 16 Z" fill="#e2e8f0" stroke="#0f172a" stroke-width="1.5"/>
+                <path d="M30 16 Q36 28 38 50 L22 50 Q24 28 30 16 Z" fill="#dc2626"/>
+                <circle cx="30" cy="90" r="8" fill="#22d3ee" stroke="#0f172a" stroke-width="1.5"/>
+                <circle cx="30" cy="150" r="6" fill="#0e7490" stroke="#0f172a"/>
+                <path d="M18 200 L8 240 L18 226 Z" fill="#dc2626" stroke="#0f172a"/>
+                <path d="M42 200 L52 240 L42 226 Z" fill="#dc2626" stroke="#0f172a"/>
+                <path d="M24 230 Q30 256 36 230 Z" fill="#fbbf24"/>
+                <path d="M27 234 Q30 248 33 234 Z" fill="#fde047"/>
+            </svg>`,
+            right: `<svg viewBox="0 0 60 280" xmlns="http://www.w3.org/2000/svg">
+                <g fill="#fff"><circle cx="48" cy="34" r="1.5"/><circle cx="12" cy="70" r="1.5"/><circle cx="46" cy="130" r="1.5"/><circle cx="14" cy="190" r="1.5"/><circle cx="48" cy="244" r="1.5"/></g>
+                <circle cx="30" cy="46" r="20" fill="#a855f7" stroke="#0f172a" stroke-width="1.5"/>
+                <ellipse cx="30" cy="46" rx="28" ry="6" fill="none" stroke="#fbbf24" stroke-width="2" transform="rotate(-20 30 46)"/>
+                <circle cx="22" cy="40" r="4" fill="#7e22ce"/>
+                <ellipse cx="30" cy="140" rx="16" ry="11" fill="#22d3ee" stroke="#0f172a" stroke-width="1.5"/>
+                <ellipse cx="30" cy="134" rx="8" ry="6" fill="#a3e635" opacity=".8"/>
+                <circle cx="30" cy="220" r="14" fill="#0e7490" stroke="#0f172a" stroke-width="1.5"/>
+                <circle cx="24" cy="214" r="4" fill="#155e75"/><circle cx="36" cy="226" r="3" fill="#155e75"/>
+                <path d="M44 246 L48 250 L52 246" stroke="#fde047" stroke-width="2" fill="none"/>
+            </svg>`
+        },
+        slot_candy: {
+            left: `<svg viewBox="0 0 60 280" xmlns="http://www.w3.org/2000/svg">
+                <path d="M40 270 L40 70 Q40 30 24 30 Q8 30 8 56" fill="none" stroke="#fff" stroke-width="20" stroke-linecap="round"/>
+                <path d="M40 270 L40 70 Q40 30 24 30 Q8 30 8 56" fill="none" stroke="#dc2626" stroke-width="20" stroke-linecap="round" stroke-dasharray="14 14"/>
+                <circle cx="14" cy="86" r="7" fill="#ec4899" stroke="#fff" stroke-width="1.5"/>
+                <circle cx="46" cy="150" r="7" fill="#22d3ee" stroke="#fff" stroke-width="1.5"/>
+                <circle cx="14" cy="220" r="7" fill="#fde047" stroke="#fff" stroke-width="1.5"/>
+            </svg>`,
+            right: `<svg viewBox="0 0 60 280" xmlns="http://www.w3.org/2000/svg">
+                <path d="M20 270 L20 70 Q20 30 36 30 Q52 30 52 56" fill="none" stroke="#fff" stroke-width="20" stroke-linecap="round"/>
+                <path d="M20 270 L20 70 Q20 30 36 30 Q52 30 52 56" fill="none" stroke="#a3e635" stroke-width="20" stroke-linecap="round" stroke-dasharray="14 14"/>
+                <circle cx="46" cy="86" r="7" fill="#fde047" stroke="#fff" stroke-width="1.5"/>
+                <circle cx="14" cy="150" r="7" fill="#ec4899" stroke="#fff" stroke-width="1.5"/>
+                <circle cx="46" cy="220" r="7" fill="#22d3ee" stroke="#fff" stroke-width="1.5"/>
+            </svg>`
+        },
+        slot_atlantis: {
+            left: `<svg viewBox="0 0 60 280" xmlns="http://www.w3.org/2000/svg">
+                <path d="M30 272 Q14 230 30 190 Q46 150 30 110 Q14 70 30 20" fill="none" stroke="#0e7490" stroke-width="14" stroke-linecap="round"/>
+                <path d="M30 272 Q14 230 30 190 Q46 150 30 110 Q14 70 30 20" fill="none" stroke="#15803d" stroke-width="7" stroke-linecap="round" opacity=".7"/>
+                <ellipse cx="22" cy="80" rx="9" ry="5" fill="#16a34a"/>
+                <ellipse cx="40" cy="150" rx="9" ry="5" fill="#16a34a"/>
+                <ellipse cx="22" cy="220" rx="9" ry="5" fill="#16a34a"/>
+                <circle cx="14" cy="40" r="4" fill="none" stroke="#fff" stroke-width="1.5"/>
+                <circle cx="44" cy="100" r="3" fill="none" stroke="#fff" stroke-width="1.5"/>
+                <circle cx="16" cy="170" r="4" fill="none" stroke="#fff" stroke-width="1.5"/>
+                <circle cx="44" cy="240" r="3" fill="none" stroke="#fff" stroke-width="1.5"/>
+            </svg>`,
+            right: `<svg viewBox="0 0 60 280" xmlns="http://www.w3.org/2000/svg">
+                <path d="M30 272 Q46 230 30 190 Q14 150 30 110 Q46 70 30 20" fill="none" stroke="#0e7490" stroke-width="14" stroke-linecap="round"/>
+                <path d="M30 272 Q46 230 30 190 Q14 150 30 110 Q46 70 30 20" fill="none" stroke="#dc2626" stroke-width="7" stroke-linecap="round" opacity=".6"/>
+                <ellipse cx="40" cy="80" rx="9" ry="5" fill="#ec4899"/>
+                <ellipse cx="22" cy="150" rx="9" ry="5" fill="#ec4899"/>
+                <ellipse cx="40" cy="220" rx="9" ry="5" fill="#ec4899"/>
+                <circle cx="46" cy="40" r="4" fill="none" stroke="#fff" stroke-width="1.5"/>
+                <circle cx="16" cy="100" r="3" fill="none" stroke="#fff" stroke-width="1.5"/>
+                <circle cx="44" cy="170" r="4" fill="none" stroke="#fff" stroke-width="1.5"/>
+                <circle cx="16" cy="240" r="3" fill="none" stroke="#fff" stroke-width="1.5"/>
+            </svg>`
+        },
+        slot_viking: {
+            left: `<svg viewBox="0 0 60 280" xmlns="http://www.w3.org/2000/svg">
+                <rect x="26" y="10" width="8" height="260" fill="#7c2d12" stroke="#451a03"/>
+                ${[42, 110, 178, 246].map(cy => `
+                    <circle cx="30" cy="${cy}" r="22" fill="#92400e" stroke="#451a03" stroke-width="2"/>
+                    <circle cx="30" cy="${cy}" r="22" fill="none" stroke="#cbd5e1" stroke-width="2" stroke-dasharray="3 4"/>
+                    <circle cx="30" cy="${cy}" r="7" fill="#cbd5e1" stroke="#0f172a"/>
+                    <line x1="8" y1="${cy}" x2="52" y2="${cy}" stroke="#7c2d12" stroke-width="3"/>
+                    <line x1="30" y1="${cy - 22}" x2="30" y2="${cy + 22}" stroke="#7c2d12" stroke-width="3"/>
+                `).join('')}
+            </svg>`,
+            right: `<svg viewBox="0 0 60 280" xmlns="http://www.w3.org/2000/svg">
+                <rect x="26" y="10" width="8" height="260" fill="#7c2d12" stroke="#451a03"/>
+                ${[42, 110, 178, 246].map(cy => `
+                    <circle cx="30" cy="${cy}" r="22" fill="#475569" stroke="#0f172a" stroke-width="2"/>
+                    <circle cx="30" cy="${cy}" r="22" fill="none" stroke="#fbbf24" stroke-width="2" stroke-dasharray="3 4"/>
+                    <circle cx="30" cy="${cy}" r="7" fill="#fbbf24" stroke="#0f172a"/>
+                    <path d="M14 ${cy - 12} L46 ${cy + 12} M46 ${cy - 12} L14 ${cy + 12}" stroke="#cbd5e1" stroke-width="3"/>
+                `).join('')}
+            </svg>`
+        },
+        slot_rome: {
+            left: `<svg viewBox="0 0 60 280" xmlns="http://www.w3.org/2000/svg">
+                <rect x="10" y="10" width="40" height="10" fill="#fde047" stroke="#92400e"/>
+                <rect x="14" y="20" width="32" height="10" fill="#e2e8f0" stroke="#92400e"/>
+                <rect x="18" y="30" width="24" height="222" fill="#f1f5f9" stroke="#92400e" stroke-width="1.5"/>
+                <g stroke="#cbd5e1" stroke-width="2">
+                    <line x1="24" y1="30" x2="24" y2="252"/>
+                    <line x1="30" y1="30" x2="30" y2="252"/>
+                    <line x1="36" y1="30" x2="36" y2="252"/>
+                </g>
+                <rect x="14" y="252" width="32" height="10" fill="#e2e8f0" stroke="#92400e"/>
+                <rect x="10" y="262" width="40" height="10" fill="#cbd5e1" stroke="#92400e"/>
+                <path d="M10 60 Q4 50 10 44 Q16 52 10 60 Z" fill="#16a34a"/>
+                <path d="M10 150 Q4 140 10 134 Q16 142 10 150 Z" fill="#16a34a"/>
+                <path d="M10 240 Q4 230 10 224 Q16 232 10 240 Z" fill="#16a34a"/>
+            </svg>`,
+            right: `<svg viewBox="0 0 60 280" xmlns="http://www.w3.org/2000/svg">
+                <rect x="10" y="10" width="40" height="10" fill="#fde047" stroke="#92400e"/>
+                <rect x="14" y="20" width="32" height="10" fill="#e2e8f0" stroke="#92400e"/>
+                <rect x="18" y="30" width="24" height="222" fill="#f1f5f9" stroke="#92400e" stroke-width="1.5"/>
+                <g stroke="#cbd5e1" stroke-width="2">
+                    <line x1="24" y1="30" x2="24" y2="252"/>
+                    <line x1="30" y1="30" x2="30" y2="252"/>
+                    <line x1="36" y1="30" x2="36" y2="252"/>
+                </g>
+                <rect x="14" y="252" width="32" height="10" fill="#e2e8f0" stroke="#92400e"/>
+                <rect x="10" y="262" width="40" height="10" fill="#cbd5e1" stroke="#92400e"/>
+                <path d="M50 60 Q56 50 50 44 Q44 52 50 60 Z" fill="#16a34a"/>
+                <path d="M50 150 Q56 140 50 134 Q44 142 50 150 Z" fill="#16a34a"/>
+                <path d="M50 240 Q56 230 50 224 Q44 232 50 240 Z" fill="#16a34a"/>
+            </svg>`
+        },
+        slot_fairy: {
+            left: `<svg viewBox="0 0 60 280" xmlns="http://www.w3.org/2000/svg">
+                <polygon points="30,2 14,34 46,34" fill="#dc2626" stroke="#7f1d1d"/>
+                <circle cx="30" cy="10" r="3" fill="#fde047"/>
+                <rect x="14" y="34" width="32" height="238" fill="#a855f7" stroke="#6b21a8" stroke-width="2"/>
+                <g fill="#7e22ce" stroke="#581c87">
+                    <rect x="22" y="50" width="16" height="22" rx="8"/>
+                    <rect x="22" y="100" width="16" height="22" rx="8"/>
+                    <rect x="22" y="150" width="16" height="22" rx="8"/>
+                </g>
+                <rect x="20" y="210" width="20" height="62" rx="10" fill="#451a03"/>
+                <rect x="14" y="34" width="32" height="6" fill="#c084fc"/>
+                <g fill="#fde047"><circle cx="10" cy="80" r="2"/><circle cx="50" cy="130" r="2"/><circle cx="10" cy="190" r="2"/></g>
+            </svg>`,
+            right: `<svg viewBox="0 0 60 280" xmlns="http://www.w3.org/2000/svg">
+                <polygon points="30,2 14,34 46,34" fill="#dc2626" stroke="#7f1d1d"/>
+                <circle cx="30" cy="10" r="3" fill="#fde047"/>
+                <rect x="14" y="34" width="32" height="238" fill="#a855f7" stroke="#6b21a8" stroke-width="2"/>
+                <g fill="#7e22ce" stroke="#581c87">
+                    <rect x="22" y="50" width="16" height="22" rx="8"/>
+                    <rect x="22" y="100" width="16" height="22" rx="8"/>
+                    <rect x="22" y="150" width="16" height="22" rx="8"/>
+                </g>
+                <rect x="20" y="210" width="20" height="62" rx="10" fill="#451a03"/>
+                <rect x="14" y="34" width="32" height="6" fill="#c084fc"/>
+                <g fill="#fde047"><circle cx="50" cy="80" r="2"/><circle cx="10" cy="130" r="2"/><circle cx="50" cy="190" r="2"/></g>
             </svg>`
         }
     };

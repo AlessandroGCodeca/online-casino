@@ -1766,6 +1766,21 @@ function createCardElement(card, faceDown) {
     }
     return div;
 }
+/* 3D flippable card. Starts face-down (back showing); add .flipped to reveal. */
+function createFlipCard(card) {
+    const box = document.createElement('div');
+    box.className = 'flip-card';
+    const isRed = card.suit === '♥' || card.suit === '♦';
+    box.innerHTML =
+        '<div class="flip-card-inner">' +
+            '<div class="flip-card-face flip-card-back"></div>' +
+            '<div class="flip-card-face flip-card-front ' + (isRed ? 'red' : 'black') + '">' +
+                '<span class="card-value">' + esc(card.display) + '</span>' +
+                '<span class="card-suit">' + esc(card.suit) + '</span>' +
+            '</div>' +
+        '</div>';
+    return box;
+}
 function createDeck() {
     const suits = ['♠', '♥', '♦', '♣'];
     const deck = [];
@@ -1783,7 +1798,7 @@ function shuffle(arr) {
     }
     return arr;
 }
-Object.assign(window.Casino, { createCardElement, createDeck, shuffle, esc, haptic });
+Object.assign(window.Casino, { createCardElement, createFlipCard, createDeck, shuffle, esc, haptic });
 
 /* ---- Round Audit (provably-fair-style transparency layer) ----
    Each placeBet bumps a nonce and records the round's client/server-seed

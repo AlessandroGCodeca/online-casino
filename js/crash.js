@@ -2,6 +2,36 @@
 (function() {
     let bet = 100, autoCashout = 2.0, useAutoCashout = false;
     let running = false, crashed = false, multiplier = 1, crashPoint, animId, canvas, ctx, area;
+    let crashFx = [], fxAnimId = null, lastHead = null;
+
+    /* Burst particles for cash-out / crash moments. */
+    function spawnCrashFx(x, y, color, count, spread) {
+        for (let i = 0; i < count; i++) {
+            const a = Math.random() * Math.PI * 2;
+            const sp = 1.5 + Math.random() * spread;
+            crashFx.push({
+                x: x, y: y,
+                vx: Math.cos(a) * sp,
+                vy: Math.sin(a) * sp - 1.5,
+                life: 1,
+                color: color,
+                size: 2 + Math.random() * 4
+            });
+        }
+        startFxLoop();
+    }
+    function updateFx() {
+        crashFx.forEach(p => { p.vy += 0.14; p.x += p.vx; p.y += p.vy; p.life -= 0.024; });
+        crashFx = crashFx.filter(p => p.life > 0);
+    }
+    function startFxLoop() {
+        if (fxAnimId || running) return;  // running tick already redraws
+        (function loop() {
+            updateFx();
+            if (ctx) drawGraph();
+            fxAnimId = crashFx.length > 0 ? requestAnimationFrame(loop) : null;
+        })();
+    }
     let graphData = [];
     let history = []; // stores last crash points
 
@@ -179,7 +209,10 @@
         
         Casino.playSound(multiplier >= 5 ? 'jackpot' : 'win');
         if (winnings >= bet * 5) Casino.showWinEffect(winnings, { bet, particles: ['🚀','💥','⭐','🔥','💰','✨'], accent: '#f97316', themeLabel: 'Crash' });
-        
+
+        // Green cash-out burst at the line head.
+        if (lastHead) spawnCrashFx(lastHead.x, lastHead.y, '#22c55e', 22, 6);
+
         resetBtn();
         
         // Let graph continue drawing a ghost line until actual crash (visual flair)
@@ -205,6 +238,7 @@
             }
             
             graphData.push({time: elapsed, mult: ghostMult, ghost: true});
+            updateFx();
             drawGraph();
             requestAnimationFrame(ghostTick);
         }
@@ -218,9 +252,15 @@
         
         graphData.push({time: graphData.length>0 ? graphData[graphData.length-1].time + 0.1 : 0, mult: crashPoint, ghost: wasCashed});
         updateDisplay();
-        
+
         document.getElementById('cr-mult').textContent = `${crashPoint.toFixed(2)}x`;
-        
+
+        // Explosion burst at the crash point.
+        if (lastHead) {
+            spawnCrashFx(lastHead.x, lastHead.y, '#ef4444', 34, 8);
+            spawnCrashFx(lastHead.x, lastHead.y, '#f59e0b', 18, 6);
+        }
+
         if (!wasCashed) {
             document.getElementById('cr-mult').className = 'crash-multiplier crashed';
             document.getElementById('cr-status').textContent = `Crashed at ${crashPoint.toFixed(2)}x!`;
@@ -327,19 +367,56 @@
             realData.forEach(pt => ctx.lineTo(getX(pt.time), getY(pt.mult)));
             ctx.lineTo(getX(realData[realData.length-1].time), h);
             ctx.lineTo(0, h);
-            
+
             let fillGrad = ctx.createLinearGradient(0, 0, 0, h);
             fillGrad.addColorStop(0, crashed ? 'rgba(239,68,68,0.2)' : 'rgba(34,197,94,0.3)');
             fillGrad.addColorStop(1, 'rgba(0,0,0,0)');
-            
+
             ctx.fillStyle = fillGrad;
             ctx.fill();
         }
+
+        // Glowing comet head on the leading point of the line.
+        const headPt = graphData[graphData.length - 1];
+        if (headPt) {
+            const hx = getX(headPt.time), hy = getY(headPt.mult);
+            lastHead = { x: hx, y: hy };
+            const headColor = crashed ? '#ef4444' : (headPt.ghost ? 'rgba(255,255,255,0.7)' : '#22c55e');
+            ctx.beginPath();
+            ctx.arc(hx, hy, 7, 0, Math.PI * 2);
+            ctx.fillStyle = '#fff';
+            ctx.shadowColor = headColor;
+            ctx.shadowBlur = 22;
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(hx, hy, 3.5, 0, Math.PI * 2);
+            ctx.fillStyle = headColor;
+            ctx.fill();
+            ctx.shadowBlur = 0;
+        }
+
+        // Burst particles (cash-out / crash).
+        crashFx.forEach(p => {
+            ctx.globalAlpha = Math.max(0, p.life);
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size * Math.max(0.3, p.life), 0, Math.PI * 2);
+            ctx.fillStyle = p.color;
+            ctx.shadowColor = p.color;
+            ctx.shadowBlur = 10;
+            ctx.fill();
+        });
+        ctx.shadowBlur = 0;
+        ctx.globalAlpha = 1;
     }
 
     function msg(t, type) { const el = document.getElementById('cr-msg'); if(el){ el.textContent = t; el.className = 'game-message ' + (type||''); } }
 
-    function destroy() { running = false; crashed = false; cancelAnimationFrame(animId); }
+    function destroy() {
+        running = false; crashed = false;
+        crashFx = [];
+        cancelAnimationFrame(animId);
+        if (fxAnimId) { cancelAnimationFrame(fxAnimId); fxAnimId = null; }
+    }
 
     Casino.games.crash = { init, destroy, _action: action, _setBet: setBet, _toggleAuto: toggleAuto, _updateAutoVal: updateAutoVal };
 })();

@@ -74,7 +74,15 @@
         hands = [{ cards: [], bet: mainBet, status: 'playing', score: 0 }];
         currentHandIdx = 0;
         dealerHand = [];
-        
+
+        // Clear the dealer area from the previous round.
+        const dContainer = document.getElementById('bj-dealer');
+        if (dContainer) dContainer.innerHTML = '';
+        const dScore = document.getElementById('bj-dealer-score');
+        if (dScore) dScore.textContent = '';
+        const dSection = document.getElementById('bj-dealer-section');
+        if (dSection) dSection.classList.remove('dealer-drawing');
+
         setupPlayerArea();
         document.getElementById('bj-actions').innerHTML = ''; // Hide buttons during deal
         msg('Dealing...', '');

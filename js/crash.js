@@ -18,7 +18,9 @@
                 size: 2 + Math.random() * 4
             });
         }
-        startFxLoop();
+        // Note: the caller decides whether to start a standalone FX loop.
+        // During the cash-out "ghost" phase, ghostTick already advances and
+        // redraws the particles, so we must NOT start a second loop there.
     }
     function updateFx() {
         crashFx.forEach(p => { p.vy += 0.14; p.x += p.vx; p.y += p.vy; p.life -= 0.024; });
@@ -255,11 +257,13 @@
 
         document.getElementById('cr-mult').textContent = `${crashPoint.toFixed(2)}x`;
 
-        // Explosion burst at the crash point.
+        // Explosion burst at the crash point. ghostTick has stopped by now,
+        // so spin up the standalone FX loop to animate the particles out.
         if (lastHead) {
             spawnCrashFx(lastHead.x, lastHead.y, '#ef4444', 34, 8);
             spawnCrashFx(lastHead.x, lastHead.y, '#f59e0b', 18, 6);
         }
+        startFxLoop();
 
         if (!wasCashed) {
             document.getElementById('cr-mult').className = 'crash-multiplier crashed';

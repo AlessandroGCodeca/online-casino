@@ -1922,7 +1922,7 @@ window.Casino.registerGame = function(meta, gameLogic) {
 };
 
 /* ---- Click ripple — material-style feedback on action buttons ---- */
-const RIPPLE_SELECTOR = '.action-btn, .bet-btn, .icon-btn, .ts-icon-btn, .ts-auto-count, .ts-auto-stop-btn, .ts-bonus-buy, .ts-spin, .sidebar-btn, .cat-tab, .shop-btn, .shop-tab, .r-action-btn, .r-grid-btn, .r-out-btn, .r-chip-btn, .back-btn, .modal-close, .reset-btn';
+const RIPPLE_SELECTOR = '.action-btn, .bet-btn, .icon-btn, .ts-icon-btn, .ts-auto-count, .ts-auto-stop-btn, .ts-bonus-buy, .ts-spin, .sidebar-btn, .cat-tab, .r-action-btn, .r-grid-btn, .r-out-btn, .r-chip-btn, .back-btn, .modal-close, .reset-btn';
 function initClickRipple() {
     if (reducedMotion) return;
     document.addEventListener('pointerdown', e => {

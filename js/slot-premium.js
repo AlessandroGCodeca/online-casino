@@ -107,8 +107,14 @@
                 ? ` · <span class="ts-sym">${theme.scatter}</span> Scatter (3+ = ${freeSpinGrant} free spins, ${freeSpinMult}×)`
                 : '';
 
+            const decor = THEME_DECOR[theme.id];
+            const decorHtml = decor
+                ? `<div class="ts-decor ts-decor-left" aria-hidden="true">${decor.left}</div><div class="ts-decor ts-decor-right" aria-hidden="true">${decor.right}</div>`
+                : '';
+
             area.innerHTML = `
             <div class="themed-slot ts5-slot" style="--ts-g1:${theme.g1};--ts-g2:${theme.g2};--ts-accent:${theme.accent || '#fbbf24'}">
+                ${decorHtml}
                 <div class="ts-frame">
                     <div class="ts-banner">
                         <span class="ts-banner-icon">${theme.icon}</span>
@@ -575,6 +581,81 @@
             }
         };
     }
+
+    /* Decorative ornaments flanking the reels (premium tier). */
+    const THEME_DECOR = {
+        p_olympus: {
+            left: `<svg viewBox="0 0 60 280" xmlns="http://www.w3.org/2000/svg">
+                <rect x="8" y="8" width="44" height="10" fill="#fde047" stroke="#92400e"/>
+                <rect x="12" y="18" width="36" height="10" fill="#e2e8f0" stroke="#92400e"/>
+                <rect x="16" y="28" width="28" height="222" fill="#f1f5f9" stroke="#92400e" stroke-width="1.5"/>
+                <g stroke="#cbd5e1" stroke-width="2.5"><line x1="22" y1="28" x2="22" y2="250"/><line x1="30" y1="28" x2="30" y2="250"/><line x1="38" y1="28" x2="38" y2="250"/></g>
+                <rect x="12" y="250" width="36" height="10" fill="#e2e8f0" stroke="#92400e"/>
+                <rect x="8" y="260" width="44" height="12" fill="#cbd5e1" stroke="#92400e"/>
+                <polygon points="4,120 0,134 6,134 2,150 14,128 7,128 11,120" fill="#fde047" stroke="#92400e"/>
+            </svg>`,
+            right: `<svg viewBox="0 0 60 280" xmlns="http://www.w3.org/2000/svg">
+                <rect x="8" y="8" width="44" height="10" fill="#fde047" stroke="#92400e"/>
+                <rect x="12" y="18" width="36" height="10" fill="#e2e8f0" stroke="#92400e"/>
+                <rect x="16" y="28" width="28" height="222" fill="#f1f5f9" stroke="#92400e" stroke-width="1.5"/>
+                <g stroke="#cbd5e1" stroke-width="2.5"><line x1="22" y1="28" x2="22" y2="250"/><line x1="30" y1="28" x2="30" y2="250"/><line x1="38" y1="28" x2="38" y2="250"/></g>
+                <rect x="12" y="250" width="36" height="10" fill="#e2e8f0" stroke="#92400e"/>
+                <rect x="8" y="260" width="44" height="12" fill="#cbd5e1" stroke="#92400e"/>
+                <polygon points="56,120 60,134 54,134 58,150 46,128 53,128 49,120" fill="#fde047" stroke="#92400e"/>
+            </svg>`
+        },
+        p_dragon: {
+            left: `<svg viewBox="0 0 60 280" xmlns="http://www.w3.org/2000/svg">
+                <path d="M30 10 Q12 44 30 78 Q48 112 30 146 Q12 180 30 214 Q48 244 30 272"
+                      fill="none" stroke="#dc2626" stroke-width="15" stroke-linecap="round"/>
+                <path d="M30 10 Q12 44 30 78 Q48 112 30 146 Q12 180 30 214 Q48 244 30 272"
+                      fill="none" stroke="#fde047" stroke-width="6" stroke-linecap="round" stroke-dasharray="3 7"/>
+                <circle cx="30" cy="22" r="10" fill="#dc2626" stroke="#fde047" stroke-width="2"/>
+                <circle cx="30" cy="22" r="3.5" fill="#fde047"/>
+                <g fill="#fde047"><circle cx="14" cy="60" r="2"/><circle cx="46" cy="112" r="2"/><circle cx="14" cy="180" r="2"/><circle cx="46" cy="244" r="2"/></g>
+            </svg>`,
+            right: `<svg viewBox="0 0 60 280" xmlns="http://www.w3.org/2000/svg">
+                <path d="M30 10 Q48 44 30 78 Q12 112 30 146 Q48 180 30 214 Q12 244 30 272"
+                      fill="none" stroke="#dc2626" stroke-width="15" stroke-linecap="round"/>
+                <path d="M30 10 Q48 44 30 78 Q12 112 30 146 Q48 180 30 214 Q12 244 30 272"
+                      fill="none" stroke="#fde047" stroke-width="6" stroke-linecap="round" stroke-dasharray="3 7"/>
+                <circle cx="30" cy="22" r="10" fill="#dc2626" stroke="#fde047" stroke-width="2"/>
+                <circle cx="30" cy="22" r="3.5" fill="#fde047"/>
+                <g fill="#fde047"><circle cx="46" cy="60" r="2"/><circle cx="14" cy="112" r="2"/><circle cx="46" cy="180" r="2"/><circle cx="14" cy="244" r="2"/></g>
+            </svg>`
+        },
+        p_aztec: {
+            left: `<svg viewBox="0 0 60 280" xmlns="http://www.w3.org/2000/svg">
+                <polygon points="6,16 30,0 54,16" fill="#fbbf24" stroke="#92400e"/>
+                <rect x="10" y="16" width="40" height="256" rx="3" fill="#16a34a" stroke="#14532d" stroke-width="2"/>
+                <rect x="10" y="16" width="40" height="64" fill="#15803d"/>
+                <circle cx="22" cy="44" r="6" fill="#fde047"/><circle cx="38" cy="44" r="6" fill="#fde047"/>
+                <circle cx="22" cy="44" r="2.5" fill="#0f172a"/><circle cx="38" cy="44" r="2.5" fill="#0f172a"/>
+                <path d="M20 64 Q30 74 40 64" stroke="#0f172a" stroke-width="3" fill="none"/>
+                <rect x="10" y="86" width="40" height="62" fill="#16a34a"/>
+                <polygon points="18,114 30,104 26,124" fill="#dc2626"/><polygon points="42,114 30,104 34,124" fill="#dc2626"/>
+                <rect x="10" y="154" width="40" height="62" fill="#15803d"/>
+                <circle cx="22" cy="182" r="6" fill="#22d3ee"/><circle cx="38" cy="182" r="6" fill="#22d3ee"/>
+                <path d="M20 202 L40 202" stroke="#0f172a" stroke-width="3.5"/>
+                <rect x="10" y="222" width="40" height="50" fill="#16a34a"/>
+                <circle cx="30" cy="246" r="8" fill="#fbbf24"/>
+            </svg>`,
+            right: `<svg viewBox="0 0 60 280" xmlns="http://www.w3.org/2000/svg">
+                <polygon points="6,16 30,0 54,16" fill="#fbbf24" stroke="#92400e"/>
+                <rect x="10" y="16" width="40" height="256" rx="3" fill="#16a34a" stroke="#14532d" stroke-width="2"/>
+                <rect x="10" y="16" width="40" height="64" fill="#16a34a"/>
+                <circle cx="30" cy="48" r="9" fill="#fbbf24"/>
+                <rect x="10" y="86" width="40" height="62" fill="#15803d"/>
+                <circle cx="22" cy="114" r="6" fill="#fde047"/><circle cx="38" cy="114" r="6" fill="#fde047"/>
+                <circle cx="22" cy="114" r="2.5" fill="#0f172a"/><circle cx="38" cy="114" r="2.5" fill="#0f172a"/>
+                <rect x="10" y="154" width="40" height="62" fill="#16a34a"/>
+                <polygon points="18,182 30,172 26,192" fill="#dc2626"/><polygon points="42,182 30,172 34,192" fill="#dc2626"/>
+                <path d="M20 202 Q30 212 40 202" stroke="#0f172a" stroke-width="3" fill="none"/>
+                <rect x="10" y="222" width="40" height="50" fill="#15803d"/>
+                <circle cx="22" cy="246" r="6" fill="#22d3ee"/><circle cx="38" cy="246" r="6" fill="#22d3ee"/>
+            </svg>`
+        }
+    };
 
     /* Custom premium 5-reel lobby scenes. */
     const SCENES = {

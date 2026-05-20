@@ -18,8 +18,8 @@
                 <!-- Deck visual for animations -->
                 <div id="bj-deck-pos" style="position:absolute; top:-50px; right:-50px; width:72px; height:100px;"></div>
                 
-                <div class="bj-section">
-                    <div class="bj-label">Dealer</div>
+                <div class="bj-section" id="bj-dealer-section">
+                    <div class="bj-label">Dealer<span class="bj-drawing-dot" id="bj-drawing-dot"></span></div>
                     <div class="card-hand" id="bj-dealer" style="min-height:100px;"></div>
                     <div class="bj-score" id="bj-dealer-score" style="min-height:24px;"></div>
                 </div>
@@ -377,6 +377,9 @@
     async function dealerTurn() {
         gameOver = true;
 
+        const dealerSection = document.getElementById('bj-dealer-section');
+        if (dealerSection) dealerSection.classList.add('dealer-drawing');
+
         // Reveal the dealer's hole card with a 3D flip.
         flipDealerHoleCard();
         await new Promise(r => setTimeout(r, 500));
@@ -384,7 +387,7 @@
 
         // Check if all hands busted
         const allBusted = hands.every(h => h.status === 'bust');
-        
+
         if (!allBusted) {
             // Dealer draws to 17
             while (handValue(dealerHand) < 17) {
@@ -393,6 +396,8 @@
                 updateScores();
             }
         }
+
+        if (dealerSection) dealerSection.classList.remove('dealer-drawing');
 
         finalizeRound();
     }

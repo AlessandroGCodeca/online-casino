@@ -315,74 +315,180 @@
         const canvas = document.getElementById('r-canvas');
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
-        const cx = 150, cy = 150, r = 140;
+        const cx = 150, cy = 150, R = 142;
 
         ctx.clearRect(0, 0, 300, 300);
+
+        // --- Outer wood bowl with a beveled gold rim (3D depth) ---
+        const bowl = ctx.createRadialGradient(cx - 40, cy - 50, 30, cx, cy, R);
+        bowl.addColorStop(0, '#3a2410');
+        bowl.addColorStop(0.7, '#1a1006');
+        bowl.addColorStop(1, '#0a0703');
+        ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2);
+        ctx.fillStyle = bowl; ctx.fill();
+        // Gold rim with light bevel
+        const rim = ctx.createLinearGradient(cx - R, cy - R, cx + R, cy + R);
+        rim.addColorStop(0, '#fde68a');
+        rim.addColorStop(0.5, '#a07830');
+        rim.addColorStop(1, '#fde68a');
+        ctx.lineWidth = 9;
+        ctx.strokeStyle = rim;
+        ctx.beginPath(); ctx.arc(cx, cy, R - 4, 0, Math.PI * 2); ctx.stroke();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+        ctx.beginPath(); ctx.arc(cx, cy, R - 8, 0, Math.PI * 2); ctx.stroke();
+
         ctx.save();
         ctx.translate(cx, cy);
         ctx.rotate(wheelAngle);
 
         const segAngle = (Math.PI * 2) / 37;
-        // Place the slot for NUMBERS[0] at the TOP (pointer position) so its
-        // segment sits centred at angle -π/2 (canvas: 12 o'clock).
         const baseOffset = -Math.PI / 2;
+        const rPocket = R - 14;   // outer edge of pockets
+        const rInner = 58;        // inner edge of pockets
+
+        // --- Pockets with radial shading ---
         for (let i = 0; i < 37; i++) {
             const num = NUMBERS[i];
             const a0 = baseOffset + i * segAngle - segAngle / 2;
             const a1 = baseOffset + (i + 1) * segAngle - segAngle / 2;
             ctx.beginPath();
-            ctx.moveTo(0, 0);
-            ctx.arc(0, 0, r, a0, a1);
-            ctx.fillStyle = getColor(num);
+            ctx.arc(0, 0, rPocket, a0, a1);
+            ctx.arc(0, 0, rInner, a1, a0, true);
+            ctx.closePath();
+            const base = getColor(num);
+            const pg = ctx.createRadialGradient(0, 0, rInner, 0, 0, rPocket);
+            pg.addColorStop(0, shade(base, 1.35));
+            pg.addColorStop(0.6, base);
+            pg.addColorStop(1, shade(base, 0.6));
+            ctx.fillStyle = pg;
             ctx.fill();
-            ctx.strokeStyle = 'rgba(0,0,0,0.4)';
-            ctx.lineWidth = 1;
-            ctx.stroke();
+        }
 
+        // --- Metal frets (raised dividers between pockets) ---
+        for (let i = 0; i < 37; i++) {
+            const a = baseOffset + i * segAngle - segAngle / 2;
+            const sx = Math.cos(a), sy = Math.sin(a);
+            ctx.beginPath();
+            ctx.moveTo(sx * rInner, sy * rInner);
+            ctx.lineTo(sx * rPocket, sy * rPocket);
+            ctx.lineWidth = 2.5;
+            ctx.strokeStyle = 'rgba(20,12,4,0.8)';
+            ctx.stroke();
+            ctx.lineWidth = 1;
+            ctx.strokeStyle = 'rgba(253,230,138,0.55)';
+            ctx.stroke();
+            // Fret stud
+            const mr = (rPocket + rInner) / 2;
+            ctx.beginPath();
+            ctx.arc(sx * rPocket - sx * 4, sy * rPocket - sy * 4, 1.8, 0, Math.PI * 2);
+            ctx.fillStyle = '#fde68a';
+            ctx.fill();
+        }
+
+        // --- Numbers ---
+        for (let i = 0; i < 37; i++) {
+            const num = NUMBERS[i];
             ctx.save();
             ctx.rotate(baseOffset + i * segAngle);
-            ctx.translate(0, -r + 18);
+            ctx.translate(0, -(rPocket - 12));
             ctx.fillStyle = '#fff';
             ctx.font = 'bold 11px Inter';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
+            ctx.shadowColor = 'rgba(0,0,0,0.6)';
+            ctx.shadowBlur = 2;
             ctx.fillText(num.toString(), 0, 0);
+            ctx.shadowBlur = 0;
             ctx.restore();
         }
 
-        // Center hub
-        ctx.beginPath();
-        ctx.arc(0, 0, 40, 0, Math.PI * 2);
-        ctx.fillStyle = '#1e293b';
-        ctx.fill();
-        ctx.lineWidth = 4;
-        ctx.strokeStyle = '#d4a843';
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.arc(0, 0, 30, 0, Math.PI * 2);
-        ctx.fillStyle = '#0f172a';
-        ctx.fill();
+        // --- Inner track ring (where the ball rolls) ---
+        const track = ctx.createRadialGradient(0, 0, rInner - 8, 0, 0, rInner);
+        track.addColorStop(0, '#2a1a0a');
+        track.addColorStop(1, '#120c05');
+        ctx.beginPath(); ctx.arc(0, 0, rInner, 0, Math.PI * 2);
+        ctx.fillStyle = track; ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = 'rgba(253,230,138,0.4)';
+        ctx.beginPath(); ctx.arc(0, 0, rInner, 0, Math.PI * 2); ctx.stroke();
+
+        // --- 3D center turret (cone) ---
+        const cone = ctx.createRadialGradient(-12, -14, 4, 0, 0, 42);
+        cone.addColorStop(0, '#fde68a');
+        cone.addColorStop(0.45, '#c8962f');
+        cone.addColorStop(1, '#5a3d12');
+        ctx.beginPath(); ctx.arc(0, 0, 42, 0, Math.PI * 2);
+        ctx.fillStyle = cone; ctx.fill();
+        // Decorative spokes
+        ctx.strokeStyle = 'rgba(90,61,18,0.6)';
+        ctx.lineWidth = 3;
+        for (let i = 0; i < 8; i++) {
+            const a = i * Math.PI / 4;
+            ctx.beginPath();
+            ctx.moveTo(Math.cos(a) * 12, Math.sin(a) * 12);
+            ctx.lineTo(Math.cos(a) * 40, Math.sin(a) * 40);
+            ctx.stroke();
+        }
+        // Turret tip
+        const tip = ctx.createRadialGradient(-4, -5, 1, 0, 0, 14);
+        tip.addColorStop(0, '#fff');
+        tip.addColorStop(0.5, '#fde047');
+        tip.addColorStop(1, '#a07830');
+        ctx.beginPath(); ctx.arc(0, 0, 14, 0, Math.PI * 2);
+        ctx.fillStyle = tip; ctx.fill();
 
         ctx.restore();
 
-        // Outer gold rim
+        // --- Inner shadow for bowl depth (drawn unrotated, on top) ---
+        const depth = ctx.createRadialGradient(cx, cy - 30, rInner, cx, cy, R);
+        depth.addColorStop(0, 'rgba(0,0,0,0)');
+        depth.addColorStop(0.82, 'rgba(0,0,0,0)');
+        depth.addColorStop(1, 'rgba(0,0,0,0.55)');
+        ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2);
+        ctx.fillStyle = depth; ctx.fill();
+        // Top highlight glint
         ctx.beginPath();
-        ctx.arc(cx, cy, r, 0, Math.PI * 2);
-        ctx.lineWidth = 6;
-        ctx.strokeStyle = '#d4a843';
-        ctx.stroke();
+        ctx.ellipse(cx, cy - R * 0.55, R * 0.55, R * 0.22, 0, 0, Math.PI * 2);
+        const glint = ctx.createLinearGradient(cx, cy - R, cx, cy);
+        glint.addColorStop(0, 'rgba(255,255,255,0.14)');
+        glint.addColorStop(1, 'rgba(255,255,255,0)');
+        ctx.fillStyle = glint; ctx.fill();
 
+        // --- Ball with shadow + highlight ---
         if (ballRadius > 0) {
-            ctx.beginPath();
             const bx = cx + Math.cos(ballAngle) * ballRadius;
             const by = cy + Math.sin(ballAngle) * ballRadius;
-            ctx.arc(bx, by, 6, 0, Math.PI * 2);
-            ctx.fillStyle = '#f8fafc';
-            ctx.shadowColor = 'rgba(0,0,0,0.5)';
-            ctx.shadowBlur = 6;
+            // Drop shadow
+            ctx.beginPath();
+            ctx.ellipse(bx + 2, by + 3, 6, 4, 0, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(0,0,0,0.5)';
             ctx.fill();
-            ctx.shadowBlur = 0;
+            // Ball body
+            const bg = ctx.createRadialGradient(bx - 2.5, by - 3, 1, bx, by, 7);
+            bg.addColorStop(0, '#ffffff');
+            bg.addColorStop(0.6, '#e2e8f0');
+            bg.addColorStop(1, '#94a3b8');
+            ctx.beginPath();
+            ctx.arc(bx, by, 6.5, 0, Math.PI * 2);
+            ctx.fillStyle = bg;
+            ctx.fill();
+            // Specular highlight
+            ctx.beginPath();
+            ctx.arc(bx - 2, by - 2.5, 2, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(255,255,255,0.9)';
+            ctx.fill();
         }
+    }
+
+    /* Lighten (>1) or darken (<1) a hex colour. */
+    function shade(hex, factor) {
+        const n = parseInt(hex.slice(1), 16);
+        let r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+        r = Math.min(255, Math.round(r * factor));
+        g = Math.min(255, Math.round(g * factor));
+        b = Math.min(255, Math.round(b * factor));
+        return `rgb(${r},${g},${b})`;
     }
 
     function renderHistory() {
@@ -418,6 +524,10 @@
         const startBallAngle = -Math.PI / 2;
         let lastTick = 0;
 
+        const TRACK_R = 128;   // outer track the ball rolls on
+        const POCKET_R = 100;  // radius the ball rests at inside a pocket
+        let bounceTick = 0;
+
         function animate(now) {
             const elapsed = now - startTime;
             const progress = Math.min(elapsed / duration, 1);
@@ -426,19 +536,34 @@
             wheelAngle = startWheelAngle + (Math.PI * 2 * 3 * easeOut) + (targetWheelAngle - startWheelAngle) * progress;
             ballAngle = startBallAngle - (Math.PI * 2 * 8 * easeOut);
 
-            if (progress < 0.7) {
-                ballRadius = 130;
+            const finalBallAngle = -Math.PI / 2;
+            if (progress < 0.62) {
+                // Ball rolls smoothly on the outer track.
+                ballRadius = TRACK_R;
             } else {
-                const dropProgress = (progress - 0.7) / 0.3;
-                ballRadius = 130 - (30 * dropProgress);
-                const finalBallAngle = -Math.PI / 2;
-                ballAngle = ballAngle * (1 - dropProgress) + finalBallAngle * dropProgress;
+                // Drop-and-bounce: ball falls toward the pocket, hopping off
+                // the frets with a damped oscillation before settling.
+                const dp = (progress - 0.62) / 0.38;            // 0..1
+                const smooth = dp * dp * (3 - 2 * dp);          // smoothstep
+                const baseR = TRACK_R - (TRACK_R - POCKET_R) * smooth;
+                const bounce = Math.abs(Math.sin(dp * Math.PI * 4.5)) * (1 - dp) * (1 - dp) * 20;
+                ballRadius = baseR + bounce;
+                // Settle the angle to the winning pocket with a fading wobble.
+                const wobble = Math.sin(dp * Math.PI * 8) * (1 - dp) * (1 - dp) * 0.22;
+                ballAngle = ballAngle * (1 - smooth) + (finalBallAngle + wobble) * smooth;
+                // Thud on each bounce apex.
+                const apex = Math.floor(dp * 4.5);
+                if (apex !== bounceTick && dp < 0.92) {
+                    bounceTick = apex;
+                    if (Casino.playTones) Casino.playTones([{ freq: 280 + Math.random() * 120, wave: 'sine', dur: 0.05, vol: 0.04 }]);
+                }
             }
 
             drawStaticWheel();
 
-            if (progress < 0.85 && elapsed - lastTick > 120 + (progress * 250)) {
-                if (Casino.playTones) Casino.playTones([{ freq: 1200, wave: 'sine', dur: 0.03, vol: 0.025 }]);
+            // Rolling clicks during the fast phase.
+            if (progress < 0.62 && elapsed - lastTick > 110 + (progress * 320)) {
+                if (Casino.playTones) Casino.playTones([{ freq: 1200, wave: 'sine', dur: 0.03, vol: 0.022 }]);
                 lastTick = elapsed;
             }
 

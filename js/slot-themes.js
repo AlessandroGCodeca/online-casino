@@ -83,6 +83,11 @@
         const baseSym = theme.symbols[0];
         const freeSpinMult = theme.freeSpinMultiplier || 2;
         const freeSpinGrant = theme.freeSpinGrant || 8;
+        // Wild + the two highest-paying symbols — used to trigger the
+        // near-miss "anticipation" build-up on the final reel.
+        const HIGH_SYMBOLS = new Set([theme.wild].concat(
+            Object.entries(theme.payouts).sort((a, b) => b[1] - a[1]).slice(0, 2).map(e => e[0])
+        ));
 
         function $$(sel) { return area && area.querySelector(sel); }
 
@@ -399,32 +404,50 @@
             const t = getTiming();
             const spinCounts = Casino.fastSpin ? [8, 12, 16] : [16, 22, 28];
 
+            // Near-miss anticipation: if reels 1 & 2 both land the same
+            // high-value symbol (wild or a top-2 payout symbol), reel 3
+            // gets a dramatic slow build-up.
+            const nearMiss = result[0] === result[1] && HIGH_SYMBOLS.has(result[0]);
+
+            let maxDur = 0;
             result.forEach((sym, r) => {
                 const strip = area.querySelector(`[data-reel="${r}"]`);
-                const cells = Array.from({ length: spinCounts[r] }, () => `<div class="ts-cell">${pick()}</div>`).join('') +
+                const reel = strip.parentElement;
+                const anticip = nearMiss && r === 2;
+                const count = anticip ? spinCounts[r] + 14 : spinCounts[r];
+                const cells = Array.from({ length: count }, () => `<div class="ts-cell">${pick()}</div>`).join('') +
                               `<div class="ts-cell">${sym}</div>`;
                 strip.innerHTML = cells;
                 strip.style.transition = 'none';
                 strip.style.transform = 'translateY(0)';
                 void strip.offsetWidth;
-                const offset = -(spinCounts[r]) * SYMBOL_ROW;
-                const dur = t.base + r * t.inc;
+                const offset = -count * SYMBOL_ROW;
+                const dur = (t.base + r * t.inc) + (anticip ? (Casino.fastSpin ? 1.3 : 2.4) : 0);
+                maxDur = Math.max(maxDur, dur);
+                if (anticip && reel) {
+                    reel.classList.add('reel-anticipation');
+                    showMsg('😬 Anticipation…', '');
+                    // Rising tension tone.
+                    if (Casino.playTones) Casino.playTones([
+                        { freq: 220, freqEnd: 660, wave: 'sawtooth', start: (t.base + 2 * t.inc) * 0.5, dur: dur - (t.base + 2 * t.inc) * 0.5, vol: 0.05 }
+                    ]);
+                }
                 requestAnimationFrame(() => {
-                    strip.style.transition = `transform ${dur}s cubic-bezier(0.2, 0.85, 0.25, 1)`;
+                    const ease = anticip ? 'cubic-bezier(0.1, 0.7, 0.1, 1)' : 'cubic-bezier(0.2, 0.85, 0.25, 1)';
+                    strip.style.transition = `transform ${dur}s ${ease}`;
                     strip.style.transform = `translateY(${offset}px)`;
                 });
                 setTimeout(() => {
                     playThemeSound(theme, 'reelStop');
-                    const reel = strip.parentElement;
                     if (reel) {
-                        reel.classList.remove('reel-bounce');
+                        reel.classList.remove('reel-anticipation', 'reel-bounce');
                         void reel.offsetWidth;
                         reel.classList.add('reel-bounce');
                     }
                 }, dur * 1000);
             });
 
-            setTimeout(() => evaluate(result, usingFreeSpin), (t.base + 2 * t.inc) * 1000 + t.finishPad);
+            setTimeout(() => evaluate(result, usingFreeSpin), maxDur * 1000 + t.finishPad);
         }
 
         function pick() { return weightedPick(theme.symbols, theme.weights); }
@@ -972,6 +995,128 @@
                 <rect x="20" y="210" width="20" height="62" rx="10" fill="#451a03"/>
                 <rect x="14" y="34" width="32" height="6" fill="#c084fc"/>
                 <g fill="#fde047"><circle cx="50" cy="80" r="2"/><circle cx="10" cy="130" r="2"/><circle cx="50" cy="190" r="2"/></g>
+            </svg>`
+        },
+        slot_fruit: {
+            left: `<svg viewBox="0 0 60 280" xmlns="http://www.w3.org/2000/svg">
+                <path d="M36 10 Q14 60 36 110 Q58 160 36 210 Q20 250 36 272" fill="none" stroke="#15803d" stroke-width="6" stroke-linecap="round"/>
+                <ellipse cx="22" cy="70" rx="7" ry="5" fill="#16a34a"/><ellipse cx="48" cy="150" rx="7" ry="5" fill="#16a34a"/><ellipse cx="22" cy="230" rx="7" ry="5" fill="#16a34a"/>
+                <circle cx="20" cy="44" r="9" fill="#dc2626" stroke="#7c2d12"/><circle cx="30" cy="50" r="9" fill="#dc2626" stroke="#7c2d12"/>
+                <ellipse cx="40" cy="124" rx="10" ry="8" fill="#fde047" stroke="#a16207"/>
+                <ellipse cx="24" cy="200" rx="9" ry="9" fill="#fb923c" stroke="#9a3412"/>
+                <circle cx="36" cy="262" r="9" fill="#7c3aed" stroke="#581c87"/>
+            </svg>`,
+            right: `<svg viewBox="0 0 60 280" xmlns="http://www.w3.org/2000/svg">
+                <path d="M24 10 Q46 60 24 110 Q2 160 24 210 Q40 250 24 272" fill="none" stroke="#15803d" stroke-width="6" stroke-linecap="round"/>
+                <ellipse cx="38" cy="70" rx="7" ry="5" fill="#16a34a"/><ellipse cx="12" cy="150" rx="7" ry="5" fill="#16a34a"/><ellipse cx="38" cy="230" rx="7" ry="5" fill="#16a34a"/>
+                <ellipse cx="40" cy="46" rx="10" ry="8" fill="#fde047" stroke="#a16207"/>
+                <circle cx="28" cy="124" r="9" fill="#dc2626" stroke="#7c2d12"/><circle cx="38" cy="130" r="9" fill="#dc2626" stroke="#7c2d12"/>
+                <ellipse cx="20" cy="200" rx="9" ry="9" fill="#fb923c" stroke="#9a3412"/>
+                <circle cx="24" cy="262" r="9" fill="#7c3aed" stroke="#581c87"/>
+            </svg>`
+        },
+        slot_olympus: {
+            left: `<svg viewBox="0 0 60 280" xmlns="http://www.w3.org/2000/svg">
+                <rect x="10" y="10" width="40" height="9" fill="#fde047" stroke="#92400e"/>
+                <rect x="14" y="19" width="32" height="9" fill="#e2e8f0" stroke="#92400e"/>
+                <rect x="18" y="28" width="24" height="226" fill="#f1f5f9" stroke="#92400e" stroke-width="1.5"/>
+                <g stroke="#cbd5e1" stroke-width="2"><line x1="24" y1="28" x2="24" y2="254"/><line x1="30" y1="28" x2="30" y2="254"/><line x1="36" y1="28" x2="36" y2="254"/></g>
+                <rect x="14" y="254" width="32" height="9" fill="#e2e8f0" stroke="#92400e"/>
+                <rect x="10" y="263" width="40" height="9" fill="#cbd5e1" stroke="#92400e"/>
+                <polygon points="6,90 2,104 8,104 4,118 14,98 8,98 12,90" fill="#fde047" stroke="#92400e"/>
+                <polygon points="6,190 2,204 8,204 4,218 14,198 8,198 12,190" fill="#fde047" stroke="#92400e"/>
+            </svg>`,
+            right: `<svg viewBox="0 0 60 280" xmlns="http://www.w3.org/2000/svg">
+                <rect x="10" y="10" width="40" height="9" fill="#fde047" stroke="#92400e"/>
+                <rect x="14" y="19" width="32" height="9" fill="#e2e8f0" stroke="#92400e"/>
+                <rect x="18" y="28" width="24" height="226" fill="#f1f5f9" stroke="#92400e" stroke-width="1.5"/>
+                <g stroke="#cbd5e1" stroke-width="2"><line x1="24" y1="28" x2="24" y2="254"/><line x1="30" y1="28" x2="30" y2="254"/><line x1="36" y1="28" x2="36" y2="254"/></g>
+                <rect x="14" y="254" width="32" height="9" fill="#e2e8f0" stroke="#92400e"/>
+                <rect x="10" y="263" width="40" height="9" fill="#cbd5e1" stroke="#92400e"/>
+                <polygon points="54,90 58,104 52,104 56,118 46,98 52,98 48,90" fill="#fde047" stroke="#92400e"/>
+                <polygon points="54,190 58,204 52,204 56,218 46,198 52,198 48,190" fill="#fde047" stroke="#92400e"/>
+            </svg>`
+        },
+        slot_dj: {
+            left: `<svg viewBox="0 0 60 280" xmlns="http://www.w3.org/2000/svg">
+                <rect x="10" y="14" width="40" height="252" rx="5" fill="#1e1b4b" stroke="#0f172a" stroke-width="2"/>
+                ${[52, 140].map(cy => `
+                    <circle cx="30" cy="${cy}" r="16" fill="#0f172a" stroke="#a855f7" stroke-width="2"/>
+                    <circle cx="30" cy="${cy}" r="8" fill="#a855f7"/>
+                    <circle cx="30" cy="${cy}" r="3" fill="#0f172a"/>
+                `).join('')}
+                <circle cx="30" cy="222" r="20" fill="#0f172a" stroke="#22d3ee" stroke-width="2"/>
+                <circle cx="30" cy="222" r="11" fill="#ec4899"/>
+                <circle cx="30" cy="222" r="3.5" fill="#0f172a"/>
+                <g stroke="#22d3ee" stroke-width="2" fill="none"><path d="M6 100 Q2 92 6 84"/><path d="M6 184 Q2 176 6 168"/></g>
+            </svg>`,
+            right: `<svg viewBox="0 0 60 280" xmlns="http://www.w3.org/2000/svg">
+                <rect x="10" y="14" width="40" height="252" rx="5" fill="#1e1b4b" stroke="#0f172a" stroke-width="2"/>
+                <circle cx="30" cy="58" r="20" fill="#0f172a" stroke="#22d3ee" stroke-width="2"/>
+                <circle cx="30" cy="58" r="11" fill="#ec4899"/>
+                <circle cx="30" cy="58" r="3.5" fill="#0f172a"/>
+                ${[140, 228].map(cy => `
+                    <circle cx="30" cy="${cy}" r="16" fill="#0f172a" stroke="#a855f7" stroke-width="2"/>
+                    <circle cx="30" cy="${cy}" r="8" fill="#a855f7"/>
+                    <circle cx="30" cy="${cy}" r="3" fill="#0f172a"/>
+                `).join('')}
+                <g stroke="#22d3ee" stroke-width="2" fill="none"><path d="M54 100 Q58 92 54 84"/><path d="M54 184 Q58 176 54 168"/></g>
+            </svg>`
+        },
+        slot_safari: {
+            left: `<svg viewBox="0 0 60 280" xmlns="http://www.w3.org/2000/svg">
+                <rect x="26" y="60" width="8" height="210" fill="#7c2d12"/>
+                <path d="M30 60 Q8 50 4 30 M30 60 Q52 50 56 30 M30 70 Q10 64 6 48 M30 70 Q50 64 54 48" stroke="#15803d" stroke-width="6" fill="none" stroke-linecap="round"/>
+                <ellipse cx="30" cy="44" rx="26" ry="14" fill="#16a34a"/>
+                <circle cx="14" cy="120" r="9" fill="#fbbf24" stroke="#92400e"/>
+                <circle cx="46" cy="180" r="9" fill="#fbbf24" stroke="#92400e"/>
+                <circle cx="14" cy="240" r="9" fill="#fbbf24" stroke="#92400e"/>
+                <g stroke="#451a03" stroke-width="1"><path d="M14 111 L14 129 M5 120 L23 120"/></g>
+            </svg>`,
+            right: `<svg viewBox="0 0 60 280" xmlns="http://www.w3.org/2000/svg">
+                <rect x="26" y="60" width="8" height="210" fill="#7c2d12"/>
+                <path d="M30 60 Q8 50 4 30 M30 60 Q52 50 56 30 M30 70 Q10 64 6 48 M30 70 Q50 64 54 48" stroke="#15803d" stroke-width="6" fill="none" stroke-linecap="round"/>
+                <ellipse cx="30" cy="44" rx="26" ry="14" fill="#16a34a"/>
+                <circle cx="46" cy="120" r="9" fill="#fbbf24" stroke="#92400e"/>
+                <circle cx="14" cy="180" r="9" fill="#fbbf24" stroke="#92400e"/>
+                <circle cx="46" cy="240" r="9" fill="#fbbf24" stroke="#92400e"/>
+                <g stroke="#451a03" stroke-width="1"><path d="M46 171 L46 189 M37 180 L55 180"/></g>
+            </svg>`
+        },
+        slot_frozen: {
+            left: `<svg viewBox="0 0 60 280" xmlns="http://www.w3.org/2000/svg">
+                <rect x="16" y="0" width="28" height="40" fill="#0ea5e9" opacity=".4"/>
+                ${[10, 22, 34, 46].map(x => `<polygon points="${x},0 ${x + 8},0 ${x + 4},${30 + Math.random() * 30}" fill="#bae6fd" stroke="#0ea5e9" stroke-width="0.5"/>`).join('')}
+                <path d="M30 40 L36 270 L24 270 Z" fill="#e0f2fe" stroke="#7dd3fc" stroke-width="1.5"/>
+                <path d="M30 40 L33 270 L30 270 Z" fill="#fff" opacity=".6"/>
+                <g fill="#fff"><circle cx="14" cy="90" r="2"/><circle cx="46" cy="150" r="2"/><circle cx="14" cy="210" r="2"/></g>
+                <g transform="translate(12 60)" stroke="#22d3ee" stroke-width="2"><line x1="0" y1="-8" x2="0" y2="8"/><line x1="-7" y1="-4" x2="7" y2="4"/><line x1="-7" y1="4" x2="7" y2="-4"/></g>
+                <g transform="translate(48 200)" stroke="#22d3ee" stroke-width="2"><line x1="0" y1="-8" x2="0" y2="8"/><line x1="-7" y1="-4" x2="7" y2="4"/><line x1="-7" y1="4" x2="7" y2="-4"/></g>
+            </svg>`,
+            right: `<svg viewBox="0 0 60 280" xmlns="http://www.w3.org/2000/svg">
+                <rect x="16" y="0" width="28" height="40" fill="#0ea5e9" opacity=".4"/>
+                ${[10, 22, 34, 46].map(x => `<polygon points="${x},0 ${x + 8},0 ${x + 4},${30 + Math.random() * 30}" fill="#bae6fd" stroke="#0ea5e9" stroke-width="0.5"/>`).join('')}
+                <path d="M30 40 L36 270 L24 270 Z" fill="#e0f2fe" stroke="#7dd3fc" stroke-width="1.5"/>
+                <path d="M30 40 L33 270 L30 270 Z" fill="#fff" opacity=".6"/>
+                <g fill="#fff"><circle cx="46" cy="90" r="2"/><circle cx="14" cy="150" r="2"/><circle cx="46" cy="210" r="2"/></g>
+                <g transform="translate(48 60)" stroke="#22d3ee" stroke-width="2"><line x1="0" y1="-8" x2="0" y2="8"/><line x1="-7" y1="-4" x2="7" y2="4"/><line x1="-7" y1="4" x2="7" y2="-4"/></g>
+                <g transform="translate(12 200)" stroke="#22d3ee" stroke-width="2"><line x1="0" y1="-8" x2="0" y2="8"/><line x1="-7" y1="-4" x2="7" y2="4"/><line x1="-7" y1="4" x2="7" y2="-4"/></g>
+            </svg>`
+        },
+        slot_mardi: {
+            left: `<svg viewBox="0 0 60 280" xmlns="http://www.w3.org/2000/svg">
+                <path d="M30 270 L30 70" stroke="#fbbf24" stroke-width="5"/>
+                <path d="M30 70 Q10 50 16 14 Q24 40 30 70" fill="#a855f7" stroke="#7e22ce"/>
+                <path d="M30 70 Q30 44 30 14 Q34 44 30 70" fill="#22d3ee" stroke="#0891b2"/>
+                <path d="M30 70 Q50 50 44 14 Q36 40 30 70" fill="#16a34a" stroke="#15803d"/>
+                <g><circle cx="14" cy="110" r="6" fill="#a855f7" stroke="#fff"/><circle cx="46" cy="135" r="6" fill="#fbbf24" stroke="#fff"/><circle cx="14" cy="165" r="6" fill="#22d3ee" stroke="#fff"/><circle cx="46" cy="195" r="6" fill="#16a34a" stroke="#fff"/><circle cx="14" cy="225" r="6" fill="#ec4899" stroke="#fff"/><circle cx="40" cy="252" r="6" fill="#fbbf24" stroke="#fff"/></g>
+            </svg>`,
+            right: `<svg viewBox="0 0 60 280" xmlns="http://www.w3.org/2000/svg">
+                <path d="M30 270 L30 70" stroke="#fbbf24" stroke-width="5"/>
+                <path d="M30 70 Q10 50 16 14 Q24 40 30 70" fill="#16a34a" stroke="#15803d"/>
+                <path d="M30 70 Q30 44 30 14 Q34 44 30 70" fill="#fbbf24" stroke="#d97706"/>
+                <path d="M30 70 Q50 50 44 14 Q36 40 30 70" fill="#a855f7" stroke="#7e22ce"/>
+                <g><circle cx="46" cy="110" r="6" fill="#22d3ee" stroke="#fff"/><circle cx="14" cy="135" r="6" fill="#ec4899" stroke="#fff"/><circle cx="46" cy="165" r="6" fill="#a855f7" stroke="#fff"/><circle cx="14" cy="195" r="6" fill="#fbbf24" stroke="#fff"/><circle cx="46" cy="225" r="6" fill="#16a34a" stroke="#fff"/><circle cx="20" cy="252" r="6" fill="#22d3ee" stroke="#fff"/></g>
             </svg>`
         }
     };

@@ -89,8 +89,14 @@
                 ? ` · <span class="ts-sym">${theme.scatter}</span> Scatter (${SCATTER_TRIGGER}+ = ${freeSpinGrant} free spins, ${freeSpinMult}×)`
                 : '';
 
+            const decor = THEME_DECOR[theme.id];
+            const decorHtml = decor
+                ? `<div class="ts-decor ts-decor-left" aria-hidden="true">${decor.left}</div><div class="ts-decor ts-decor-right" aria-hidden="true">${decor.right}</div>`
+                : '';
+
             area.innerHTML = `
             <div class="themed-slot tsc-slot" style="--ts-g1:${theme.g1};--ts-g2:${theme.g2};--ts-accent:${theme.accent || '#fbbf24'}">
+                ${decorHtml}
                 <div class="ts-frame">
                     <div class="ts-banner">
                         <span class="ts-banner-icon">${theme.icon}</span>
@@ -509,6 +515,62 @@
     }
 
     /* Custom cascade lobby scenes — falling clusters tell the tumble story. */
+    /* Decorative ornaments flanking the grid (cascade tier). */
+    const THEME_DECOR = {
+        c_candy: {
+            left: `<svg viewBox="0 0 60 280" xmlns="http://www.w3.org/2000/svg">
+                <path d="M40 272 L40 64 Q40 22 22 22 Q6 22 6 50" fill="none" stroke="#fff" stroke-width="22" stroke-linecap="round"/>
+                <path d="M40 272 L40 64 Q40 22 22 22 Q6 22 6 50" fill="none" stroke="#ec4899" stroke-width="22" stroke-linecap="round" stroke-dasharray="15 15"/>
+                <circle cx="14" cy="92" r="8" fill="#fde047" stroke="#fff" stroke-width="1.5"/>
+                <circle cx="46" cy="158" r="8" fill="#22d3ee" stroke="#fff" stroke-width="1.5"/>
+                <circle cx="14" cy="224" r="8" fill="#a3e635" stroke="#fff" stroke-width="1.5"/>
+            </svg>`,
+            right: `<svg viewBox="0 0 60 280" xmlns="http://www.w3.org/2000/svg">
+                <path d="M20 272 L20 64 Q20 22 38 22 Q54 22 54 50" fill="none" stroke="#fff" stroke-width="22" stroke-linecap="round"/>
+                <path d="M20 272 L20 64 Q20 22 38 22 Q54 22 54 50" fill="none" stroke="#22d3ee" stroke-width="22" stroke-linecap="round" stroke-dasharray="15 15"/>
+                <circle cx="46" cy="92" r="8" fill="#ec4899" stroke="#fff" stroke-width="1.5"/>
+                <circle cx="14" cy="158" r="8" fill="#fde047" stroke="#fff" stroke-width="1.5"/>
+                <circle cx="46" cy="224" r="8" fill="#a3e635" stroke="#fff" stroke-width="1.5"/>
+            </svg>`
+        },
+        c_jewel: {
+            left: `<svg viewBox="0 0 60 280" xmlns="http://www.w3.org/2000/svg">
+                <rect x="24" y="10" width="12" height="260" fill="#1e1b4b" stroke="#0f172a"/>
+                ${[42, 110, 178, 246].map((cy, i) => {
+                    const cols = ['#dc2626', '#fbbf24', '#22d3ee', '#a3e635'];
+                    return `<polygon points="30,${cy - 22} 48,${cy - 6} 30,${cy + 22} 12,${cy - 6}" fill="${cols[i]}" stroke="#fff" stroke-width="1.5"/>
+                            <polygon points="30,${cy - 22} 48,${cy - 6} 30,${cy - 6} 12,${cy - 6}" fill="#fff" opacity=".3"/>`;
+                }).join('')}
+            </svg>`,
+            right: `<svg viewBox="0 0 60 280" xmlns="http://www.w3.org/2000/svg">
+                <rect x="24" y="10" width="12" height="260" fill="#1e1b4b" stroke="#0f172a"/>
+                ${[42, 110, 178, 246].map((cy, i) => {
+                    const cols = ['#7c3aed', '#22d3ee', '#ec4899', '#fde047'];
+                    return `<polygon points="30,${cy - 22} 48,${cy - 6} 30,${cy + 22} 12,${cy - 6}" fill="${cols[i]}" stroke="#fff" stroke-width="1.5"/>
+                            <polygon points="30,${cy - 22} 48,${cy - 6} 30,${cy - 6} 12,${cy - 6}" fill="#fff" opacity=".3"/>`;
+                }).join('')}
+            </svg>`
+        },
+        c_fruit: {
+            left: `<svg viewBox="0 0 60 280" xmlns="http://www.w3.org/2000/svg">
+                <path d="M34 8 Q12 56 34 104 Q56 152 34 200 Q18 244 34 272" fill="none" stroke="#15803d" stroke-width="6" stroke-linecap="round"/>
+                <circle cx="20" cy="44" r="10" fill="#dc2626" stroke="#7c2d12"/>
+                <ellipse cx="42" cy="118" rx="11" ry="9" fill="#fde047" stroke="#a16207"/>
+                <ellipse cx="22" cy="192" rx="10" ry="10" fill="#fb923c" stroke="#9a3412"/>
+                <circle cx="36" cy="256" r="10" fill="#7c3aed" stroke="#581c87"/>
+                <ellipse cx="28" cy="80" rx="7" ry="5" fill="#16a34a"/><ellipse cx="44" cy="158" rx="7" ry="5" fill="#16a34a"/>
+            </svg>`,
+            right: `<svg viewBox="0 0 60 280" xmlns="http://www.w3.org/2000/svg">
+                <path d="M26 8 Q48 56 26 104 Q4 152 26 200 Q42 244 26 272" fill="none" stroke="#15803d" stroke-width="6" stroke-linecap="round"/>
+                <ellipse cx="40" cy="44" rx="11" ry="9" fill="#fde047" stroke="#a16207"/>
+                <circle cx="22" cy="118" r="10" fill="#dc2626" stroke="#7c2d12"/>
+                <circle cx="38" cy="192" r="10" fill="#7c3aed" stroke="#581c87"/>
+                <ellipse cx="24" cy="256" rx="10" ry="10" fill="#fb923c" stroke="#9a3412"/>
+                <ellipse cx="32" cy="80" rx="7" ry="5" fill="#16a34a"/><ellipse cx="16" cy="158" rx="7" ry="5" fill="#16a34a"/>
+            </svg>`
+        }
+    };
+
     const SCENES = {
         c_candy: `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
             <defs>

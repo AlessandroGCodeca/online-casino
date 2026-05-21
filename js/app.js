@@ -10,18 +10,14 @@ window.Casino = {
     fastSpin: false,
     ambientEnabled: false,
     theme: 'dark',
-    lastDailyBonus: 0,
     lastRescue: 0,
     achievements: [],
     vip: { xp: 0, level: 0 },
     inventory: {},
-    stats: { totalWagered: 0, totalWon: 0, biggestWin: 0, gamesPlayed: 0, winStreak: 0, bestStreak: 0, jackpots: 0, fastSpins: 0, freeSpinTriggers: 0, bonusesBought: 0, maxChain: 0, dailyClaims: 0, missionsCompleted: 0 },
+    stats: { totalWagered: 0, totalWon: 0, biggestWin: 0, gamesPlayed: 0, winStreak: 0, bestStreak: 0, jackpots: 0, fastSpins: 0, freeSpinTriggers: 0, bonusesBought: 0, maxChain: 0 },
     recentlyPlayed: [],
     playCounts: {},
     betHistory: [],
-    missions: { date: '', list: [] },
-    dailyStats: { date: '', rounds: 0, wins: 0, wagered: 0, gamesSet: [], bestMult: 0 },
-    race: { weekStart: '', wagered: 0, won: 0 },
     notifications: []
 };
 
@@ -31,15 +27,24 @@ const RESCUE_COOLDOWN_MS = 6 * 60 * 60 * 1000; // 6h
 const BET_HISTORY_MAX = 30;
 const RECENT_MAX = 6;
 
-const DEFAULT_STATS = { totalWagered: 0, totalWon: 0, biggestWin: 0, gamesPlayed: 0, winStreak: 0, bestStreak: 0, jackpots: 0, fastSpins: 0, freeSpinTriggers: 0, bonusesBought: 0, maxChain: 0, dailyClaims: 0, missionsCompleted: 0 };
-const DEFAULT_DAILY = { date: '', rounds: 0, wins: 0, wagered: 0, gamesSet: [], bestMult: 0 };
+const DEFAULT_STATS = { totalWagered: 0, totalWon: 0, biggestWin: 0, gamesPlayed: 0, winStreak: 0, bestStreak: 0, jackpots: 0, fastSpins: 0, freeSpinTriggers: 0, bonusesBought: 0, maxChain: 0 };
 
+// VIP ladder — 14 tiers from Bronze to Royal. XP is earned 1:1 with chips wagered.
 const VIP_TIERS = [
-    { name: 'Bronze', xp: 0, icon: '🥉', bonus: 1000 },
-    { name: 'Silver', xp: 5000, icon: '🥈', bonus: 2500 },
-    { name: 'Gold', xp: 25000, icon: '🥇', bonus: 5000 },
-    { name: 'Platinum', xp: 100000, icon: '💎', bonus: 10000 },
-    { name: 'Diamond', xp: 500000, icon: '👑', bonus: 25000 }
+    { name: 'Bronze',      xp: 0,        icon: '🥉' },
+    { name: 'Silver',      xp: 2500,     icon: '🥈' },
+    { name: 'Gold',        xp: 7500,     icon: '🥇' },
+    { name: 'Platinum',    xp: 20000,    icon: '💠' },
+    { name: 'Sapphire',    xp: 45000,    icon: '🔷' },
+    { name: 'Emerald',     xp: 90000,    icon: '🟢' },
+    { name: 'Ruby',        xp: 175000,   icon: '🔴' },
+    { name: 'Diamond',     xp: 320000,   icon: '💎' },
+    { name: 'Obsidian',    xp: 600000,   icon: '🖤' },
+    { name: 'Master',      xp: 1100000,  icon: '⭐' },
+    { name: 'Grandmaster', xp: 2000000,  icon: '🌟' },
+    { name: 'Champion',    xp: 3800000,  icon: '🏆' },
+    { name: 'Legend',      xp: 7000000,  icon: '👑' },
+    { name: 'Royal',       xp: 13000000, icon: '🔱' }
 ];
 
 // Single confetti palette — keep it lush.
@@ -70,12 +75,10 @@ const ACHIEVEMENTS_DATA = [
     // VIP ladder
     { id: 'silver_crown', name: 'Silver Crown',   icon: '🥈', desc: 'Reach Silver VIP', reward: 2500 },
     { id: 'gold_crown',   name: 'Gold Crown',     icon: '🥇', desc: 'Reach Gold VIP', reward: 5000 },
-    { id: 'plat_crown',   name: 'Platinum Crown', icon: '💎', desc: 'Reach Platinum VIP', reward: 15000 },
-    { id: 'diamond_crown',name: 'Diamond Crown',  icon: '👑', desc: 'Reach Diamond VIP', reward: 50000 },
-    // Engagement / collection
-    { id: 'daily_devotee',name: 'Daily Devotee',  icon: '📅', desc: 'Claim daily bonus 7 times', reward: 3000 },
-    { id: 'pilgrim',      name: 'Pilgrim',        icon: '🕊️', desc: 'Claim daily bonus 30 times', reward: 15000 },
-    { id: 'mission_spec', name: 'Mission Specialist', icon: '🎯', desc: 'Complete 25 daily missions', reward: 5000 }
+    { id: 'plat_crown',   name: 'Platinum Crown', icon: '💠', desc: 'Reach Platinum VIP', reward: 15000 },
+    { id: 'diamond_crown',name: 'Diamond Crown',  icon: '💎', desc: 'Reach Diamond VIP', reward: 50000 },
+    { id: 'obsidian_crown', name: 'Obsidian Elite', icon: '🖤', desc: 'Reach Obsidian VIP', reward: 100000 },
+    { id: 'royal_crown',  name: 'Royal Ascension', icon: '🔱', desc: 'Reach Royal VIP — the top tier', reward: 500000 }
 ];
 
 const GAME_CARDS = [
@@ -273,30 +276,14 @@ const GAME_ART = {
     </svg>`
 };
 
-const MISSION_POOL = [
-    { type: 'rounds', target: 10, name: 'Warm Up', desc: 'Play 10 rounds today', reward: 500, icon: '🎯' },
-    { type: 'rounds', target: 25, name: 'Marathon', desc: 'Play 25 rounds today', reward: 1500, icon: '🏃' },
-    { type: 'wins', target: 5, name: 'Winning Vibe', desc: 'Win 5 games today', reward: 1000, icon: '🎉' },
-    { type: 'wins', target: 15, name: 'On Fire', desc: 'Win 15 games today', reward: 3000, icon: '🔥' },
-    { type: 'wagered', target: 5000, name: 'Big Spender', desc: 'Bet $5,000 in total today', reward: 1000, icon: '💰' },
-    { type: 'wagered', target: 25000, name: 'Whale', desc: 'Bet $25,000 in total today', reward: 5000, icon: '🐋' },
-    { type: 'variety', target: 3, name: 'Explorer', desc: 'Try 3 different games today', reward: 750, icon: '🗺️' },
-    { type: 'variety', target: 6, name: 'Globetrotter', desc: 'Try 6 different games today', reward: 2000, icon: '🌍' },
-    { type: 'multiplier', target: 5, name: 'Multiplier Magic', desc: 'Win at 5× your bet or higher', reward: 1500, icon: '⚡' },
-    { type: 'multiplier', target: 25, name: 'Jackpot Hunter', desc: 'Win at 25× your bet or higher', reward: 5000, icon: '🎰' },
-    { type: 'streak', target: 3, name: 'Triple Threat', desc: 'Win 3 games in a row', reward: 1000, icon: '🔱' },
-    { type: 'streak', target: 6, name: 'Unstoppable', desc: 'Win 6 games in a row', reward: 4000, icon: '👑' }
-];
-
 const PROMOS = [
-    '🎁 Claim your daily bonus from the hero banner!',
-    '💎 Bet to earn XP and unlock VIP tiers with bigger daily bonuses.',
-    '🛍️ Spend chips in the Reward Shop on decks and themes.',
+    '💎 Bet to earn XP and climb 14 VIP tiers from Bronze to Royal.',
     '🏆 Win 5 in a row to unlock the Lucky Streak achievement.',
-    '🎯 Complete Daily Missions for bonus chips.',
+    '🔥 Land 2 jackpot symbols — the third reel builds the tension.',
     '⌨️ Pro tip: press Space to spin, Esc to leave a game.',
     '🚀 Crash, Plinko, Mines — instant games pay big multipliers.',
-    '🃏 Card sharks: Blackjack, Baccarat and Video Poker await.'
+    '🃏 Card sharks: Blackjack, Baccarat and Video Poker await.',
+    '🎰 Cascade slots tumble — wins clear the grid for fresh symbols.'
 ];
 
 /* ---- Utilities ---- */
@@ -314,18 +301,14 @@ function today() { return new Date().toISOString().slice(0, 10); }
 /* ---- Init ---- */
 document.addEventListener('DOMContentLoaded', () => {
     loadState();
-    checkDailyReset();
     applyTheme();
     renderLobby();
     updateBalanceUI();
     updateVIPUI();
-    checkDailyBonus();
     renderLeaderboard();
-    renderMissions();
     renderRecentlyPlayed();
     renderRescue();
     initPromoCarousel();
-    initMissionTimer();
     initLiveFeed();
     initKeyboard();
 
@@ -335,9 +318,6 @@ document.addEventListener('DOMContentLoaded', () => {
     bindClick('theme-toggle', toggleTheme);
     bindClick('stats-btn', showStats);
     bindClick('close-stats', () => closeModal('stats-modal'));
-    bindClick('close-daily', () => closeModal('daily-modal'));
-    bindClick('claim-daily-btn', claimDailyBonus);
-    bindClick('daily-bonus-btn', showDailyModal);
     bindClick('rescue-btn', claimRescueChips);
     bindClick('fullscreen-btn', toggleFullscreen);
     bindClick('settings-btn', showSettings);
@@ -398,15 +378,12 @@ function loadState() {
             Casino.hapticsEnabled = s.hapticsEnabled ?? true;
             Casino.ambientEnabled = s.ambientEnabled ?? false;
             Casino.fastSpin = s.fastSpin ?? false;
-            Casino.lastDailyBonus = s.lastDailyBonus ?? 0;
             Casino.lastRescue = s.lastRescue ?? 0;
             Casino.achievements = s.achievements ?? [];
             Casino.vip = s.vip ?? { xp: 0, level: 0 };
             Casino.recentlyPlayed = s.recentlyPlayed ?? [];
             Casino.playCounts = s.playCounts ?? {};
             Casino.betHistory = s.betHistory ?? [];
-            Casino.missions = s.missions ?? { date: '', list: [] };
-            Casino.dailyStats = Object.assign({}, DEFAULT_DAILY, s.dailyStats || {});
             if (s.audit) {
                 Casino.audit.clientSeed = s.audit.clientSeed || '';
                 Casino.audit.serverSeed = s.audit.serverSeed || '';
@@ -429,15 +406,12 @@ function saveState() {
             ambientEnabled: Casino.ambientEnabled,
             fastSpin: Casino.fastSpin,
             theme: Casino.theme,
-            lastDailyBonus: Casino.lastDailyBonus,
             lastRescue: Casino.lastRescue,
             achievements: Casino.achievements,
             vip: Casino.vip,
             recentlyPlayed: Casino.recentlyPlayed,
             playCounts: Casino.playCounts,
             betHistory: Casino.betHistory,
-            missions: Casino.missions,
-            dailyStats: Casino.dailyStats,
             audit: {
                 clientSeed: Casino.audit.clientSeed,
                 serverSeed: Casino.audit.serverSeed,
@@ -446,30 +420,6 @@ function saveState() {
             }
         }));
     } catch(e) {}
-}
-
-/* ---- Daily rollover (missions, daily stats) ---- */
-function checkDailyReset() {
-    const t = today();
-    if (Casino.dailyStats.date !== t) {
-        Casino.dailyStats = Object.assign({}, DEFAULT_DAILY, { date: t });
-    }
-    if (Casino.missions.date !== t) {
-        Casino.missions = { date: t, list: generateMissions(t) };
-    }
-}
-function generateMissions(date) {
-    let seed = 0;
-    for (const c of date) seed = (seed * 31 + c.charCodeAt(0)) | 0;
-    const rand = () => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; };
-    const pool = MISSION_POOL.slice();
-    const picked = [];
-    for (let i = 0; i < 3 && pool.length; i++) {
-        const idx = Math.floor(rand() * pool.length);
-        const m = pool.splice(idx, 1)[0];
-        picked.push(Object.assign({}, m, { progress: 0, claimed: false, missionId: m.type + '_' + m.target }));
-    }
-    return picked;
 }
 
 /* ---- Balance & game outcome tracking ---- */
@@ -511,17 +461,12 @@ function changeBalance(amount) {
         if (Casino.stats.winStreak > Casino.stats.bestStreak) Casino.stats.bestStreak = Casino.stats.winStreak;
         if (amount >= pendingBet * 25) Casino.stats.jackpots = (Casino.stats.jackpots || 0) + 1;
 
-        // Daily mission tracking
-        Casino.dailyStats.wins++;
-        if (mult > (Casino.dailyStats.bestMult || 0)) Casino.dailyStats.bestMult = mult;
-
         // Bet history
         recordBet({ game: pendingGameId, bet: pendingBet, won: amount, mult: mult });
 
         pendingBet = 0;
         pendingGameId = null;
         haptic([30, 40, 30]);
-        updateMissionProgress();
     }
 
     checkAchievements();
@@ -530,7 +475,6 @@ function changeBalance(amount) {
 }
 function placeBet(amount) {
     if (amount > Casino.balance || amount <= 0) return false;
-    checkDailyReset();
 
     // Previous round had a pending bet that never paid out → loss.
     if (pendingBet > 0) {
@@ -541,11 +485,6 @@ function placeBet(amount) {
     Casino.balance -= amount;
     Casino.stats.totalWagered += amount;
     Casino.stats.gamesPlayed++;
-    Casino.dailyStats.rounds++;
-    Casino.dailyStats.wagered += amount;
-    if (Casino.currentGame && !Casino.dailyStats.gamesSet.includes(Casino.currentGame)) {
-        Casino.dailyStats.gamesSet.push(Casino.currentGame);
-    }
     recordAuditRound(Casino.currentGame, amount);
     pendingBet = amount;
     pendingGameId = Casino.currentGame;
@@ -556,7 +495,6 @@ function placeBet(amount) {
 
     updateBalanceUI();
     flashBalance(false);
-    updateMissionProgress();
     renderRescue();
     saveState();
     return true;
@@ -612,17 +550,11 @@ window.Casino.buyBonusFlat = function(amount) {
     Casino.balance -= amount;
     Casino.stats.totalWagered += amount;
     Casino.stats.gamesPlayed++;
-    Casino.dailyStats.wagered += amount;
-    Casino.dailyStats.rounds++;
-    if (Casino.currentGame && !Casino.dailyStats.gamesSet.includes(Casino.currentGame)) {
-        Casino.dailyStats.gamesSet.push(Casino.currentGame);
-    }
     Casino.vip.xp += amount;
     checkVIPLevelUp();
     updateVIPUI();
     updateBalanceUI();
     flashBalance(false);
-    updateMissionProgress();
     renderRescue();
     saveState();
     return true;
@@ -1006,7 +938,6 @@ function showLobby() {
         renderLeaderboard();
         renderRecentlyPlayed();
         renderLobby();
-        renderMissions();
     }, delay);
 
     if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
@@ -1063,23 +994,19 @@ function showStats() {
         Casino.balance = STARTING_BALANCE;
         Casino.stats = Object.assign({}, DEFAULT_STATS);
         Casino.achievements = [];
-        Casino.lastDailyBonus = 0;
         Casino.lastRescue = 0;
         Casino.vip = { xp: 0, level: 0 };
         Casino.inventory = {};
         Casino.recentlyPlayed = [];
         Casino.playCounts = {};
         Casino.betHistory = [];
-        Casino.missions = { date: '', list: [] };
-        Casino.dailyStats = Object.assign({}, DEFAULT_DAILY);
         Casino.audit = { clientSeed: '', serverSeed: '', serverSeedHash: '', nonce: 0, history: [] };
         initAudit();
         pendingBet = 0; pendingGameId = null;
         document.documentElement.style.removeProperty('--bg-primary');
-        checkDailyReset();
         saveState();
         updateBalanceUI(); updateVIPUI(); renderLeaderboard(); renderLobby();
-        renderRecentlyPlayed(); renderMissions(); renderRescue();
+        renderRecentlyPlayed(); renderRescue();
         showStats();
         showToast('All data reset.');
     });
@@ -1147,13 +1074,13 @@ function checkAchievements() {
     check('mythic_wager', s.totalWagered >= 1000000);
     check('sharpshooter', s.biggestWin >= 10000);
     check('profit_king',  s.totalWon - s.totalWagered >= 50000);
-    check('silver_crown', (Casino.vip.level || 0) >= 1);
-    check('gold_crown',   (Casino.vip.level || 0) >= 2);
-    check('plat_crown',   (Casino.vip.level || 0) >= 3);
-    check('diamond_crown',(Casino.vip.level || 0) >= 4);
-    check('daily_devotee',(s.dailyClaims || 0) >= 7);
-    check('pilgrim',      (s.dailyClaims || 0) >= 30);
-    check('mission_spec', (s.missionsCompleted || 0) >= 25);
+    // VIP tier indices: Bronze 0, Silver 1, Gold 2, Platinum 3 … Diamond 7, Obsidian 8 … Royal 13.
+    check('silver_crown',   (Casino.vip.level || 0) >= 1);
+    check('gold_crown',     (Casino.vip.level || 0) >= 2);
+    check('plat_crown',     (Casino.vip.level || 0) >= 3);
+    check('diamond_crown',  (Casino.vip.level || 0) >= 7);
+    check('obsidian_crown', (Casino.vip.level || 0) >= 8);
+    check('royal_crown',    (Casino.vip.level || 0) >= 13);
 }
 window.Casino.checkAchievements = checkAchievements;
 
@@ -1167,113 +1094,6 @@ function showToast(msg) {
     setTimeout(() => { toast.classList.add('toast-leaving'); setTimeout(() => toast.remove(), 300); }, 4000);
 }
 window.Casino.showToast = showToast;
-
-/* ---- Daily Bonus ---- */
-function checkDailyBonus() {
-    const now = Date.now();
-    const msPerDay = 24 * 60 * 60 * 1000;
-    $('daily-bonus-btn').classList.toggle('hidden', now - Casino.lastDailyBonus <= msPerDay);
-}
-function showDailyModal() {
-    const tier = VIP_TIERS[Casino.vip.level];
-    $('daily-bonus-amount').textContent = `Claim $${tier.bonus.toLocaleString()}!`;
-    openModal('daily-modal');
-}
-function claimDailyBonus() {
-    const tier = VIP_TIERS[Casino.vip.level];
-    Casino.balance += tier.bonus;
-    updateBalanceUI();
-    flashBalance(true);
-    Casino.lastDailyBonus = Date.now();
-    Casino.stats.dailyClaims = (Casino.stats.dailyClaims || 0) + 1;
-    saveState();
-    closeModal('daily-modal');
-    $('daily-bonus-btn').classList.add('hidden');
-    playSound('win');
-    showWinEffect(tier.bonus);
-    haptic([30, 30, 60]);
-    checkAchievements();
-}
-
-/* ---- Missions ---- */
-function renderMissions() {
-    const list = $('missions-list');
-    if (!list) return;
-    checkDailyReset();
-    list.innerHTML = Casino.missions.list.map(m => {
-        const pct = Math.min(100, (m.progress / m.target) * 100);
-        const complete = m.progress >= m.target;
-        return `
-            <div class="mission-card${complete ? ' complete' : ''}${m.claimed ? ' claimed' : ''}">
-                <div class="mission-icon" aria-hidden="true">${esc(m.icon)}</div>
-                <div class="mission-body">
-                    <div class="mission-name">${esc(m.name)}</div>
-                    <div class="mission-desc">${esc(m.desc)}</div>
-                    <div class="mission-progress">
-                        <div class="mission-progress-bar"><div class="mission-progress-fill" style="width:${pct}%"></div></div>
-                        <div class="mission-progress-text">${formatProgress(m)}</div>
-                    </div>
-                </div>
-                <div class="mission-reward">${m.claimed ? '✓' : `+$${m.reward.toLocaleString()}`}</div>
-            </div>`;
-    }).join('');
-}
-function formatProgress(m) {
-    if (m.type === 'wagered') return `$${Math.min(m.progress, m.target).toLocaleString()} / $${m.target.toLocaleString()}`;
-    if (m.type === 'multiplier') return `${m.progress.toFixed(1)}× / ${m.target}×`;
-    return `${Math.min(m.progress, m.target)} / ${m.target}`;
-}
-function updateMissionProgress() {
-    if (!Casino.missions || !Casino.missions.list) return;
-    const ds = Casino.dailyStats;
-    let anyComplete = false;
-    Casino.missions.list.forEach(m => {
-        if (m.claimed) return;
-        const prev = m.progress;
-        if (m.type === 'rounds') m.progress = ds.rounds;
-        else if (m.type === 'wins') m.progress = ds.wins;
-        else if (m.type === 'wagered') m.progress = ds.wagered;
-        else if (m.type === 'variety') m.progress = ds.gamesSet.length;
-        else if (m.type === 'multiplier') m.progress = Math.max(m.progress, ds.bestMult || 0);
-        else if (m.type === 'streak') m.progress = Math.max(m.progress, Casino.stats.winStreak || 0);
-
-        if (m.progress >= m.target && !m.claimed) {
-            m.claimed = true;
-            Casino.balance += m.reward;
-            updateBalanceUI();
-            Casino.stats.missionsCompleted = (Casino.stats.missionsCompleted || 0) + 1;
-            showToast(`✨ Mission Complete: ${m.name}! +$${m.reward.toLocaleString()}`);
-            playSound('jackpot');
-            haptic([40, 40, 80]);
-            anyComplete = true;
-            checkAchievements();
-        }
-        if (prev !== m.progress) anyComplete = true;
-    });
-    if (anyComplete) renderMissions();
-}
-function initMissionTimer() {
-    const el = $('mission-timer');
-    if (!el) return;
-    function tick() {
-        const now = new Date();
-        const tomorrow = new Date(now);
-        tomorrow.setUTCHours(24, 0, 0, 0);
-        const diff = tomorrow - now;
-        const h = String(Math.floor(diff / 3600000)).padStart(2, '0');
-        const m = String(Math.floor((diff % 3600000) / 60000)).padStart(2, '0');
-        const s = String(Math.floor((diff % 60000) / 1000)).padStart(2, '0');
-        el.textContent = `${h}:${m}:${s}`;
-        // Mid-rollover: refresh missions if day changed.
-        if (Casino.missions.date !== today()) {
-            checkDailyReset();
-            renderMissions();
-            saveState();
-        }
-    }
-    tick();
-    setInterval(tick, 1000);
-}
 
 /* ---- Promo carousel (hero) ---- */
 function initPromoCarousel() {
@@ -1974,9 +1794,6 @@ function handleSidebarNav(nav, btn) {
         const allTab = document.querySelector('.cat-tab[data-cat="all"]');
         if (allTab && !allTab.classList.contains('active')) allTab.click();
         scrollToSelector('#games-grid');
-        markActiveSidebar(btn);
-    } else if (nav === 'missions') {
-        scrollToSelector('.missions-section');
         markActiveSidebar(btn);
     } else if (nav === 'leaderboard') {
         scrollToSelector('.leaderboard');

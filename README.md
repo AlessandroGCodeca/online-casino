@@ -77,12 +77,11 @@ Every themed slot has its own symbol set, weighted distribution, payout table, w
 
 - **$10,000 free chips** to start (resets when you go broke)
 - **Virtual currency only** — no real money, ever
-- **VIP progression** with 5 tiers (Bronze → Diamond) and tier-scaled daily bonuses
-- **Achievements** — 5 unlockable goals with chip rewards
+- **VIP progression** — a 14-tier ladder from Bronze to Royal, XP earned 1:1 with chips wagered
+- **Achievements** — 25 unlockable goals with chip rewards
 - **Win streak tracking** with personal-best record
 - **Persistent leaderboard** that places you against seeded competition
-- **Reward shop** — buy and equip cosmetic decks and themes with chips
-- **Daily bonus** that scales with VIP level
+- **Rescue chips** — a free top-up button appears when your balance runs low
 - **Sound effects** via a single shared Web Audio context
 - **Mobile haptics** on wins via the Vibration API
 - **Statistics tracking** with localStorage persistence

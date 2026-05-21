@@ -175,7 +175,6 @@ body.in-game #game-tint { opacity: 0.22; }
 @media (min-width: 900px) {
     .sidebar { display: flex; }
     #top-bar, #lobby, #game-container { padding-left: 72px; }
-    .live-feed { left: 96px; }
     .skip-link { left: 72px; }
 }
 
@@ -1569,14 +1568,57 @@ body.no-animations *, body.no-animations *::before, body.no-animations *::after 
 }
 @keyframes vipFillFlow { from { background-position: 200% 0; } to { background-position: -200% 0; } }
 
-/* Live Feed */
-.live-feed { position: fixed; left: 24px; top: 100px; width: 260px; background: rgba(10,14,26,0.6); backdrop-filter: blur(10px); border: 1px solid var(--glass-border); border-radius: var(--radius); padding: 16px; z-index: 50; display: flex; flex-direction: column; gap: 12px; box-shadow: var(--shadow); max-height: 300px; overflow: hidden; }
-.live-feed-header { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; color: var(--text-secondary); display: flex; align-items: center; gap: 8px; }
-.live-dot { width: 8px; height: 8px; background: var(--red); border-radius: 50%; animation: pulse 2s infinite; }
-.live-feed-list { display: flex; flex-direction: column; gap: 8px; flex: 1; overflow-y: hidden; }
-.live-feed-item { font-size: 12px; line-height: 1.4; color: var(--text); padding: 8px; background: var(--glass-bg); border-radius: 8px; border-left: 3px solid var(--gold); animation: slideInLeft 0.4s ease-out forwards; }
+/* Live Feed — in-flow horizontal activity bar (never overlaps the sidebar) */
+.live-feed {
+    position: relative;
+    z-index: 1;
+    max-width: 1400px;
+    margin: 22px auto 0;
+    padding: 10px 40px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+.live-feed-header {
+    flex-shrink: 0;
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+.live-dot { width: 8px; height: 8px; background: var(--red); border-radius: 50%; animation: pulse 2s infinite; flex-shrink: 0; }
+.live-feed-list {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    flex: 1;
+    overflow: hidden;
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 24px, #000 calc(100% - 60px), transparent);
+    mask-image: linear-gradient(90deg, transparent, #000 24px, #000 calc(100% - 60px), transparent);
+}
+.live-feed-item {
+    flex-shrink: 0;
+    white-space: nowrap;
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--text);
+    padding: 7px 14px;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 50px;
+    animation: liveItemIn 0.4s cubic-bezier(0.2, 1.4, 0.4, 1) forwards;
+}
+.live-feed-item strong { color: var(--gold-light); }
 @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239,68,68,0.7); } 70% { box-shadow: 0 0 0 6px rgba(239,68,68,0); } 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); } }
-@keyframes slideInLeft { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes liveItemIn { from { opacity: 0; transform: translateX(-24px) scale(0.9); } to { opacity: 1; transform: translateX(0) scale(1); } }
+@media (max-width: 768px) {
+    .live-feed { padding: 8px 16px; }
+    .live-feed-header span:not(.live-dot) { display: none; }
+}
 
 
 /* Leaderboard */
@@ -1611,12 +1653,6 @@ body.no-animations *, body.no-animations *::before, body.no-animations *::after 
 .achievement-reward { font-size: 12px; color: var(--gold); font-weight: 700; }
 
 /* Modal extras */
-.daily-modal-content { text-align: center; }
-.daily-modal-body { padding: 24px; }
-.daily-icon { font-size: 64px; margin-bottom: 16px; }
-.daily-amount { color: var(--gold); margin-bottom: 8px; }
-.daily-note { color: var(--text-secondary); margin-bottom: 24px; }
-.daily-claim-btn { width: 100%; }
 
 /* (Old single-line .game-card override removed — full portrait styles above.) */
 
@@ -1632,39 +1668,15 @@ body.no-animations *, body.no-animations *::before, body.no-animations *::after 
     #ambient-bg::before, #ambient-bg::after { animation: none !important; }
 }
 
-/* Hide live feed on narrow screens — it overlaps the lobby content. */
-@media (max-width: 1400px) {
-    .live-feed { display: none; }
-}
 
 /* Promo strip in hero */
 .promo-text { margin: 20px auto 0; max-width: 600px; padding: 10px 18px; border-radius: 50px; background: linear-gradient(135deg, rgba(212,168,67,0.12), rgba(139,92,246,0.12)); border: 1px solid var(--glass-border); font-size: 14px; color: var(--text); font-weight: 500; transition: opacity 0.3s; }
 .promo-text.promo-leaving { opacity: 0; }
 
-/* Section header (missions, recently played) */
+/* Section header (recently played, etc.) */
 .section-header { display: flex; align-items: baseline; justify-content: space-between; max-width: 1200px; margin: 0 auto; padding: 24px 40px 12px; }
 .section-header h2 { font-family: var(--font-display); font-size: 22px; color: var(--gold); }
 .section-sub { color: var(--text-secondary); font-size: 12px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; }
-.section-sub #mission-timer { color: var(--gold-light); font-variant-numeric: tabular-nums; }
-
-/* Missions */
-.missions-section { position: relative; z-index: 1; max-width: 1200px; margin: 0 auto; }
-.missions-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; padding: 0 40px; }
-.mission-card { display: flex; align-items: center; gap: 14px; background: var(--bg-card); border: 1px solid var(--glass-border); border-radius: var(--radius); padding: 14px; transition: all 0.3s; }
-.mission-card:hover { border-color: rgba(212,168,67,0.3); }
-.mission-card.complete { border-color: var(--green); background: rgba(34,197,94,0.06); }
-.mission-card.claimed { opacity: 0.6; }
-.mission-icon { font-size: 32px; flex-shrink: 0; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4)); }
-.mission-body { flex: 1; min-width: 0; }
-.mission-name { font-weight: 800; font-size: 14px; color: var(--text); margin-bottom: 2px; }
-.mission-desc { font-size: 12px; color: var(--text-secondary); margin-bottom: 8px; }
-.mission-progress { display: flex; align-items: center; gap: 8px; }
-.mission-progress-bar { flex: 1; height: 6px; background: rgba(0,0,0,0.3); border-radius: 4px; overflow: hidden; }
-.mission-progress-fill { height: 100%; background: linear-gradient(90deg, var(--gold-dark), var(--gold-light)); transition: width 0.5s ease-out; }
-.mission-card.complete .mission-progress-fill { background: linear-gradient(90deg, var(--green), #4ade80); }
-.mission-progress-text { font-size: 11px; color: var(--text-muted); font-weight: 700; font-variant-numeric: tabular-nums; min-width: 60px; text-align: right; }
-.mission-reward { font-size: 13px; font-weight: 800; color: var(--gold-light); flex-shrink: 0; }
-.mission-card.claimed .mission-reward { color: var(--green); font-size: 20px; }
 
 /* Recently played — mini portrait tiles */
 .recent-section { position: relative; z-index: 1; max-width: 1400px; margin: 0 auto; }
@@ -1774,7 +1786,7 @@ body.no-animations *, body.no-animations *::before, body.no-animations *::after 
 /* Responsive tweaks */
 @media (max-width: 768px) {
     .section-header, .recent-section h2,
-    .missions-list, .recent-row, .lobby-toolbar,
+    .recent-row, .lobby-toolbar,
     .game-row-section .row-header, .game-row, .game-row-grid,
     .big-wins-row, .game-grid-inner {
         padding-left: 16px;
